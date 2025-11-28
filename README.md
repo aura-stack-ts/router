@@ -1,6 +1,6 @@
-# `@aura-stack/router`
-
 <div align="center">
+
+<h1>Aura Stack Router</h1>
 
 **A modern, TypeScript-first router and endpoint definition library**
 
