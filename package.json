@@ -16,6 +16,29 @@
     "clean": "rm -rf dist",
     "clean:cts": "rm -rf dist/*.cts"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aura-stack-ts/router"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/@aura-stack/router"
+  },
+  "keywords": [
+    "router",
+    "endpoints",
+    "api",
+    "aura",
+    "aura stack",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Aura Stack <auraauthoss@gmail.com> | Hernan Alvarado <hernanvid123@gmail.com>",
+  "homepage": "https://github.com/aura-stack-ts/router",
+  "bugs": {
+    "url": "https://github.com/aura-stack-ts/router/issues"
+  },
+  "license": "MIT",
   "files": [
     "dist"
   ],
@@ -42,17 +65,6 @@
     },
     "./types": "./dist/types.d.ts"
   },
-  "keywords": [
-    "router",
-    "endpoints",
-    "api",
-    "aura",
-    "aura stack",
-    "typescript",
-    "nodejs"
-  ],
-  "author": "Aura Stack <auraauthoss@gmail.com> | Hernan Alvarado <hernanvid123@gmail.com>",
-  "license": "MIT",
   "devDependencies": {
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
