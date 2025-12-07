@@ -110,6 +110,9 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             headers,
             body,
             request: globalRequest,
+            url,
+            method: globalRequest.method,
+            route: endpoint.route,
         }
         context = await executeMiddlewares(context, endpoint.config.middlewares)
         const response = await endpoint.handler(context)

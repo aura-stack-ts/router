@@ -393,4 +393,22 @@ describe("createEndpoint", () => {
             })
         })
     })
+
+    describe("With method, route, and url", () => {
+        const endpont = createEndpoint("GET", "/users", async (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route, url: ctx.url })
+        })
+
+        const { GET } = createRouter([endpont])
+
+        test("Access method, route, and url from context", async ({ expect }) => {
+            const get = await GET(new Request("https://example.com/users?id=123"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                method: "GET",
+                route: "/users",
+                url: "https://example.com/users?id=123",
+            })
+        })
+    })
 })

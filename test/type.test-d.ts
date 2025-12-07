@@ -11,6 +11,7 @@ import type {
     RouteEndpoint,
     InferMethod,
     EndpointSchemas,
+    HTTPMethod,
 } from "../src/types.js"
 import type { ZodObject, ZodString } from "zod"
 
@@ -302,6 +303,9 @@ describe("RequestContext", () => {
         body: undefined
         searchParams: URLSearchParams
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<RequestContext<{ oauth: string }>>().toEqualTypeOf<{
@@ -310,6 +314,9 @@ describe("RequestContext", () => {
         body: undefined
         searchParams: URLSearchParams
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<RequestContext<{ oauth: string; provider: string }>>().toEqualTypeOf<{
@@ -318,6 +325,9 @@ describe("RequestContext", () => {
         body: undefined
         searchParams: URLSearchParams
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<
@@ -335,6 +345,9 @@ describe("RequestContext", () => {
         body: { username: string; password: string }
         searchParams: URLSearchParams
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<
@@ -352,6 +365,9 @@ describe("RequestContext", () => {
         body: undefined
         searchParams: { code: string; state: string }
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<
@@ -370,6 +386,9 @@ describe("RequestContext", () => {
         body: { username: string; password: string }
         searchParams: { code: string; state: string }
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 
     expectTypeOf<
@@ -388,6 +407,9 @@ describe("RequestContext", () => {
         body: { username: string; password: string }
         searchParams: { code: string; state: string }
         request: Request
+        url: URL
+        method: HTTPMethod
+        route: RoutePattern
     }>()
 })
 
