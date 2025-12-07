@@ -14,7 +14,8 @@
     "test:bench": "vitest --run bench",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "clean:cts": "rm -rf dist/*.cts"
+    "clean:cts": "rm -rf dist/*.cts",
+    "prepublish": "pnpm clean:cts"
   },
   "repository": {
     "type": "git",
