@@ -111,6 +111,9 @@ export interface RequestContext<RouteParams = Record<string, string>, Config ext
     body: ContextBody<Config["schemas"]>["body"]
     searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
     request: Request
+    url: URL
+    method: HTTPMethod
+    route: RoutePattern
 }
 
 /**
