@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added the `route`, `method`, and `url` properties to the `context` object for both route handlers and middlewares per endpoint to access extensive metadata related to the incoming request. [#19](https://github.com/aura-stack-ts/router/pull/19).
+
 ### Changed
 
 - Moved the `request` property into the `context` object for both route handlers and middlewares (per endpoint and global). [#18](https://github.com/aura-stack-ts/router/pull/18).
