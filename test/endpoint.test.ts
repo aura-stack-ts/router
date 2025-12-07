@@ -56,6 +56,12 @@ describe("createEndpoint", () => {
                 route: "/users",
                 expected: /Unsupported HTTP method: FETCH/,
             },
+            {
+                description: "Throws error for invalid route format",
+                method: "GET",
+                route: "invalid-route",
+                expected: /Invalid route format: invalid-route/,
+            },
         ]
 
         for (const { description, method, route, expected } of testCases) {
@@ -73,7 +79,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "POST",
                 "/auth/credentials",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ body: ctx.body })
                 },
                 {
@@ -119,7 +125,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ searchParams: ctx.searchParams })
                 },
                 {
@@ -221,13 +227,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (ctx) => {
+                (ctx) => {
                     const oauth = ctx.params.oauth
                     return Response.json({ oauth })
                 },
                 {
                     middlewares: [
-                        async (ctx) => {
+                        (ctx) => {
                             ctx.params = { oauth: "google" }
                             return ctx
                         },
@@ -244,13 +250,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/google",
-                async (ctx) => {
+                (ctx) => {
                     const searchParams = Object.fromEntries(ctx.searchParams.entries())
                     return Response.json({ searchParams })
                 },
                 {
                     middlewares: [
-                        async (ctx) => {
+                        (ctx) => {
                             ctx.searchParams.set("state", "123abc")
                             ctx.searchParams.set("code", "123")
                             return ctx
@@ -270,13 +276,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/headers",
-                async (ctx) => {
+                (ctx) => {
                     const headers = Object.fromEntries(ctx.headers.entries())
                     return Response.json({ headers })
                 },
                 {
                     middlewares: [
-                        async (ctx) => {
+                        (ctx) => {
                             ctx.headers.set("Authorization", "Bearer token")
                             return ctx
                         },
@@ -297,7 +303,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "POST",
                 "/auth/credentials",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ body: ctx.body })
                 },
                 {
@@ -308,9 +314,8 @@ describe("createEndpoint", () => {
                         }),
                     },
                     middlewares: [
-                        async (ctx) => {
-                            const body = ctx.body as any
-                            body.userId = 12
+                        (ctx) => {
+                            ctx.body.username = "John Doe"
                             return ctx
                         },
                     ],
@@ -327,7 +332,7 @@ describe("createEndpoint", () => {
             )
             expect(post.ok).toBe(true)
             expect(await post.json()).toEqual({
-                body: { username: "John", password: "secret", userId: 12 },
+                body: { username: "John Doe", password: "secret" },
             })
         })
 
@@ -335,7 +340,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/google",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ searchParams: ctx.searchParams })
                 },
                 {
@@ -345,7 +350,7 @@ describe("createEndpoint", () => {
                         }),
                     },
                     middlewares: [
-                        async (ctx) => {
+                        (ctx) => {
                             const searchParams = ctx.searchParams as any
                             searchParams.state = "123abc"
                             searchParams.code = "123"
@@ -370,15 +375,14 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ params: ctx.params })
                 },
                 {
                     schemas: {},
                     middlewares: [
-                        async (ctx) => {
-                            const params = ctx.params as any
-                            params.oauth = "google"
+                        (ctx) => {
+                            ctx.params.oauth = "google"
                             return ctx
                         },
                     ],
