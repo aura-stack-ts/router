@@ -36,19 +36,17 @@ describe("GetRouteParams", () => {
 
 describe("MiddlewareFunction", () => {
     expectTypeOf<MiddlewareFunction>().toEqualTypeOf<
-        (request: Request, ctx: RequestContext) => Response | RequestContext | Promise<RequestContext>
+        (ctx: RequestContext) => Response | RequestContext | Promise<RequestContext>
     >()
 
     expectTypeOf<MiddlewareFunction<{ oauth: string }>>().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<{ oauth: string }>
         ) => Response | RequestContext<{ oauth: string }> | Promise<RequestContext<{ oauth: string }>>
     >()
 
     expectTypeOf<MiddlewareFunction<{ oauth: string; provider: string }>>().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<{ oauth: string; provider: string }>
         ) =>
             | Response
@@ -69,7 +67,6 @@ describe("MiddlewareFunction", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<
                 {},
                 {
@@ -111,7 +108,6 @@ describe("MiddlewareFunction", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<
                 {},
                 {
@@ -154,7 +150,6 @@ describe("MiddlewareFunction", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<
                 {},
                 {
@@ -197,7 +192,6 @@ describe("MiddlewareFunction", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<{}, { middlewares: [] }>
         ) => Response | RequestContext<{}, { middlewares: [] }> | Promise<RequestContext<{}, { middlewares: [] }>>
     >()
@@ -206,12 +200,11 @@ describe("MiddlewareFunction", () => {
         MiddlewareFunction<
             {},
             {
-                middlewares: [(request: Request, ctx: RequestContext) => Promise<RequestContext<{}, { middlewares: [] }>>]
+                middlewares: [(ctx: RequestContext) => Promise<RequestContext<{}, { middlewares: [] }>>]
             }
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<{}, { middlewares: [] }>
         ) => Response | RequestContext<{}, { middlewares: [] }> | Promise<RequestContext<{}, { middlewares: [] }>>
     >()
@@ -221,7 +214,6 @@ describe("MiddlewareFunction", () => {
      */
     expectTypeOf<MiddlewareFunction<GetRouteParams<"/auth/:oauth">>>().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<{ oauth: string }, { middlewares: [] }>
         ) =>
             | Response
@@ -239,7 +231,6 @@ describe("MiddlewareFunction", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<GetRouteParams<"/auth/:oauth">, { schemas: { searchParams: ZodObject<{ state: ZodString }> } }>
         ) =>
             | Response
@@ -433,10 +424,10 @@ describe("EndpointConfig", () => {
 
 describe("RouteHandler", () => {
     expectTypeOf<RouteHandler<"/auth/:oauth", {}>>().toEqualTypeOf<
-        (request: Request, ctx: RequestContext<GetRouteParams<"/auth/:oauth">, {}>) => Response | Promise<Response>
+        (ctx: RequestContext<GetRouteParams<"/auth/:oauth">, {}>) => Response | Promise<Response>
     >()
     expectTypeOf<RouteHandler<"/auth/session", {}>>().toEqualTypeOf<
-        (request: Request, ctx: RequestContext<GetRouteParams<"/auth/session">, {}>) => Response | Promise<Response>
+        (ctx: RequestContext<GetRouteParams<"/auth/session">, {}>) => Response | Promise<Response>
     >()
     expectTypeOf<
         RouteHandler<
@@ -449,7 +440,6 @@ describe("RouteHandler", () => {
         >
     >().toEqualTypeOf<
         (
-            request: Request,
             ctx: RequestContext<
                 GetRouteParams<"/auth/:oauth">,
                 {
