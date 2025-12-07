@@ -1,9 +1,9 @@
 import z from "zod"
 import { describe, expect, expectTypeOf, test } from "vitest"
-import { createRouter } from "../src/router.js"
-import { createEndpoint, createEndpointConfig } from "../src/endpoint.js"
-import { isRouterError } from "../src/assert.js"
 import { RouterError } from "../src/error.js"
+import { createRouter } from "../src/router.js"
+import { isRouterError } from "../src/assert.js"
+import { createEndpoint, createEndpointConfig } from "../src/endpoint.js"
 
 describe("createRouter", () => {
     describe("OAuth endpoints", () => {
@@ -16,7 +16,7 @@ describe("createRouter", () => {
         })
         const sessionConfig = createEndpointConfig({
             middlewares: [
-                async (ctx) => {
+                (ctx) => {
                     ctx.headers.set("session-token", "123abc-token")
                     return ctx
                 },
@@ -26,20 +26,20 @@ describe("createRouter", () => {
         const signIn = createEndpoint(
             "GET",
             "/auth/signin/:oauth",
-            async () => {
+            () => {
                 return Response.json({ message: "Redirect to OAuth provider" }, { status: 302 })
             },
             signInConfig
         )
 
-        const callback = createEndpoint("GET", "/auth/callback", async () => {
+        const callback = createEndpoint("GET", "/auth/callback", () => {
             return Response.json({ message: "Handle OAuth callback" }, { status: 200 })
         })
 
         const session = createEndpoint(
             "GET",
             "/auth/session",
-            async (ctx) => {
+            (ctx) => {
                 const headers = ctx.headers
                 return Response.json({ message: "Get user session" }, { status: 200, headers })
             },
@@ -58,7 +58,7 @@ describe("createRouter", () => {
         const credentials = createEndpoint(
             "POST",
             "/auth/credentials",
-            async (ctx) => {
+            (ctx) => {
                 const body = ctx.body
                 return Response.json({ message: "Sign in with credentials", credentials: body }, { status: 200 })
             },
@@ -276,7 +276,7 @@ describe("createRouter", () => {
         describe("Block request middleware", async () => {
             const router = createRouter([session], {
                 middlewares: [
-                    async (request) => {
+                    (request) => {
                         if (!request.headers.get("authorization")) {
                             return new Response(JSON.stringify({ message: "Forbidden" }), {
                                 status: 403,
@@ -298,11 +298,11 @@ describe("createRouter", () => {
     })
 
     describe("Custom error handler", () => {
-        const session = createEndpoint("GET", "/session", async () => {
+        const session = createEndpoint("GET", "/session", () => {
             throw new Error("Unexpected error in GET /session")
         })
 
-        const getUsers = createEndpoint("GET", "/user/:userId", async () => {
+        const getUsers = createEndpoint("GET", "/user/:userId", () => {
             throw new RouterError("BAD_REQUEST", "Invalid user ID")
         })
 

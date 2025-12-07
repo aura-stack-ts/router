@@ -1,8 +1,8 @@
 import z from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
+import { createNode, insert, search } from "../src/router.js"
 import { getRouteParams, getSearchParams, getHeaders, getBody } from "../src/context.js"
 import type { RouteEndpoint } from "../src/types.js"
-import { createNode, insert, search } from "../src/router.js"
 
 describe("getRouteParams", () => {
     const root = createNode()
@@ -230,23 +230,15 @@ describe("getSearchParams", () => {
             {
                 description: "No search parameters",
                 url: "http://example.com",
-                config: {
-                    schemas: {
-                        searchParams: z.object({}),
-                    },
-                },
+                schema: z.object({}),
                 expected: {},
             },
             {
                 description: "Single search parameter",
                 url: "http://example.com?name=John",
-                config: {
-                    schemas: {
-                        searchParams: z.object({
-                            name: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    name: z.string(),
+                }),
                 expected: {
                     name: "John",
                 },
@@ -254,14 +246,11 @@ describe("getSearchParams", () => {
             {
                 description: "Multiple search parameters",
                 url: "http://example.com?name=John&age=30",
-                config: {
-                    schemas: {
-                        searchParams: z.object({
-                            name: z.string(),
-                            age: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    name: z.string(),
+                    age: z.string(),
+                }),
+
                 expected: {
                     name: "John",
                     age: "30",
@@ -270,13 +259,9 @@ describe("getSearchParams", () => {
             {
                 description: "Encoded search parameters",
                 url: "http://example.com?query=hello%20world",
-                config: {
-                    schemas: {
-                        searchParams: z.object({
-                            query: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    query: z.string(),
+                }),
                 expected: {
                     query: "hello world",
                 },
@@ -284,13 +269,10 @@ describe("getSearchParams", () => {
             {
                 description: "Extra unexpected search parameter",
                 url: "http://example.com?name=John&age=30",
-                config: {
-                    schemas: {
-                        searchParams: z.object({
-                            name: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    name: z.string(),
+                }),
+
                 expected: {
                     name: "John",
                 },
@@ -298,17 +280,13 @@ describe("getSearchParams", () => {
             {
                 description: "Without schema definition",
                 url: "http://example.com?name=John",
-                config: {
-                    schemas: {
-                        searchParams: z.object({}),
-                    },
-                },
+                schema: z.object({}),
                 expected: {},
             },
         ]
-        for (const { description, url, config, expected } of testCases) {
+        for (const { description, url, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const searchParams = getSearchParams(url, config)
+                const searchParams = getSearchParams(url, { schemas: { searchParams: schema } })
                 expect(searchParams instanceof Object).toBe(true)
                 expect(searchParams).toBeDefined()
                 expect(searchParams).toBeInstanceOf(Object)
@@ -514,8 +492,8 @@ describe("getBody", () => {
                 config: {
                     schemas: {
                         body: z.object({
-                            username: z.string(),
                             password: z.string(),
+                            username: z.string(),
                         }),
                     },
                 },
@@ -563,14 +541,11 @@ describe("getBody", () => {
                         password: 123,
                     }),
                 }),
-                config: {
-                    schemas: {
-                        body: z.object({
-                            username: z.string(),
-                            password: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    username: z.string(),
+                    password: z.string(),
+                }),
+
                 expected: /Invalid request body/,
             },
             {
@@ -582,21 +557,17 @@ describe("getBody", () => {
                         username: "John",
                     }),
                 }),
-                config: {
-                    schemas: {
-                        body: z.object({
-                            username: z.string(),
-                            password: z.string(),
-                        }),
-                    },
-                },
+                schema: z.object({
+                    username: z.string(),
+                    password: z.string(),
+                }),
                 expected: /Invalid request body/,
             },
         ]
 
-        for (const { description, request, config, expected } of testCases) {
+        for (const { description, request, schema, expected } of testCases) {
             test.concurrent(description, async ({ expect }) => {
-                await expect(getBody(request, config)).rejects.toThrowError(expected)
+                await expect(getBody(request, { schemas: { body: schema } })).rejects.toThrowError(expected)
             })
         }
     })

@@ -1,6 +1,6 @@
-import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.js"
 import { isSupportedBodyMethod } from "./assert.js"
 import { RouterError } from "./error.js"
+import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.js"
 
 /**
  * Extracts route parameters from a given path using the specified route pattern.
@@ -9,9 +9,9 @@ import { RouterError } from "./error.js"
  * (e.g., "/users/:userId/posts/:postId") and returns an object mapping parameter
  * names to their decoded values.
  *
- * @param route - The route pattern, typically defined in the endpoint configuration.
- * @param path - The actual request path to extract parameters from.
- * @returns An object containing the extracted route parameters as key-value pairs.
+ * @param params - The extracted route parameters as key-value pairs.
+ * @param config - The endpoint configuration which may include schemas for validation.
+ * @returns An object containing the extracted and validated route parameters.
  *
  * @example
  * const route = "/users/:userId/posts/:postId";
