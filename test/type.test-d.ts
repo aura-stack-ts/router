@@ -13,6 +13,7 @@ import type {
     EndpointSchemas,
     HTTPMethod,
     Prettify,
+    GlobalContext,
 } from "../src/types.js"
 import type { ZodObject, ZodString } from "zod"
 
@@ -247,6 +248,7 @@ describe("RequestContext", () => {
             url: URL
             method: HTTPMethod
             route: RoutePattern
+            context: GlobalContext
         } & T
     >
 

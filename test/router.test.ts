@@ -386,4 +386,39 @@ describe("createRouter", () => {
             expect(await request.json()).toEqual({ message: "Get user", body: { username: "John", password: "Doe" } })
         })
     })
+
+    /**
+     * For type-inference the user should augment the module to define the context type
+     * but in this test we want to ensure that the global context is accessible even
+     * without module augmentation
+     */
+    describe("With global context", () => {
+        const endpoint = createEndpoint("GET", "/secret", async (ctx) => {
+            const secret = (ctx.context as any).secret
+            return Response.json({ secret }, { status: 200 })
+        })
+
+        const wrongEndpoint = createEndpoint("GET", "/wrong", async (ctx) => {
+            const nonExistent = (ctx.context as any).nonExistent
+            return Response.json({ nonExistent }, { status: 200 })
+        })
+
+        const { GET } = createRouter([endpoint, wrongEndpoint], {
+            context: {
+                secret: "my-global-secret",
+            },
+        })
+
+        test("Access global context in endpoint without module augmentation", async () => {
+            const get = await GET(new Request("https://example.com/secret", { method: "GET" }))
+            expect(get.status).toBe(200)
+            expect(await get.json()).toEqual({ secret: "my-global-secret" })
+        })
+
+        test("Access incorrect context property", async () => {
+            const get = await GET(new Request("https://example.com/wrong", { method: "GET" }))
+            expect(get.status).toBe(200)
+            expect(await get.json()).toEqual({ nonExistent: undefined })
+        })
+    })
 })

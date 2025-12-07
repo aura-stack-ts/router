@@ -68,6 +68,13 @@ export interface EndpointSchemas {
 }
 
 /**
+ * Global context type that can be extended when creating the router. It allows passing
+ * additional data to all route handlers and middlewares. For a type-inference use module
+ * augmentation to extend the GlobalContext interface.
+ */
+export interface GlobalContext {}
+
+/**
  * Configuration for an endpoint, including optional schemas for request validation and middlewares.
  */
 export type EndpointConfig<
@@ -114,6 +121,7 @@ export interface RequestContext<RouteParams = Record<string, string>, Config ext
     url: URL
     method: HTTPMethod
     route: RoutePattern
+    context: GlobalContext
 }
 
 /**
@@ -166,10 +174,12 @@ export type GetHttpHandlers<Endpoints extends RouteEndpoint[]> = {
     [Method in InferMethod<Endpoints>]: (req: Request) => Response | Promise<Response>
 }
 
+export type GlobalCtx = keyof GlobalContext extends never ? { context?: GlobalContext } : { context: GlobalContext }
+
 /**
  * Configuration options for `createRouter` function.
  */
-export interface RouterConfig {
+export interface RouterConfig extends GlobalCtx {
     /**
      * Prefix path for all routes/endpoints defined in the router.
      *

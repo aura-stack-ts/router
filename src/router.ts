@@ -1,8 +1,8 @@
-import { isRouterError, isSupportedMethod } from "./assert.js"
-import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
 import { RouterError, statusText } from "./error.js"
+import { isRouterError, isSupportedMethod } from "./assert.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
-import type { GetHttpHandlers, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
+import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
+import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
 
 interface TrieNode {
     statics: Map<string, TrieNode>
@@ -113,6 +113,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             url,
             method: globalRequest.method,
             route: endpoint.route,
+            context: config.context ?? ({} as GlobalContext),
         }
         context = await executeMiddlewares(context, endpoint.config.middlewares)
         const response = await endpoint.handler(context)
