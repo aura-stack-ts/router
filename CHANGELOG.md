@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Changed
+
+- Moved the `request` property into the `context` object for both route handlers and middlewares (per endpoint and global). [#18](https://github.com/aura-stack-ts/router/pull/18).
+
 ---
 
 ## [0.3.0] - 2025-11-18
