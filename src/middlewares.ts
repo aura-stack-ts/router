@@ -1,5 +1,5 @@
 import { RouterError } from "./error.js"
-import type { EndpointConfig, MiddlewareFunction, RequestContext, RouterConfig } from "./types.js"
+import type { EndpointConfig, GlobalMiddlewareContext, MiddlewareFunction, RequestContext, RouterConfig } from "./types.js"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.
@@ -8,22 +8,22 @@ import type { EndpointConfig, MiddlewareFunction, RequestContext, RouterConfig }
  * @param middlewares - Array of global middleware functions to be executed
  * @returns - The modified request after all middlewares have been executed
  */
-export const executeGlobalMiddlewares = async (request: Request, middlewares: RouterConfig["middlewares"]) => {
-    if (!middlewares) return request
+export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext, middlewares: RouterConfig["middlewares"]) => {
+    if (!middlewares) return context
     for (const middleware of middlewares) {
         if (typeof middleware !== "function") {
             throw new RouterError("BAD_REQUEST", "Global middlewares must be functions")
         }
-        const executed = await middleware(request)
+        const executed = await middleware(context)
         if (executed instanceof Response) {
             return executed
         }
-        request = executed
+        context = executed
     }
-    if (!request || !(request instanceof Request)) {
+    if (!context || !(context.request instanceof Request)) {
         throw new RouterError("BAD_REQUEST", "Global middleware must return a Request or Response object")
     }
-    return request
+    return context
 }
 
 /**

@@ -248,9 +248,9 @@ describe("createRouter", () => {
         describe("Add headers middleware", async () => {
             const router = createRouter([session, signIn], {
                 middlewares: [
-                    async (request) => {
-                        request.headers.set("x-powered-by", "@aura-stack")
-                        return request
+                    async (ctx) => {
+                        ctx.request.headers.set("x-powered-by", "@aura-stack")
+                        return ctx
                     },
                 ],
             })
@@ -276,13 +276,13 @@ describe("createRouter", () => {
         describe("Block request middleware", async () => {
             const router = createRouter([session], {
                 middlewares: [
-                    (request) => {
-                        if (!request.headers.get("authorization")) {
+                    (ctx) => {
+                        if (!ctx.request.headers.get("authorization")) {
                             return new Response(JSON.stringify({ message: "Forbidden" }), {
                                 status: 403,
                             })
                         }
-                        return request
+                        return ctx
                     },
                 ],
             })

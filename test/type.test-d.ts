@@ -41,10 +41,10 @@ describe("MiddlewareFunction", () => {
     type ReturnCtx<R = Record<string, string>, C extends EndpointConfig = EndpointConfig> =
         | Response
         | RequestContext<R, C>
-        | Promise<RequestContext<R, C>>
+        | Promise<Response | RequestContext<R, C>>
 
     expectTypeOf<MiddlewareFunction>().toEqualTypeOf<
-        (ctx: RequestContext) => Response | RequestContext | Promise<RequestContext>
+        (ctx: RequestContext) => Response | RequestContext | Promise<Response | RequestContext>
     >()
 
     expectTypeOf<MiddlewareFunction<{ oauth: string }>>().toEqualTypeOf<

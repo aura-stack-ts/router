@@ -124,10 +124,17 @@ export interface RequestContext<RouteParams = Record<string, string>, Config ext
     context: GlobalContext
 }
 
+export interface GlobalMiddlewareContext {
+    request: Request
+    context: GlobalContext
+}
+
 /**
  * Global middleware function type that represent a function that runs before the route matching.
  */
-export type GlobalMiddleware = (request: Request) => Request | Response | Promise<Request | Response>
+export type GlobalMiddleware = (
+    ctx: GlobalMiddlewareContext
+) => Response | GlobalMiddlewareContext | Promise<Response | GlobalMiddlewareContext>
 
 /**
  * Middleware function type that represent a function that runs before the route handler
@@ -135,7 +142,7 @@ export type GlobalMiddleware = (request: Request) => Request | Response | Promis
  */
 export type MiddlewareFunction<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> = (
     ctx: Prettify<RequestContext<RouteParams, Config>>
-) => Response | RequestContext<RouteParams, Config> | Promise<RequestContext<RouteParams, Config>>
+) => Response | RequestContext<RouteParams, Config> | Promise<Response | RequestContext<RouteParams, Config>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.
