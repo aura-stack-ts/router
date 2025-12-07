@@ -35,17 +35,25 @@ describe("GetRouteParams", () => {
 })
 
 describe("MiddlewareFunction", () => {
-    expectTypeOf<MiddlewareFunction>().toEqualTypeOf<(request: Request, ctx: RequestContext) => Promise<RequestContext>>()
+    expectTypeOf<MiddlewareFunction>().toEqualTypeOf<
+        (request: Request, ctx: RequestContext) => Response | RequestContext | Promise<RequestContext>
+    >()
 
     expectTypeOf<MiddlewareFunction<{ oauth: string }>>().toEqualTypeOf<
-        (request: Request, ctx: RequestContext<{ oauth: string }>) => Promise<RequestContext<{ oauth: string }>>
+        (
+            request: Request,
+            ctx: RequestContext<{ oauth: string }>
+        ) => Response | RequestContext<{ oauth: string }> | Promise<RequestContext<{ oauth: string }>>
     >()
 
     expectTypeOf<MiddlewareFunction<{ oauth: string; provider: string }>>().toEqualTypeOf<
         (
             request: Request,
             ctx: RequestContext<{ oauth: string; provider: string }>
-        ) => Promise<RequestContext<{ oauth: string; provider: string }>>
+        ) =>
+            | Response
+            | RequestContext<{ oauth: string; provider: string }>
+            | Promise<RequestContext<{ oauth: string; provider: string }>>
     >()
 
     type Body = ZodObject<{ username: ZodString; password: ZodString }>
@@ -70,16 +78,26 @@ describe("MiddlewareFunction", () => {
                     }
                 }
             >
-        ) => Promise<
-            RequestContext<
-                {},
-                {
-                    schemas: {
-                        body: Body
-                    }
-                }
-            >
-        >
+        ) =>
+            | Response
+            | RequestContext<
+                  {},
+                  {
+                      schemas: {
+                          body: Body
+                      }
+                  }
+              >
+            | Promise<
+                  RequestContext<
+                      {},
+                      {
+                          schemas: {
+                              body: Body
+                          }
+                      }
+                  >
+              >
     >()
 
     expectTypeOf<
@@ -102,16 +120,26 @@ describe("MiddlewareFunction", () => {
                     }
                 }
             >
-        ) => Promise<
-            RequestContext<
-                {},
-                {
-                    schemas: {
-                        searchParams: SearchParams
-                    }
-                }
-            >
-        >
+        ) =>
+            | Response
+            | RequestContext<
+                  {},
+                  {
+                      schemas: {
+                          searchParams: SearchParams
+                      }
+                  }
+              >
+            | Promise<
+                  RequestContext<
+                      {},
+                      {
+                          schemas: {
+                              searchParams: SearchParams
+                          }
+                      }
+                  >
+              >
     >()
 
     expectTypeOf<
@@ -136,17 +164,28 @@ describe("MiddlewareFunction", () => {
                     }
                 }
             >
-        ) => Promise<
-            RequestContext<
-                {},
-                {
-                    schemas: {
-                        body: Body
-                        searchParams: SearchParams
-                    }
-                }
-            >
-        >
+        ) =>
+            | Response
+            | RequestContext<
+                  {},
+                  {
+                      schemas: {
+                          body: Body
+                          searchParams: SearchParams
+                      }
+                  }
+              >
+            | Promise<
+                  RequestContext<
+                      {},
+                      {
+                          schemas: {
+                              body: Body
+                              searchParams: SearchParams
+                          }
+                      }
+                  >
+              >
     >()
 
     expectTypeOf<
@@ -157,7 +196,10 @@ describe("MiddlewareFunction", () => {
             }
         >
     >().toEqualTypeOf<
-        (request: Request, ctx: RequestContext<{}, { middlewares: [] }>) => Promise<RequestContext<{}, { middlewares: [] }>>
+        (
+            request: Request,
+            ctx: RequestContext<{}, { middlewares: [] }>
+        ) => Response | RequestContext<{}, { middlewares: [] }> | Promise<RequestContext<{}, { middlewares: [] }>>
     >()
 
     expectTypeOf<
@@ -168,7 +210,10 @@ describe("MiddlewareFunction", () => {
             }
         >
     >().toEqualTypeOf<
-        (request: Request, ctx: RequestContext<{}, { middlewares: [] }>) => Promise<RequestContext<{}, { middlewares: [] }>>
+        (
+            request: Request,
+            ctx: RequestContext<{}, { middlewares: [] }>
+        ) => Response | RequestContext<{}, { middlewares: [] }> | Promise<RequestContext<{}, { middlewares: [] }>>
     >()
 
     /**
@@ -178,7 +223,10 @@ describe("MiddlewareFunction", () => {
         (
             request: Request,
             ctx: RequestContext<{ oauth: string }, { middlewares: [] }>
-        ) => Promise<RequestContext<{ oauth: string }, { middlewares: [] }>>
+        ) =>
+            | Response
+            | RequestContext<{ oauth: string }, { middlewares: [] }>
+            | Promise<RequestContext<{ oauth: string }, { middlewares: [] }>>
     >()
 
     expectTypeOf<
@@ -193,7 +241,10 @@ describe("MiddlewareFunction", () => {
         (
             request: Request,
             ctx: RequestContext<GetRouteParams<"/auth/:oauth">, { schemas: { searchParams: ZodObject<{ state: ZodString }> } }>
-        ) => Promise<RequestContext<GetRouteParams<"/auth/:oauth">, {}>>
+        ) =>
+            | Response
+            | RequestContext<GetRouteParams<"/auth/:oauth">, {}>
+            | Promise<RequestContext<GetRouteParams<"/auth/:oauth">, {}>>
     >()
 })
 
@@ -259,6 +310,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: undefined
         searchParams: URLSearchParams
+        request: Request
     }>()
 
     expectTypeOf<RequestContext<{ oauth: string }>>().toEqualTypeOf<{
@@ -266,6 +318,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: undefined
         searchParams: URLSearchParams
+        request: Request
     }>()
 
     expectTypeOf<RequestContext<{ oauth: string; provider: string }>>().toEqualTypeOf<{
@@ -273,6 +326,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: undefined
         searchParams: URLSearchParams
+        request: Request
     }>()
 
     expectTypeOf<
@@ -289,6 +343,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: { username: string; password: string }
         searchParams: URLSearchParams
+        request: Request
     }>()
 
     expectTypeOf<
@@ -305,6 +360,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: undefined
         searchParams: { code: string; state: string }
+        request: Request
     }>()
 
     expectTypeOf<
@@ -322,6 +378,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: { username: string; password: string }
         searchParams: { code: string; state: string }
+        request: Request
     }>()
 
     expectTypeOf<
@@ -339,6 +396,7 @@ describe("RequestContext", () => {
         headers: Headers
         body: { username: string; password: string }
         searchParams: { code: string; state: string }
+        request: Request
     }>()
 })
 

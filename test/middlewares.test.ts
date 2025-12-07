@@ -66,17 +66,17 @@ describe("executeGlobalMiddlewares", () => {
 describe("executeMiddlewares", () => {
     test.concurrent("Middleware with searchParams and headers context", async ({ expect }) => {
         const middlewares: MiddlewareFunction[] = [
-            async (_, ctx) => {
+            async (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.headers.set("Content-Type", "application/json")
                 return ctx
             },
         ]
         const ctx = await executeMiddlewares(
-            new Request("https://example.com"),
             {
                 searchParams: new URL("https://example.com").searchParams,
                 headers: new Headers(),
+                request: new Request("https://example.com"),
             } as RequestContext,
             middlewares
         )
@@ -86,22 +86,22 @@ describe("executeMiddlewares", () => {
 
     test.concurrent("Two middlewares with searchParams and headers context", async ({ expect }) => {
         const middlewares: MiddlewareFunction[] = [
-            async (_, ctx) => {
+            async (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.searchParams.set("state", "xyz")
                 return ctx
             },
-            async (_, ctx) => {
+            async (ctx) => {
                 ctx.searchParams.set("state", "abc")
                 ctx.headers.set("Authorization", "Bearer token")
                 return ctx
             },
         ]
         const ctx = await executeMiddlewares(
-            new Request("https://example.com"),
             {
                 searchParams: new URL("https://example.com").searchParams,
                 headers: new Headers(),
+                request: new Request("https://example.com"),
             } as RequestContext,
             middlewares
         )
@@ -114,10 +114,10 @@ describe("executeMiddlewares", () => {
         const middlewares: MiddlewareFunction[] = [undefined as any]
         await expect(
             executeMiddlewares(
-                new Request("https://example.com"),
                 {
                     searchParams: new URL("https://example.com").searchParams,
                     headers: new Headers(),
+                    request: new Request("https://example.com"),
                 } as RequestContext,
                 middlewares
             )
@@ -125,9 +125,10 @@ describe("executeMiddlewares", () => {
     })
 
     test.concurrent("No middleware", async ({ expect }) => {
-        const ctx = await executeMiddlewares(new Request("https://example.com"), {
+        const ctx = await executeMiddlewares({
             searchParams: new URL("https://example.com").searchParams,
             headers: new Headers(),
+            request: new Request("https://example.com"),
         } as RequestContext)
         expect(ctx.searchParams.get("code")).toBe(null)
         expect(ctx.searchParams.get("state")).toBe(null)
@@ -141,7 +142,7 @@ describe("executeMiddlewares", () => {
         })
         const middlewares: MiddlewareFunction<Record<string, string>, { schemas: { searchParams: typeof searchParamsShema } }>[] =
             [
-                async (_, ctx) => {
+                async (ctx) => {
                     ctx.searchParams.code = "123abc"
                     ctx.searchParams.state = "xyz"
                     return ctx
@@ -149,7 +150,6 @@ describe("executeMiddlewares", () => {
             ]
 
         const ctx = await executeMiddlewares(
-            new Request("https://example.com"),
             {
                 headers: new Headers(),
                 searchParams: {
@@ -158,6 +158,7 @@ describe("executeMiddlewares", () => {
                 },
                 params: {},
                 body: undefined,
+                request: new Request("https://example.com"),
             } as RequestContext<Record<string, string>, { schemas: { searchParams: typeof searchParamsShema } }>,
             middlewares
         )

@@ -35,7 +35,6 @@ export const executeGlobalMiddlewares = async (request: Request, middlewares: Ro
  * @returns The modified context after all middlewares have been executed
  */
 export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
-    request: Request,
     context: RequestContext<RouteParams, Config>,
     middlewares: MiddlewareFunction<RouteParams, Config>[] = []
 ): Promise<RequestContext<RouteParams, Config>> => {
@@ -45,7 +44,7 @@ export const executeMiddlewares = async <const RouteParams extends Record<string
             if (typeof middleware !== "function") {
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }
-            ctx = await middleware(request, ctx)
+            ctx = (await middleware(ctx)) as RequestContext<RouteParams, Config>
         }
         return ctx
     } catch {

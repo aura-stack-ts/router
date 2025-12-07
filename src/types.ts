@@ -110,21 +110,21 @@ export interface RequestContext<RouteParams = Record<string, string>, Config ext
     headers: Headers
     body: ContextBody<Config["schemas"]>["body"]
     searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
+    request: Request
 }
 
 /**
  * Global middleware function type that represent a function that runs before the route matching.
  */
-export type GlobalMiddleware = (request: Request) => Promise<Request | Response>
+export type GlobalMiddleware = (request: Request) => Request | Response | Promise<Request | Response>
 
 /**
  * Middleware function type that represent a function that runs before the route handler
  * defined in the `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
 export type MiddlewareFunction<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> = (
-    request: Request,
     ctx: Prettify<RequestContext<RouteParams, Config>>
-) => Promise<RequestContext<RouteParams, Config>>
+) => Response | RequestContext<RouteParams, Config> | Promise<RequestContext<RouteParams, Config>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.
@@ -132,7 +132,6 @@ export type MiddlewareFunction<RouteParams = Record<string, string>, Config exte
  * and optionally validated body and search parameters based on the endpoint configuration.
  */
 export type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig> = (
-    request: Request,
     ctx: Prettify<RequestContext<GetRouteParams<Route>, Config>>
 ) => Response | Promise<Response>
 

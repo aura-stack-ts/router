@@ -104,14 +104,15 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         const body = await getBody(globalRequest, endpoint.config)
         const searchParams = getSearchParams(globalRequest.url, endpoint.config)
         const headers = getHeaders(globalRequest)
-        const context = {
+        let context = {
             params: dynamicParams,
             searchParams,
             headers,
             body,
+            request: globalRequest,
         }
-        await executeMiddlewares(globalRequest, context, endpoint.config.middlewares)
-        const response = await endpoint.handler(globalRequest, context)
+        context = await executeMiddlewares(context, endpoint.config.middlewares)
+        const response = await endpoint.handler(context)
         return response
     } catch (error) {
         return handleError(error, request, config)

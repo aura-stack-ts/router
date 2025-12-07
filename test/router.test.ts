@@ -16,7 +16,7 @@ describe("createRouter", () => {
         })
         const sessionConfig = createEndpointConfig({
             middlewares: [
-                async (_, ctx) => {
+                async (ctx) => {
                     ctx.headers.set("session-token", "123abc-token")
                     return ctx
                 },
@@ -39,7 +39,7 @@ describe("createRouter", () => {
         const session = createEndpoint(
             "GET",
             "/auth/session",
-            async (_, ctx) => {
+            async (ctx) => {
                 const headers = ctx.headers
                 return Response.json({ message: "Get user session" }, { status: 200, headers })
             },
@@ -58,7 +58,7 @@ describe("createRouter", () => {
         const credentials = createEndpoint(
             "POST",
             "/auth/credentials",
-            async (_, ctx) => {
+            async (ctx) => {
                 const body = ctx.body
                 return Response.json({ message: "Sign in with credentials", credentials: body }, { status: 200 })
             },
@@ -237,11 +237,11 @@ describe("createRouter", () => {
     })
 
     describe("With global middlewares", () => {
-        const session = createEndpoint("GET", "/session", async (_, ctx) => {
+        const session = createEndpoint("GET", "/session", async (ctx) => {
             return Response.json({ message: "Get user session" }, { status: 200, headers: ctx.headers })
         })
 
-        const signIn = createEndpoint("POST", "/auth/:oauth", async (_, ctx) => {
+        const signIn = createEndpoint("POST", "/auth/:oauth", async (ctx) => {
             return Response.json({ message: "Sign in with OAuth" }, { status: 200, headers: ctx.headers })
         })
 
@@ -348,11 +348,11 @@ describe("createRouter", () => {
         const getUser = createEndpoint(
             "POST",
             "/auth/credentials",
-            async (request, ctx) => {
+            async (ctx) => {
                 /**
                  * The body is not used in this example, but we ensure that the request will be cloned by the getBody function
                  */
-                await request.json()
+                await ctx.request.json()
                 const { body } = ctx
                 return Response.json({ message: "Get user", body }, { status: 200 })
             },

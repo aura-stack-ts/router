@@ -73,7 +73,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "POST",
                 "/auth/credentials",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ body: ctx.body })
                 },
                 {
@@ -119,7 +119,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ searchParams: ctx.searchParams })
                 },
                 {
@@ -170,7 +170,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/signIn/:oauth",
-                async (_, ctx) => {
+                async (ctx) => {
                     const oauth = ctx.params.oauth
                     return Response.json({ oauth })
                 },
@@ -180,7 +180,7 @@ describe("createEndpoint", () => {
             const inferEndpoint = createEndpoint(
                 "GET",
                 "/type/:typeId",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ typeId: ctx.params.typeId })
                 },
                 inferConfig
@@ -221,13 +221,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (_, ctx) => {
+                async (ctx) => {
                     const oauth = ctx.params.oauth
                     return Response.json({ oauth })
                 },
                 {
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             ctx.params = { oauth: "google" }
                             return ctx
                         },
@@ -244,13 +244,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/google",
-                async (_, ctx) => {
+                async (ctx) => {
                     const searchParams = Object.fromEntries(ctx.searchParams.entries())
                     return Response.json({ searchParams })
                 },
                 {
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             ctx.searchParams.set("state", "123abc")
                             ctx.searchParams.set("code", "123")
                             return ctx
@@ -270,13 +270,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/headers",
-                async (_, ctx) => {
+                async (ctx) => {
                     const headers = Object.fromEntries(ctx.headers.entries())
                     return Response.json({ headers })
                 },
                 {
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             ctx.headers.set("Authorization", "Bearer token")
                             return ctx
                         },
@@ -297,7 +297,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "POST",
                 "/auth/credentials",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ body: ctx.body })
                 },
                 {
@@ -308,7 +308,7 @@ describe("createEndpoint", () => {
                         }),
                     },
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             const body = ctx.body as any
                             body.userId = 12
                             return ctx
@@ -335,7 +335,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/google",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ searchParams: ctx.searchParams })
                 },
                 {
@@ -345,7 +345,7 @@ describe("createEndpoint", () => {
                         }),
                     },
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             const searchParams = ctx.searchParams as any
                             searchParams.state = "123abc"
                             searchParams.code = "123"
@@ -370,13 +370,13 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/auth/:oauth",
-                async (_, ctx) => {
+                async (ctx) => {
                     return Response.json({ params: ctx.params })
                 },
                 {
                     schemas: {},
                     middlewares: [
-                        async (_, ctx) => {
+                        async (ctx) => {
                             const params = ctx.params as any
                             params.oauth = "google"
                             return ctx
