@@ -1,53 +1,56 @@
 import z from "zod"
 import { describe, expect, test } from "vitest"
 import { executeGlobalMiddlewares, executeMiddlewares } from "../src/middlewares.js"
-import type { MiddlewareFunction, RequestContext } from "../src/types.js"
+import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "../src/types.js"
 
 describe("executeGlobalMiddlewares", () => {
     test("No middlewares", async () => {
         const request = new Request("https://example.com")
-        const result = await executeGlobalMiddlewares(request, undefined)
-        expect(result).toEqual(request)
+        const ctx = await executeGlobalMiddlewares({ request, context: {} }, undefined)
+        expect(ctx).toEqual({ request, context: {} })
     })
 
     test("Single middleware that modifies request", async () => {
         const request = new Request("https://example.com")
-        const middleware = async (req: Request) => {
-            const newHeaders = new Headers(req.headers)
+        const middleware = async (ctx: GlobalMiddlewareContext) => {
+            const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test", "true")
-            return new Request(req, { headers: newHeaders })
+            return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
         }
-        const result = await executeGlobalMiddlewares(request, [middleware])
-        expect(result.headers.get("X-Test")).toBe("true")
+        const ctx = (await executeGlobalMiddlewares({ request, context: {} }, [middleware])) as GlobalMiddlewareContext
+        expect(ctx.request.headers.get("X-Test")).toBe("true")
         expect(request.headers.get("X-Test")).toBeNull()
     })
 
     test("Middleware updates headers directly", async () => {
         const request = new Request("https://example.com")
-        const middleware = async (req: Request) => {
-            req.headers.set("X-Test-Direct", "true")
-            return req
+        const middleware = async (ctx: GlobalMiddlewareContext) => {
+            ctx.request.headers.set("X-Test-Direct", "true")
+            return ctx
         }
-        const result = await executeGlobalMiddlewares(request, [middleware])
-        expect(result.headers.get("X-Test-Direct")).toBe("true")
+        const ctx = (await executeGlobalMiddlewares({ request, context: {} }, [middleware])) as GlobalMiddlewareContext
+        expect(ctx.request.headers.get("X-Test-Direct")).toBe("true")
         expect(request.headers.get("X-Test-Direct")).toBe("true")
     })
 
     test("Multiple middlewares", async () => {
         const request = new Request("https://example.com")
-        const middleware1 = async (req: Request) => {
-            const newHeaders = new Headers(req.headers)
+        const middleware1 = async (ctx: GlobalMiddlewareContext) => {
+            const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test-1", "true")
-            return new Request(req, { headers: newHeaders })
+            return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
         }
-        const middleware2 = async (req: Request) => {
-            const newHeaders = new Headers(req.headers)
+        const middleware2 = async (ctx: GlobalMiddlewareContext) => {
+            const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test-2", "true")
-            return new Request(req, { headers: newHeaders })
+            return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
         }
-        const result = await executeGlobalMiddlewares(request, [middleware1, middleware2])
-        expect(result.headers.get("X-Test-1")).toBe("true")
-        expect(result.headers.get("X-Test-2")).toBe("true")
+        const ctx = (await executeGlobalMiddlewares({ request, context: {} }, [
+            middleware1,
+            middleware2,
+        ])) as GlobalMiddlewareContext
+        expect(ctx.request.headers.get("X-Test-1")).toBe("true")
+        expect(ctx.request.headers.get("X-Test-2")).toBe("true")
         expect(request.headers.get("X-Test-1")).toBeNull()
         expect(request.headers.get("X-Test-2")).toBeNull()
     })
@@ -57,9 +60,22 @@ describe("executeGlobalMiddlewares", () => {
         const middleware = async () => {
             return new Response("Blocked", { status: 403 })
         }
-        const result = await executeGlobalMiddlewares(request, [middleware])
+        const result = await executeGlobalMiddlewares({ request, context: {} }, [middleware])
         expect(result).toBeInstanceOf(Response)
         expect((result as Response).status).toBe(403)
+    })
+
+    test("override global context in middleware", async () => {
+        const request = new Request("https://example.com")
+        const middleware = async (ctx: GlobalMiddlewareContext) => {
+            ;(ctx.context as any).modified = true
+            return { request: new Request("https://modified.com"), context: ctx.context }
+        }
+        const ctx = (await executeGlobalMiddlewares({ request, context: { modified: false } }, [
+            middleware,
+        ])) as GlobalMiddlewareContext
+        expect(ctx.request.url).toBe("https://modified.com/")
+        expect((ctx.context as any).modified).toBe(true)
     })
 })
 

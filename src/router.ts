@@ -1,8 +1,8 @@
-import { isRouterError, isSupportedMethod } from "./assert.js"
-import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
 import { RouterError, statusText } from "./error.js"
+import { isRouterError, isSupportedMethod } from "./assert.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
-import type { GetHttpHandlers, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
+import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
+import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
 
 interface TrieNode {
     statics: Map<string, TrieNode>
@@ -88,31 +88,34 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         if (!isSupportedMethod(request.method)) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
         }
-        const globalRequest = await executeGlobalMiddlewares(request, config.middlewares)
-        if (globalRequest instanceof Response) return globalRequest
+        const globalContext = { request, context: config.context ?? ({} as GlobalContext) }
+        const globalRequestContext = await executeGlobalMiddlewares(globalContext, config.middlewares)
 
-        const url = new URL(globalRequest.url)
+        if (globalRequestContext instanceof Response) return globalRequestContext
+
+        const url = new URL(globalRequestContext.request.url)
         const pathnameWithBase = url.pathname
-        if (globalRequest.method !== method) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequest.method}' is not allowed`)
+        if (globalRequestContext.request.method !== method) {
+            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
         const { endpoint, params } = search(method, root, pathnameWithBase)
-        if (endpoint.method !== globalRequest.method) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequest.method}' is not allowed`)
+        if (endpoint.method !== globalRequestContext.request.method) {
+            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
         const dynamicParams = getRouteParams(params, endpoint.config)
-        const body = await getBody(globalRequest, endpoint.config)
-        const searchParams = getSearchParams(globalRequest.url, endpoint.config)
-        const headers = getHeaders(globalRequest)
+        const body = await getBody(globalRequestContext.request, endpoint.config)
+        const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
+        const headers = getHeaders(globalRequestContext.request)
         let context = {
             params: dynamicParams,
             searchParams,
             headers,
             body,
-            request: globalRequest,
+            request: globalRequestContext.request,
             url,
-            method: globalRequest.method,
+            method: globalRequestContext.request.method,
             route: endpoint.route,
+            context: config.context ?? ({} as GlobalContext),
         }
         context = await executeMiddlewares(context, endpoint.config.middlewares)
         const response = await endpoint.handler(context)
