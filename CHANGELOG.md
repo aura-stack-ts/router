@@ -15,9 +15,9 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Changed
 
-- Moved the `request` property into the `context` object for global middlewares. The global context now contains the incoming request and the global context defined in `createRouter.context`. [#22](https://github.com/aura-stack-ts/router/pull/22).
+- **BREAKING CHANGE:** The `request` property has been moved into the context object for route handlers and middlewares. Handlers now receive a single context parameter instead of separate `request` and `context` arguments. [#22](https://github.com/aura-stack-ts/router/pull/22).
 
-- Moved the `request` property into the `context` object for both route handlers and middlewares (per endpoint and global). [#18](https://github.com/aura-stack-ts/router/pull/18).
+- **BREAKING CHANGE:** The `request` property has also been moved into the `context` object for global middlewares. The global context now includes the incoming request along with the context defined in `createRouter.context`. [#18](https://github.com/aura-stack-ts/router/pull/18).
 
 ---
 

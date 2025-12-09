@@ -72,9 +72,9 @@ const config = createEndpointConfig({
     }),
   },
   middlewares: [
-    async (request, ctx) => {
+    async (ctx) => {
       const { redirect_uri, code, state } = ctx.searchParams
-      return request
+      return ctx
     },
   ],
 })
@@ -95,10 +95,10 @@ const config = createEndpointConfig("/auth/signIn/:oauth/", {
     }),
   },
   middlewares: [
-    async (request, ctx) => {
+    async (ctx) => {
       const { oauth } = ctx.params
       const { redirect_uri, code, state } = ctx.searchParams
-      return request
+      return ctx
     },
   ],
 })

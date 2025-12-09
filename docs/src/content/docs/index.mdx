@@ -61,11 +61,11 @@ Use `createEndpoint` to define an endpoint. It requires three arguments:
 ```ts lineNumbers title="@/users.ts"
 import { createEndpoint } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const getUser = createEndpoint("GET", "/users/:userId", async (request, ctx) => {
+const getUser = createEndpoint("GET", "/users/:userId", async (ctx) => {
   const { userId } = ctx.params
   return Response.json({ id: userId, name: "John" })
 })
