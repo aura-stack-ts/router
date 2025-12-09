@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] - 2025-12-09
+
 ### Added
 
 - Added the `route`, `method`, and `url` properties to the `context` object for both route handlers and middlewares per endpoint to access extensive metadata related to the incoming request. [#19](https://github.com/aura-stack-ts/router/pull/19).
