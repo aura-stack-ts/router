@@ -16,7 +16,7 @@ description: Create routers to group endpoints and expose type-safe HTTP method 
 ```ts lineNumbers
 import { createRouter, createEndpoint } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
@@ -66,6 +66,7 @@ Arguments and options for `createRouter` are fully inferred without needing to s
 - `RouterConfig`.
 - `RoutePattern`.
 - `GlobalMiddleware`.
+- `GlobalMiddlewareContext`.
 - `RouterConfig["onError"]`.
 
 Example of inferred handlers:
@@ -73,12 +74,12 @@ Example of inferred handlers:
 ```ts lineNumbers
 import { createRouter, createEndpoint } from "@aura-stack/router"
 
-const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (request, ctx) => {
+const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
   const { oauth } = ctx.params
   return Response.json({ oauth })
 })
 
-const credentials = createEndpoint("POST", "/auth/credentials", async (request, ctx) => {
+const credentials = createEndpoint("POST", "/auth/credentials", async (ctx) => {
   return Response.json({ token: "jwt-token" })
 })
 
@@ -97,6 +98,7 @@ const routerConfig: RouterConfig = {
   basePath: "/api/",
   middlewares: [],
   onError: undefined,
+  context: {},
 }
 
 export const router = createRouter([], routerConfig)
@@ -146,12 +148,12 @@ List of endpoint definitions to be loaded and managed by the router. All HTTP me
 ```ts lineNumbers
 import { createRouter, createEndpoint } from "@aura-stack/router"
 
-const signIn = createEndpoint("GET", "/auth/:oauth", async (request, ctx) => {
+const signIn = createEndpoint("GET", "/auth/:oauth", async (ctx) => {
   const oauth = ctx.oauth
   return Response.json({ oauth })
 })
 
-const callback = createEndpoint("POST", "/callback/:oauth", async (request, ctx) => {
+const callback = createEndpoint("POST", "/callback/:oauth", async (ctx) => {
   const oauth = ctx.oauth
   return Response.json({ oauth }, { status: 301 })
 })
@@ -170,14 +172,16 @@ interface RouterConfig {
   basePath?: RoutePattern
   middlewares?: GlobalMiddleware[]
   onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
+  context?: GlobalMiddlewareContext
 }
 ```
 
 | Option        | Type                                                                                | Description                                                |
 | ------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `basePath`    | `string`                                                                            | Prefix applied to all routes (recommended: start with `/`) |
-| `middlewares` | `MiddlewareFunction[]`                                                              | Global middlewares executed before endpoint handlers       |
+| `middlewares` | `GlobalMiddleware[]`                                                                | Global middlewares executed before endpoint handlers       |
 | `onError`     | ` (error: Error \| RouterError, request: Request) => Response \| Promise<Response>` | Global error handler                                       |
+| `context`     | `GlobalMiddlewareContext`                                                           | Global context for endpoints and middlewares               |
 
 ##### basePath `RoutePattern` [#base-path]
 
@@ -207,11 +211,11 @@ const routerConfig: RouterConfig = {
   basePath: "/api/v1",
 }
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const createUser = createEndpoint("POST", "/users", async (request, ctx) => {
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
   return Response.json({ id: "new-user" }, { status: 201 })
 })
 
@@ -247,9 +251,14 @@ const internalRouter = createRouter([...internalEndpoints], {
 })
 ```
 
-##### middlewares `MiddlewareFunction[]` [#middlewares]
+##### middlewares `GlobalMiddleware[]` [#middlewares]
 
 `middlewares` is an optional router config property used to register global middleware functions that run for every matched request. Global middlewares execute after route matching but before endpoint middlewares and the route handler. Add them to the router configuration as an array (`middlewares`) and type them as `GlobalMiddleware`.
+
+<Callout>
+  Global middlewares access the request via the `context` property. The context must be configured on the router to be accessible
+  for global middlewares and endpoint middlewares.
+</Callout>
 
 Global middlewares are ideal for logic that should apply across all endpoints, such as:
 
@@ -263,7 +272,9 @@ Global middlewares are ideal for logic that should apply across all endpoints, s
 You register global middlewares by adding them to the middlewares array in the router configuration, typed as `GlobalMiddleware`.
 
 ```ts lineNumbers
-export type GlobalMiddleware = (request: Request) => Promise<Request | Response>
+export type GlobalMiddleware = (
+  ctx: GlobalMiddlewareContext
+) => Response | GlobalMiddlewareContext | Promise<Response | GlobalMiddlewareContext>
 ```
 
 - Redirecting.
@@ -273,12 +284,12 @@ Global middlewares can handle route-level logic such as redirects.
 ```ts lineNumbers
 import { createRouter, type GlobalMiddleware } from "@aura-stack/router"
 
-const globalMiddleware: GlobalMiddleware = async (request) => {
-  const url = new URL(request.url)
+const globalMiddleware: GlobalMiddleware = async (ctx) => {
+  const url = new URL(ctx.url)
   if (url.pathname === "/api/v1") {
     return Response.redirect("https://unstable.aura-stack.com", 302)
   }
-  return request
+  return ctx
 }
 
 export const router = createRouter([], {
@@ -293,14 +304,14 @@ Middleware is often used for analytics, logging, and request metadata injection.
 ```ts lineNumbers
 import { createRouter, type GlobalMiddleware } from "@aura-stack/router"
 
-const auditMiddleware: GlobalMiddleware = async (request, ctx) => {
+const auditMiddleware: GlobalMiddleware = async (ctx) => {
   const timestamp = new Date().toISOString()
-  console.log(`[${timestamp}] ${request.method} ${request.url}`)
+  console.log(`[${timestamp}] ${ctx.request.method} ${ctx.request.url}`)
 
   /*
     Add request ID to all responses
   */
-  ctx.headers.set("x-request-id", crypto.randomUUID())
+  ctx.request.headers.set("x-request-id", crypto.randomUUID())
   return ctx
 }
 
@@ -316,12 +327,12 @@ Global middlewares run before the router handler, so they are ideal for request 
 ```ts lineNumbers
 import { createRouter, type GlobalMiddleware } from "@aura-stack/router"
 
-const authorizationMiddleware: GlobalMiddleware = async (request) => {
-  const headers = new Headers(request.headers)
+const authorizationMiddleware: GlobalMiddleware = async (ctx) => {
+  const headers = new Headers(ctx.request.headers)
   if (!headers.has("Authorization")) {
     return Response.json({ message: "Unauthorized" }, { status: 401 })
   }
-  return request
+  return ctx
 }
 
 export const router = createRouter([], {
@@ -342,7 +353,7 @@ import { createRouter, createEndpoint, createEndpointConfig } from "@aura-stack/
 
 const endpointConfig = createEndpointConfig({
   middlewares: [
-    async (request, ctx) => {
+    async (ctx) => {
       console.log("2. Endpoint middleware")
       return ctx
     },
@@ -352,7 +363,7 @@ const endpointConfig = createEndpointConfig({
 const endpoint = createEndpoint(
   "GET",
   "/test",
-  async (request, ctx) => {
+  async (ctx) => {
     console.log("3. Route handler")
     return Response.json({ ok: true })
   },
@@ -361,9 +372,9 @@ const endpoint = createEndpoint(
 
 export const router = createRouter([endpoint], {
   middlewares: [
-    async (request) => {
+    async (ctx) => {
       console.log("1. Global middleware")
-      return request
+      return ctx
     },
   ],
 })
@@ -458,6 +469,53 @@ Content-Type: application/json
 
 If you need to customize 404 responses, you may handle them in your server layer (e.g., Next.js route handlers, Workers fetch events, etc.)
 
+#### context `GlobalMiddlewareContext`
+
+`context` is an optional router configuration which its defined global states to the application to be acceded by endpoints and middlewares.
+
+```ts lineNumbers
+export interface GlobalContext {}
+
+interface GlobalMiddlewareContext {
+  request: Request
+  context: GlobalContext
+}
+```
+
+<Callout>
+  For better type safety with the global context, create a `types.d.ts` file and augment the module by updating the
+  `GlobalContext` type with your context object types. For more details, see [Module
+  Augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation).
+</Callout>
+
+```ts title="types.d.ts" lineNumbers
+import type { GlobalContext } from "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  interface GlobalContext {
+    state: string
+    appInstance: {
+      name: string
+      port: string
+    }
+  }
+}
+```
+
+```ts title="@/index" lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  context: {
+    state: "state-value",
+    appInstance: {
+      name: "app-name",
+      port: process.env.PORT!,
+    },
+  },
+})
+```
+
 ---
 
 ### Returns
@@ -487,12 +545,12 @@ This has two core benefits:
 import { createRouter, createEndpoint } from "@aura-stack/router"
 import type { RouterConfig, RoutePattern, GlobalMiddleware } from "@aura-stack/router/types"
 
-const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (request, ctx) => {
+const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
   const { oauth } = ctx.params
   return Response.json({ oauth })
 })
 
-const credentials = createEndpoint("POST", "/auth/credentials", async (request, ctx) => {
+const credentials = createEndpoint("POST", "/auth/credentials", async (ctx) => {
   return Response.json({ token: "jwt-token" })
 })
 
@@ -519,11 +577,11 @@ export const { DELETE } = createRouter([signIn, credentials])
 ```ts lineNumbers
 import { createRouter, createEndpoint } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const createUser = createEndpoint("POST", "/users", async (request, ctx) => {
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
   return Response.json({ id: "new-user" }, { status: 201 })
 })
 
@@ -538,11 +596,11 @@ const { GET, POST } = router
 ```ts lineNumbers
 import { createRouter, createEndpoint, type RouterConfig } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const createUser = createEndpoint("POST", "/users", async (request, ctx) => {
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
   return Response.json({ id: "new-user" }, { status: 201 })
 })
 
@@ -558,19 +616,19 @@ export const { GET, POST } = createRouter([getUsers, createUser], config)
 ```ts lineNumbers
 import { createRouter, createEndpoint, type RouterConfig, type GlobalMiddleware } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const createUser = createEndpoint("POST", "/users", async (request, ctx) => {
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
   return Response.json({ id: "new-user" }, { status: 201 })
 })
 
-const auditMiddleware: GlobalMiddleware = async (request, ctx) => {
+const auditMiddleware: GlobalMiddleware = async (ctx) => {
   const timestamp = new Date().toISOString()
-  console.log(`[${timestamp}] ${request.method} ${request.url}`)
+  console.log(`[${timestamp}] ${ctx.request.method} ${ctx.request.url}`)
 
-  ctx.headers.set("x-request-id", crypto.randomUUID())
+  ctx.request.headers.set("x-request-id", crypto.randomUUID())
   return ctx
 }
 
@@ -586,11 +644,11 @@ export const { GET, POST } = createRouter([getUsers, createUser])
 ```ts lineNumbers
 import { createRouter, createEndpoint, type RouterConfig } from "@aura-stack/router"
 
-const getUsers = createEndpoint("GET", "/users", async (request, ctx) => {
+const getUsers = createEndpoint("GET", "/users", async (ctx) => {
   return Response.json({ users: [] })
 })
 
-const createUser = createEndpoint("POST", "/users", async (request, ctx) => {
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
   return Response.json({ id: "new-user" }, { status: 201 })
 })
 
@@ -611,6 +669,52 @@ const onError: RouterConfig["onError"] = (error, request) => {
 export const { GET, POST } = createRouter([getUsers, createUser], {
   onError,
 })
+```
+
+### With `context`
+
+**Augment the module**
+
+```ts title="types.d.ts" lineNumbers
+import type { GlobalContext } from "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  interface GlobalContext {
+    state: boolean
+    appInstance: {
+      name: string
+      port: string
+    }
+  }
+}
+```
+
+**Define router**
+
+```ts lineNumbers
+import { createRouter, createEndpoint, type RouterConfig } from "@aura-stack/router"
+
+const getUser = createEndpoint("GET", "/users/:id", async (ctx) => {
+  const userId = ctx.params.id
+  return Response.json({ userId })
+})
+
+const createUser = createEndpoint("POST", "/users", async (ctx) => {
+  const userData = await ctx.request.json()
+  return Response.json({ id: "new-user", ...userData }, { status: 201 })
+})
+
+const config: RouterConfig = {
+  context: {
+    state: true,
+    appInstance: {
+      name: "api-service",
+      port: "3000",
+    },
+  },
+}
+
+export const { GET, POST } = createRouter([getUser, createUser], config)
 ```
 
 ---

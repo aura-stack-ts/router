@@ -15,7 +15,7 @@ description: Define type-safe API endpoints with automatic params inference, opt
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
-const getSession = createEndpoint("GET", "/auth/session", async (request, ctx) => {
+const getSession = createEndpoint("GET", "/auth/session", async (ctx) => {
   return Response.json({
     session: {
       userId: "uuid-123",
@@ -64,6 +64,7 @@ Through this api reference documentation you are going to learn and understand f
 - `RoutePattern`
 - `EndpointConfig`
 - `RouteHandler`
+- `GlobalContext`
 
 Example: Inferred handler types
 
@@ -74,7 +75,7 @@ import { createEndpoint } from "@aura-stack/router"
 const credentials = createEndpoint(
   "POST",
   "/auth/credentials",
-  async (_, ctx) => {
+  async (ctx) => {
     // Body types are inferred from the Zod schema
     const { username, password } = ctx.body
     return Response.json({ token: "jwt-token" })
@@ -92,7 +93,7 @@ const credentials = createEndpoint(
 const signIn = createEndpoint(
   "GET",
   "/auth/signIn/:oauth",
-  async (_, ctx) => {
+  async (ctx) => {
     // Dynamic params are fully typed
     const { oauth } = ctx.params
 
@@ -136,7 +137,7 @@ const credentialsConfig = createEndpointConfig({
 const credentials = createEndpoint(
   "POST",
   "/auth/credentials",
-  async (_, ctx) => {
+  async (ctx) => {
     const { username, password } = ctx.body
     return Response.json({ token: "jwt-token" })
   },
@@ -146,7 +147,7 @@ const credentials = createEndpoint(
 const signIn = createEndpoint(
   "GET",
   "/auth/signIn/:oauth",
-  async (_, ctx) => {
+  async (ctx) => {
     const { oauth } = ctx.params
     const { redirect_uri } = ctx.searchParams
     return Response.json({ oauth })
@@ -237,7 +238,7 @@ import { createEndpoint } from "@aura-stack/router"
 export const endpoint = createEndpoint(
   "POST",
   "/auth/credentials",
-  async (_, ctx) => {
+  async (ctx) => {
     const { body } = ctx.body
     return Response.json({ body })
   },
@@ -266,28 +267,11 @@ const endpoint: RouteHandler<
       searchParams: ZodObject<{ state: ZodString }>
     }
   }
-> = (request, ctx) => {
+> = (ctx) => {
   const { oauth } = ctx.params
   const { state } = ctx.searchParams
   return Response.json({ message: `OAuth: ${oauth}, State: ${state}` })
 }
-```
-
-##### Request `Request` [#request]
-
-`request` is the first argument passed to every route handler. It contains the original, unmodified `Request` object from the incoming HTTP request.
-
-```ts lineNumbers
-type RequestHandler = Request
-```
-
-```ts lineNumbers
-import { createEndpoint } from "@aura-stack/router"
-
-const signIn = createEndpoint("/GET", "/auth/signIn/:oauth", async (request) => {
-  const pathname = new URL(request.url)
-  return Response.json({ pathname })
-})
 ```
 
 ##### Request Context `RequestContext` [#request-context]
@@ -307,12 +291,115 @@ interface RequestContext<RouteParams = Record<string, string>, Config extends En
 }
 ```
 
-| Option         | Type                                                     | Description                                                         |
-| -------------- | -------------------------------------------------------- | ------------------------------------------------------------------- |
-| `headers`      | `Headers`                                                | Headers from the incoming request.                                  |
-| `params`       | `ContextParams<Config<["schemas"]>>`                     | Dynamic route parameters inferred from the path or Zod definitions. |
-| `body`         | `ContextBody<Config["schemas"]>["body"]`                 | Parsed and validated body based on the configured schema.           |
-| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters from the request URL.         |
+| Option         | Type                                                     | Description                                                                                               |
+| -------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `request`      | `Request`                                                | Original Request.                                                                                         |
+| `url`          | `URL`                                                    | URL object of the incoming request.                                                                       |
+| `method`       | `HTTPMethod`                                             | The HTTP method defined in the endpoint.                                                                  |
+| `route`        | `RoutePattern`                                           | Complete route defined in the endpoint.                                                                   |
+| `context`      | `GlobalContext`                                          | Global context set on the `context` object in the router. For type safety the module should be augmented. |
+| `headers`      | `Headers`                                                | Headers from the incoming request.                                                                        |
+| `params`       | `ContextParams<Config<["schemas"]>>`                     | Dynamic route parameters inferred from the path or Zod definitions.                                       |
+| `body`         | `ContextBody<Config["schemas"]>["body"]`                 | Parsed and validated body based on the configured schema.                                                 |
+| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters from the request URL.                                               |
+
+###### Request `ctx.request` [#request]
+
+`request` is present in the `RequestContext` object. It contains the original, unmodified `Request` object from the incoming HTTP request.
+
+```ts lineNumbers
+type RequestHandler = Request
+```
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
+  const isCached = ctx.request.cache
+  return Response.json({ cache: isCached })
+})
+```
+
+###### URL (`ctx.url`) [#url-context]
+
+```ts lineNumbers
+type URLContext = URL
+```
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
+  const pathname = ctx.url.pathname
+  return Response.json({ pathname })
+})
+```
+
+###### Method (`ctx.method`) [#method-context]
+
+```ts lineNumbers
+type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "HEAD" | "TRACE" | "CONNECT"
+```
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const supportedBodyMethods = new Set<HTTPMethod>(["POST", "PUT", "PATCH"])
+
+const signIn = createEndpoint("POST", "/auth/signIn", async (ctx) => {
+  if (!supportedBodyMethods.has(ctx.method)) {
+    return Response.json({ message: "Unauthorized" }, { status: 401 })
+  }
+  return Response.json({ message: "Authenticated" })
+})
+```
+
+###### Route (`ctx.route`) [#route-context]
+
+```ts lineNumbers
+type Route = `/${string}`
+```
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const deprecatedRoutes = new Set<string>(["/api/v1/users", "api/v1/books"])
+
+const getUsers = createEndpoint("GET", "/api/v1/users", async (ctx) => {
+  if(deprecatedRoutes(ctx.route)) {
+    return Response.redirect("/api/v2/services/users)
+  }
+  return Response.json({ message: "Successful" })
+})
+```
+
+###### Context (`ctx.context`) [#global-context]
+
+```ts lineNumbers
+interface GlobalContext {}
+```
+
+```ts title="types.d.ts" lineNumbers
+import type { GlobalContext } from "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  interface GlobalContext {
+    db: DatabaseInstance
+  }
+}
+```
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const getUser = createEndpoint("GET", "/users/:userId", async (ctx) => {
+  const { userId } = ctx.params
+  const { db } = ctx.context
+
+  const user = await db.query("SELECT * FROM users WHERE id = ?", [userId])
+  return Response.json({ user })
+})
+```
 
 ###### Headers (`ctx.headers`) [#headers-context]
 
@@ -325,7 +412,7 @@ You can access and mutate headers using the standard `Headers` interface:
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
-const protectedEndpoint = createEndpoint("GET", "/protected", async (request, ctx) => {
+const protectedEndpoint = createEndpoint("GET", "/protected", async (ctx) => {
   const authHeader = ctx.headers.get("authorization")
   ctx.headers.set("x-processed-by", "api")
 
@@ -354,7 +441,7 @@ import { createEndpoint } from "@aura-stack/router"
 /* 
   Single parameter 
 */
-const getUser = createEndpoint("GET", "/users/:userId", async (request, ctx) => {
+const getUser = createEndpoint("GET", "/users/:userId", async (ctx) => {
   const { userId } = ctx.params
   return Response.json({ id: userId })
 })
@@ -362,7 +449,7 @@ const getUser = createEndpoint("GET", "/users/:userId", async (request, ctx) => 
 /* 
   Multiple parameters
 */
-const getBookmark = createEndpoint("GET", "/users/:userId/books/:bookId", async (request, ctx) => {
+const getBookmark = createEndpoint("GET", "/users/:userId/books/:bookId", async (ctx) => {
   // Both are typed as string
   const { userId, bookId } = ctx.params
   return Response.json({ userId, bookId })
@@ -386,7 +473,7 @@ const config = createEndpointConfig("/users/:userId", {
 const getUser = createEndpoint(
   "GET",
   "/users/:userId",
-  async (request, ctx) => {
+  async (ctx) => {
     const { userId } = ctx.params
     return Response.json({ id: userId })
   },
@@ -394,7 +481,7 @@ const getUser = createEndpoint(
 )
 ```
 
-###### Search Parameters Context (`ctx.searchParams`) [#search-params-context]
+###### Search Parameters (`ctx.searchParams`) [#search-params-context]
 
 ```ts lineNumbers
 import { z, type ZodObject } from "zod"
@@ -414,7 +501,7 @@ Returns `URLSearchParams` (native browser API)
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
-const searchUsers = createEndpoint("GET", "/users/search", async (request, ctx) => {
+const searchUsers = createEndpoint("GET", "/users/search", async (ctx) => {
   const query = ctx.searchParams.get("q")
   const page = ctx.searchParams.get("page")
 
@@ -442,7 +529,7 @@ const searchConfig = createEndpointConfig({
 const searchUsers = createEndpoint(
   "GET",
   "/users/search",
-  async (request, ctx) => {
+  async (ctx) => {
     const { q, page } = ctx.searchParams
     return Response.json({ query: q, page })
   },
@@ -470,7 +557,7 @@ Type: `unknown`
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
-const createPost = createEndpoint("POST", "/posts", async (request, ctx) => {
+const createPost = createEndpoint("POST", "/posts", async (ctx) => {
   const body = ctx.body
   return Response.json({ data: body })
 })
@@ -497,7 +584,7 @@ const createPostConfig = createEndpointConfig({
 const createPost = createEndpoint(
   "POST",
   "/posts",
-  async (request, ctx) => {
+  async (ctx) => {
     const { title, content, tags } = ctx.body
 
     return Response.json({ id: "new-post", title, content, tags }, { status: 201 })
@@ -585,15 +672,15 @@ import { createEndpoint } from "@aura-stack/router"
 const getProfile = createEndpoint(
   "GET",
   "/profile",
-  async (request, ctx) => {
+  async (ctx) => {
     const userId = ctx.headers.get("x-user-id")
     return Response.json({ userId })
   },
   {
     middlewares: [
       // Authentication middleware
-      async (request, ctx) => {
-        const token = request.headers.get("authorization")
+      async (ctx) => {
+        const token = ctx.request.headers.get("authorization")
 
         if (!token) {
           throw new Error("Unauthorized")
@@ -616,21 +703,21 @@ You can chain several middlewares to compose complex request logic:
 const config = createEndpointConfig({
   middlewares: [
     // Logging
-    async (request, ctx) => {
-      console.log(`Request to ${request.url}`)
+    async (ctx) => {
+      console.log(`Request to ${ctx.url}`)
       return ctx
     },
 
     // Rate limiting
-    async (request, ctx) => {
+    async (ctx) => {
       // Rate limit logic
       ctx.headers.set("x-rate-limit", "100")
       return ctx
     },
 
     // Authentication
-    async (request, ctx) => {
-      const token = request.headers.get("authorization")
+    async (ctx) => {
+      const token = ctx.headers.get("authorization")
       if (!token) throw new Error("Unauthorized")
       return ctx
     },
@@ -669,7 +756,7 @@ import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 const config = createEndpointConfig("/users/:userId", {
   middlewares: [
-    async (request, ctx) => {
+    async (ctx) => {
       const { userId } = ctx.params
       console.log(`Processing request for user ${userId}`)
       return ctx
@@ -680,7 +767,7 @@ const config = createEndpointConfig("/users/:userId", {
 const endpoint = createEndpoint(
   "GET",
   "/users/:userId",
-  async (request, ctx) => {
+  async (ctx) => {
     const { userId } = ctx.params
     return Response.json({ id: userId })
   },

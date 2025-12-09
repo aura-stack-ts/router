@@ -54,8 +54,8 @@ import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 const config = createEndpointConfig({
   middlewares: [
-    async (request, ctx) => {
-      console.log(`Request to ${request.url}`)
+    async (ctx) => {
+      console.log(`Request to ${ctx.url}`)
       return ctx
     },
   ],
@@ -80,8 +80,8 @@ const verifyToken = (token: string) => {
 
 const authConfig = createEndpointConfig({
   middlewares: [
-    async (request, ctx) => {
-      const token = request.headers.get("authorization")
+    async (ctx) => {
+      const token = ctx.request.headers.get("authorization")
 
       if (!token || !token.startsWith("Bearer ")) {
         throw new Error("Unauthorized")
@@ -104,7 +104,7 @@ const authConfig = createEndpointConfig({
 const getProfile = createEndpoint(
   "GET",
   "/profile",
-  async (request, ctx) => {
+  async (ctx) => {
     const userId = ctx.headers.get("x-user-id")
     return Response.json({ userId, name: "John" })
   },
@@ -126,23 +126,23 @@ const config = createEndpointConfig({
     /*
      1. First middleware - logging
     */
-    async (request, ctx) => {
+    async (ctx) => {
       console.log("1. Logging request")
       return ctx
     },
     /*
       2. Second middleware - auth
     */
-    async (request, ctx) => {
+    async (ctx) => {
       console.log("2. Checking auth")
-      const token = request.headers.get("authorization")
+      const token = ctx.request.headers.get("authorization")
       if (!token) throw new Error("Unauthorized")
       return ctx
     },
     /*
      3. Third middleware - add metadata
     */
-    async (request, ctx) => {
+    async (ctx) => {
       console.log("3. Adding metadata")
       ctx.headers.set("x-processed", "true")
       return ctx
@@ -170,7 +170,7 @@ import { createEndpoint, createEndpointConfig, createRouter } from "@aura-stack/
 
 const endpointConfig = createEndpointConfig({
   middlewares: [
-    async (request, ctx) => {
+    async (ctx) => {
       console.log("2. Endpoint middleware")
       return ctx
     },
@@ -180,7 +180,7 @@ const endpointConfig = createEndpointConfig({
 const endpoint = createEndpoint(
   "GET",
   "/test",
-  async (request, ctx) => {
+  async (ctx) => {
     console.log("3. Handler")
     return Response.json({ ok: true })
   },
@@ -189,9 +189,9 @@ const endpoint = createEndpoint(
 
 const router = createRouter([endpoint], {
   middlewares: [
-    async (request) => {
+    async (ctx) => {
       console.log("1. Global middleware")
-      return request
+      return ctx
     },
   ],
 })
