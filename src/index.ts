@@ -1,5 +1,6 @@
 export { createEndpoint, createEndpointConfig } from "./endpoint.js"
 export { createRouter } from "./router.js"
-export { isRouterError } from "./assert.js"
+export { isRouterError, isInvalidZodSchemaError } from "./assert.js"
 export { RouterError, statusCode, statusText } from "./error.js"
+export { HeadersBuilder } from "./headers.js"
 export type * from "./types.js"
