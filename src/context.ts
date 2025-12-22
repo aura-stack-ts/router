@@ -116,6 +116,37 @@ export const getHeaders = (request: Request): Headers => {
     return new Headers(request.headers)
 }
 
+export class HeadersBuilder {
+    private headers: Headers
+
+    constructor(initialHeaders?: HeadersInit) {
+        this.headers = new Headers(initialHeaders)
+    }
+
+    set(name: string, value: string): HeadersBuilder {
+        this.headers.set(name, value)
+        return this
+    }
+
+    setCookie(name: string, value: string): HeadersBuilder {
+        this.headers.append("Set-Cookie", `${name}=${value}`)
+        return this
+    }
+
+    remove(name: string): HeadersBuilder {
+        this.headers.delete(name)
+        return this
+    }
+
+    get(name: string): string | null {
+        return this.headers.get(name)
+    }
+
+    toHeaders(): Headers {
+        return new Headers(this.headers)
+    }
+}
+
 /**
  * Extracts and parses the body of a Request object based on its Content-Type header.
  *

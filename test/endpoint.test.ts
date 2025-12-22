@@ -277,7 +277,7 @@ describe("createEndpoint", () => {
                 "GET",
                 "/headers",
                 (ctx) => {
-                    const headers = Object.fromEntries(ctx.headers.entries())
+                    const headers = Object.fromEntries(ctx.headers.toHeaders().entries())
                     return Response.json({ headers })
                 },
                 {

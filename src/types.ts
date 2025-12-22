@@ -1,5 +1,6 @@
 import { type ZodObject, z } from "zod"
 import { RouterError } from "./error.js"
+import { HeadersBuilder } from "./context.js"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -114,7 +115,7 @@ export type ContextParams<Schemas extends EndpointConfig["schemas"], Default = R
  */
 export interface RequestContext<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> {
     params: ContextParams<Config["schemas"], RouteParams>["params"]
-    headers: Headers
+    headers: HeadersBuilder
     body: ContextBody<Config["schemas"]>["body"]
     searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
     request: Request

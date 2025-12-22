@@ -40,7 +40,7 @@ describe("createRouter", () => {
             "GET",
             "/auth/session",
             (ctx) => {
-                const headers = ctx.headers
+                const headers = ctx.headers.toHeaders()
                 return Response.json({ message: "Get user session" }, { status: 200, headers })
             },
             sessionConfig
@@ -238,11 +238,11 @@ describe("createRouter", () => {
 
     describe("With global middlewares", () => {
         const session = createEndpoint("GET", "/session", async (ctx) => {
-            return Response.json({ message: "Get user session" }, { status: 200, headers: ctx.headers })
+            return Response.json({ message: "Get user session" }, { status: 200, headers: ctx.headers.toHeaders() })
         })
 
         const signIn = createEndpoint("POST", "/auth/:oauth", async (ctx) => {
-            return Response.json({ message: "Sign in with OAuth" }, { status: 200, headers: ctx.headers })
+            return Response.json({ message: "Sign in with OAuth" }, { status: 200, headers: ctx.headers.toHeaders() })
         })
 
         describe("Add headers middleware", async () => {

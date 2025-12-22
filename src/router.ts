@@ -1,7 +1,7 @@
 import { RouterError, statusText } from "./error.js"
 import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
-import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
+import { getBody, getHeaders, getRouteParams, getSearchParams, HeadersBuilder } from "./context.js"
 import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
 
 interface TrieNode {
@@ -116,7 +116,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         const dynamicParams = getRouteParams(params, endpoint.config)
         const body = await getBody(globalRequestContext.request, endpoint.config)
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
-        const headers = getHeaders(globalRequestContext.request)
+        const headers = new HeadersBuilder(globalRequestContext.request.headers)
         let context = {
             params: dynamicParams,
             searchParams,
