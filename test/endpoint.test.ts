@@ -277,13 +277,13 @@ describe("createEndpoint", () => {
                 "GET",
                 "/headers",
                 (ctx) => {
-                    const headers = Object.fromEntries(ctx.headers.entries())
+                    const headers = Object.fromEntries(ctx.headers.toHeaders().entries())
                     return Response.json({ headers })
                 },
                 {
                     middlewares: [
                         (ctx) => {
-                            ctx.headers.set("Authorization", "Bearer token")
+                            ctx.headers.setHeader("Authorization", "Bearer token")
                             return ctx
                         },
                     ],

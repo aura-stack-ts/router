@@ -1,4 +1,5 @@
 import { describe, expectTypeOf } from "vitest"
+import { HeadersBuilder } from "../src/headers.js"
 import type {
     RoutePattern,
     GetRouteParams,
@@ -243,7 +244,7 @@ describe("ContextBody", () => {
 describe("RequestContext", () => {
     type Context<T extends Record<string, unknown>> = Prettify<
         {
-            headers: Headers
+            headers: HeadersBuilder
             request: Request
             url: URL
             method: HTTPMethod

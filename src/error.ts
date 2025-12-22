@@ -82,7 +82,6 @@ export class RouterError extends AuraStackRouterError {
 }
 
 export class InvalidZodSchemaError {
-    
     public readonly status: number
     public readonly statusText: StatusCode
     public readonly errors: Record<string, string>

@@ -2,6 +2,7 @@ import { type ZodError } from "zod"
 import { isSupportedBodyMethod } from "./assert.js"
 import { InvalidZodSchemaError, RouterError } from "./error.js"
 import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.js"
+import { SerializeOptions } from "cookie"
 
 /**
  * @experimental
@@ -96,24 +97,6 @@ export const getSearchParams = <Config extends EndpointConfig>(
         return parsed.data
     }
     return new URLSearchParams(route.searchParams.toString())
-}
-
-/**
- * Extracts headers from the given Request object and returns them as a Headers instance.
- *
- * @param request - The Request object from which to extract headers.
- * @returns A Headers instance containing all headers from the request.
- * @example
- * const request = new Request("https://example.com/api", {
- *   headers: {
- *     "Content-Type": "application/json",
- *     "Authorization": "Bearer token",
- *   },
- * });
- * const headers = getHeaders(request);
- */
-export const getHeaders = (request: Request): Headers => {
-    return new Headers(request.headers)
 }
 
 /**
