@@ -1,4 +1,4 @@
-import { RouterError } from "./error.js"
+import { InvalidZodSchemaError, RouterError } from "./error.js"
 import type { RouteHandler, HTTPMethod, RoutePattern } from "./types.js"
 
 const supportedMethods = new Set<HTTPMethod>(["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS", "HEAD", "TRACE", "CONNECT"])
@@ -66,4 +66,18 @@ export const isValidHandler = (handler: unknown): handler is RouteHandler<any, a
  */
 export const isRouterError = (error: unknown): error is RouterError => {
     return error instanceof RouterError
+}
+
+export const isObject = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === "object" && value !== null && value !== undefined && !Array.isArray(value)
+}
+
+/**
+ * Checks if the provided error is an instance of InvalidZodSchemaError.
+ *
+ * @param error the error to check
+ * @returns true if the error is an instance of InvalidZodSchemaError, false otherwise.
+ */
+export const isInvalidZodSchemaError = (error: unknown): error is InvalidZodSchemaError => {
+    return error instanceof InvalidZodSchemaError
 }

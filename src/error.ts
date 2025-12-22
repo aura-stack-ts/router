@@ -80,3 +80,16 @@ export class RouterError extends AuraStackRouterError {
         this.name = name ?? "RouterError"
     }
 }
+
+export class InvalidZodSchemaError {
+    
+    public readonly status: number
+    public readonly statusText: StatusCode
+    public readonly errors: Record<string, string>
+
+    constructor(type: StatusCode, errors: Record<string, string>) {
+        this.status = statusCode[type]
+        this.statusText = statusText[type]
+        this.errors = errors
+    }
+}

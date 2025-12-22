@@ -1,6 +1,27 @@
+import { type ZodError } from "zod"
 import { isSupportedBodyMethod } from "./assert.js"
-import { RouterError } from "./error.js"
+import { InvalidZodSchemaError, RouterError } from "./error.js"
 import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.js"
+
+/**
+ * @experimental
+ * @param error ZodError instance
+ */
+export const formatZodError = (error: ZodError<Record<string, unknown>>) => {
+    if (!error.issues || error.issues.length === 0) {
+        return {}
+    }
+    return error.issues.reduce((previous, issue) => {
+        const key = issue.path.join(".")
+        return {
+            ...previous,
+            [key]: {
+                code: issue.code,
+                message: issue.message,
+            },
+        }
+    }, {})
+}
 
 /**
  * Extracts route parameters from a given path using the specified route pattern.
@@ -24,7 +45,7 @@ export const getRouteParams = (params: Record<string, string>, config: EndpointC
     if (config.schemas?.params) {
         const parsed = config.schemas.params.safeParse(params)
         if (!parsed.success) {
-            throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid route parameters")
+            throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
         }
         return parsed.data
     }
@@ -70,7 +91,7 @@ export const getSearchParams = <Config extends EndpointConfig>(
     if (config.schemas?.searchParams) {
         const parsed = config.schemas.searchParams.safeParse(Object.fromEntries(route.searchParams.entries()))
         if (!parsed.success) {
-            throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid search parameters")
+            throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
         }
         return parsed.data
     }
@@ -118,7 +139,7 @@ export const getBody = async <Config extends EndpointConfig>(request: Request, c
         if (config.schemas?.body) {
             const parsed = config.schemas.body.safeParse(json)
             if (!parsed.success) {
-                throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid request body")
+                throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
             }
             return parsed.data
         }

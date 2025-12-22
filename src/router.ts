@@ -1,5 +1,5 @@
 import { RouterError, statusText } from "./error.js"
-import { isRouterError, isSupportedMethod } from "./assert.js"
+import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
 import { getBody, getHeaders, getRouteParams, getSearchParams } from "./context.js"
 import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
@@ -75,6 +75,17 @@ const handleError = async (error: unknown, request: Request, config: RouterConfi
                 { status: 500, statusText: statusText.INTERNAL_SERVER_ERROR }
             )
         }
+    }
+    if (isInvalidZodSchemaError(error)) {
+        const { errors, status, statusText } = error
+        return Response.json(
+            {
+                message: "Invalid request data",
+                error: "validation_error",
+                details: errors,
+            },
+            { status, statusText }
+        )
     }
     if (isRouterError(error)) {
         const { message, status, statusText } = error
