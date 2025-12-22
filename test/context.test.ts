@@ -439,6 +439,19 @@ describe("HeadersBuilder", () => {
                 Accept: "application/json",
             }),
         },
+        {
+            description: "",
+            request: new Request("http://example.com", {
+                headers: new HeadersBuilder({
+                    "Content-Type": "application/json",
+                })
+                    .setCookie("sessionId", "abc123", { httpOnly: true, secure: true })
+                    .toHeaders(),
+            }),
+            expected: new HeadersBuilder({
+                "Content-Type": "application/json",
+            }).setCookie("sessionId", "abc123", { httpOnly: true, secure: true }),
+        },
     ]
     for (const { description, request, expected } of testCases) {
         test.concurrent(description, ({ expect }) => {
