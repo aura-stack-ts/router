@@ -1,6 +1,6 @@
 import { type ZodObject, z } from "zod"
 import { RouterError } from "./error.js"
-import { HeadersBuilder } from "./context.js"
+import { HeadersBuilder } from "./headers.js"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.

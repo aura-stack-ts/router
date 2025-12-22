@@ -4,6 +4,7 @@ import { RouterError } from "../src/error.js"
 import { createRouter } from "../src/router.js"
 import { isRouterError } from "../src/assert.js"
 import { createEndpoint, createEndpointConfig } from "../src/endpoint.js"
+import { HeadersBuilder } from "../src/headers.js"
 
 describe("createRouter", () => {
     describe("OAuth endpoints", () => {
@@ -17,7 +18,7 @@ describe("createRouter", () => {
         const sessionConfig = createEndpointConfig({
             middlewares: [
                 (ctx) => {
-                    ctx.headers.set("session-token", "123abc-token")
+                    ctx.headers.setCookie("session-token", "123abc-token")
                     return ctx
                 },
             ],
@@ -111,7 +112,7 @@ describe("createRouter", () => {
             expect(get.status).toBe(200)
             expect(get.ok).toBeTruthy()
             expect(await get.json()).toEqual({ message: "Get user session" })
-            expect(get.headers.get("session-token")).toBe("123abc-token")
+            expect(new HeadersBuilder(get.headers).getSetCookie("session-token")).toBe("123abc-token")
         })
 
         test("Credentials handler", async () => {

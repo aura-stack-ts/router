@@ -1,7 +1,8 @@
 import { RouterError, statusText } from "./error.js"
-import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
+import { HeadersBuilder } from "./headers.js"
+import { getBody, getRouteParams, getSearchParams } from "./context.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
-import { getBody, getHeaders, getRouteParams, getSearchParams, HeadersBuilder } from "./context.js"
+import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
 import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
 
 interface TrieNode {

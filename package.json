@@ -64,6 +64,16 @@
       "import": "./dist/error.js",
       "require": "./dist/error.cjs"
     },
+    "./headers": {
+      "types": "./dist/headers.d.ts",
+      "import": "./dist/headers.js",
+      "require": "./dist/headers.cjs"
+    },
+    "./cookie": {
+      "types": "./dist/cookie.d.ts",
+      "import": "./dist/cookie.js",
+      "require": "./dist/cookie.cjs"
+    },
     "./types": "./dist/types.d.ts"
   },
   "devDependencies": {
@@ -73,5 +83,8 @@
     "vitest": "^3.2.4",
     "zod": "^4.1.11"
   },
-  "packageManager": "pnpm@10.15.0"
+  "packageManager": "pnpm@10.15.0",
+  "dependencies": {
+    "cookie": "^1.1.1"
+  }
 }

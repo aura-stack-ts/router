@@ -283,7 +283,7 @@ describe("createEndpoint", () => {
                 {
                     middlewares: [
                         (ctx) => {
-                            ctx.headers.set("Authorization", "Bearer token")
+                            ctx.headers.setHeader("Authorization", "Bearer token")
                             return ctx
                         },
                     ],

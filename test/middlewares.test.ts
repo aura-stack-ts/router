@@ -1,5 +1,6 @@
 import z from "zod"
 import { describe, expect, test } from "vitest"
+import { HeadersBuilder } from "../src/headers.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "../src/middlewares.js"
 import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "../src/types.js"
 
@@ -84,20 +85,20 @@ describe("executeMiddlewares", () => {
         const middlewares: MiddlewareFunction[] = [
             async (ctx) => {
                 ctx.searchParams.set("code", "123abc")
-                ctx.headers.set("Content-Type", "application/json")
+                ctx.headers.setHeader("Content-Type", "application/json")
                 return ctx
             },
         ]
         const ctx = await executeMiddlewares(
             {
                 searchParams: new URL("https://example.com").searchParams,
-                headers: new Headers(),
+                headers: new HeadersBuilder(),
                 request: new Request("https://example.com"),
             } as RequestContext,
             middlewares
         )
         expect(ctx.searchParams.get("code")).toBe("123abc")
-        expect(ctx.headers.get("Content-Type")).toBe("application/json")
+        expect(ctx.headers.getHeader("Content-Type")).toBe("application/json")
     })
 
     test.concurrent("Two middlewares with searchParams and headers context", async ({ expect }) => {
@@ -109,21 +110,21 @@ describe("executeMiddlewares", () => {
             },
             async (ctx) => {
                 ctx.searchParams.set("state", "abc")
-                ctx.headers.set("Authorization", "Bearer token")
+                ctx.headers.setHeader("Authorization", "Bearer token")
                 return ctx
             },
         ]
         const ctx = await executeMiddlewares(
             {
                 searchParams: new URL("https://example.com").searchParams,
-                headers: new Headers(),
+                headers: new HeadersBuilder(),
                 request: new Request("https://example.com"),
             } as RequestContext,
             middlewares
         )
         expect(ctx.searchParams.get("code")).toBe("123abc")
         expect(ctx.searchParams.get("state")).toBe("abc")
-        expect(ctx.headers.get("Authorization")).toBe("Bearer token")
+        expect(ctx.headers.getHeader("Authorization")).toBe("Bearer token")
     })
 
     test.concurrent("Invalid middleware", async ({ expect }) => {
@@ -132,7 +133,7 @@ describe("executeMiddlewares", () => {
             executeMiddlewares(
                 {
                     searchParams: new URL("https://example.com").searchParams,
-                    headers: new Headers(),
+                    headers: new HeadersBuilder(),
                     request: new Request("https://example.com"),
                 } as RequestContext,
                 middlewares
@@ -143,12 +144,12 @@ describe("executeMiddlewares", () => {
     test.concurrent("No middleware", async ({ expect }) => {
         const ctx = await executeMiddlewares({
             searchParams: new URL("https://example.com").searchParams,
-            headers: new Headers(),
+            headers: new HeadersBuilder(),
             request: new Request("https://example.com"),
         } as RequestContext)
         expect(ctx.searchParams.get("code")).toBe(null)
         expect(ctx.searchParams.get("state")).toBe(null)
-        expect(ctx.headers.get("Content-Type")).toBe(null)
+        expect(ctx.headers.getHeader("Content-Type")).toBe(null)
     })
 
     test.concurrent("Middleware with schema", async ({ expect }) => {
@@ -167,7 +168,7 @@ describe("executeMiddlewares", () => {
 
         const ctx = await executeMiddlewares(
             {
-                headers: new Headers(),
+                headers: new HeadersBuilder(),
                 searchParams: {
                     code: "123abc",
                     state: "xyz",

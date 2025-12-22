@@ -1,7 +1,8 @@
 import { z } from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
 import { createNode, insert, search } from "../src/router.js"
-import { getRouteParams, getSearchParams, getHeaders, getBody } from "../src/context.js"
+import { getRouteParams, getSearchParams, getBody } from "../src/context.js"
+import { HeadersBuilder } from "../src/headers.js"
 import type { RouteEndpoint } from "../src/types.js"
 
 describe("getRouteParams", () => {
@@ -411,19 +412,19 @@ describe("getSearchParams", () => {
     })
 })
 
-describe("getHeaders", () => {
+describe("HeadersBuilder", () => {
     const testCases = [
         {
             description: "No headers",
             request: new Request("http://example.com"),
-            expected: new Headers({}),
+            expected: new HeadersBuilder({}),
         },
         {
             description: "Single header",
             request: new Request("http://example.com", {
                 headers: { Authorization: "Bearer token" },
             }),
-            expected: new Headers({ Authorization: "Bearer token" }),
+            expected: new HeadersBuilder({ Authorization: "Bearer token" }),
         },
         {
             description: "Multiple headers",
@@ -433,7 +434,7 @@ describe("getHeaders", () => {
                     Accept: "application/json",
                 },
             }),
-            expected: new Headers({
+            expected: new HeadersBuilder({
                 "Content-Type": "application/json",
                 Accept: "application/json",
             }),
@@ -441,10 +442,10 @@ describe("getHeaders", () => {
     ]
     for (const { description, request, expected } of testCases) {
         test.concurrent(description, ({ expect }) => {
-            const headers = getHeaders(request)
-            expect(headers instanceof Headers).toBe(true)
+            const headers = new HeadersBuilder(request.headers)
+            expect(headers instanceof HeadersBuilder).toBe(true)
             expect(headers).toBeDefined()
-            expect(headers).toBeInstanceOf(Headers)
+            expect(headers).toBeInstanceOf(HeadersBuilder)
             expect(headers).toEqual(expected)
         })
     }
