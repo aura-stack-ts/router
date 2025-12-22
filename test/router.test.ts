@@ -94,7 +94,7 @@ describe("createRouter", () => {
                 })
             )
             expect(get.status).toBe(422)
-            expect(await get.json()).toEqual({ message: "Invalid search parameters" })
+            expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
         })
 
         test("Sign-in handler with missing route param", async () => {
@@ -169,7 +169,7 @@ describe("createRouter", () => {
                     }),
                 })
             )
-            expect(await post.json()).toEqual({ message: "Invalid request body" })
+            expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
             expect(post.status).toBe(422)
         })
     })

@@ -116,7 +116,7 @@ describe("createEndpoint", () => {
                     })
                 )
                 expect(post.status).toBe(422)
-                expect(await post.json()).toEqual({ message: "Invalid request body" })
+                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
                 expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
             })
         })
@@ -150,7 +150,7 @@ describe("createEndpoint", () => {
 
             test("With invalid searchParams", async ({ expect }) => {
                 const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                expect(await get.json()).toEqual({ message: "Invalid search parameters" })
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
                 expect(get.status).toBe(422)
                 expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
             })
@@ -204,7 +204,7 @@ describe("createEndpoint", () => {
                 const get = await GET(new Request("https://example.com/signIn/facebook"))
                 expect(get.status).toBe(422)
                 expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toEqual({ message: "Invalid route parameters" })
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
             })
 
             test("With inferred params", async ({ expect }) => {
@@ -217,7 +217,7 @@ describe("createEndpoint", () => {
                 const get = await GET(new Request("https://example.com/type/invalid"))
                 expect(get.status).toBe(422)
                 expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toEqual({ message: "Invalid route parameters" })
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
             })
         })
     })
