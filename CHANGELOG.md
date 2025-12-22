@@ -11,6 +11,20 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ---
 
+## [0.5.0] - 2025-12-22
+
+### Added
+
+- Added `HeadersBuilder` class for HTTP headers management with methods for common operations: `setHeader`, `getHeader`, `setCookie`, `getCookie`, and `getSetCookie`. Exposed via `/headers` entry point. [#26](https://github.com/aura-stack-ts/router/pull/26).
+
+- Added cookie package via `/cookie` entry point for direct cookie management using the [cookie package](https://www.npmjs.com/package/cookie). [#26](https://github.com/aura-stack-ts/router/pull/26).
+
+### Changed
+
+- Updated the default error message for failed Zod schema validation in `searchParams`, `params`, and `body` context values. Now returns a detailed object with `message`, `error`, and `details` fields. [#25](https://github.com/aura-stack-ts/router/pull/25).
+
+---
+
 ## [0.4.0] - 2025-12-09
 
 ### Added
