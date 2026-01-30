@@ -1,6 +1,7 @@
 import { RouterError } from "./error.js"
 import { isSupportedMethod, isValidHandler, isValidRoute } from "./assert.js"
 import type { EndpointConfig, EndpointSchemas, HTTPMethod, RouteEndpoint, RouteHandler, RoutePattern } from "./types.js"
+import { ZodObject } from "zod"
 
 /**
  * Defines an API endpoint for the router by specifying the HTTP method, route pattern,
@@ -26,8 +27,8 @@ export const createEndpoint = <
     method: Method,
     route: Route,
     handler: RouteHandler<Route, { schemas: Schemas }>,
-    config: EndpointConfig<Route, Schemas> = {}
-): RouteEndpoint<Method, Route, {}> => {
+    config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<Route, Schemas>
+): RouteEndpoint<Method, Route, { schemas?: Schemas }> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
     }

@@ -74,9 +74,15 @@
       "import": "./dist/cookie.js",
       "require": "./dist/cookie.cjs"
     },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
     "./types": "./dist/types.d.ts"
   },
   "devDependencies": {
+    "@types/node": "24.6.2",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",

@@ -3,7 +3,7 @@ import { HeadersBuilder } from "./headers.js"
 import { getBody, getRouteParams, getSearchParams } from "./context.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
 import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
-import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig } from "./types.js"
+import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.js"
 
 interface TrieNode {
     statics: Map<string, TrieNode>
@@ -149,7 +149,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
 export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     endpoints: Endpoints,
     config: RouterConfig = {}
-): GetHttpHandlers<Endpoints> => {
+): Router<Endpoints> => {
     const root = createNode()
     const server = {} as GetHttpHandlers<Endpoints>
     const methods = new Set<HTTPMethod>()

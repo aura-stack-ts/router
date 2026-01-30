@@ -1,6 +1,7 @@
 import { type ZodObject, z } from "zod"
 import { RouterError } from "./error.js"
 import { HeadersBuilder } from "./headers.js"
+import { type IncomingHttpHeaders } from "http"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -235,4 +236,77 @@ export interface RouterConfig extends GlobalCtx {
      * }
      */
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
+}
+
+/**
+ * @experimental
+ */
+export type ExtractEndpoint<T> = T extends RouteEndpoint<infer M, infer P, infer C> ? { method: M; path: P; config: C } : never
+
+/**
+ * @experimental
+ */
+export type RoutesByMethod<Defs extends readonly RouteEndpoint[], Met extends HTTPMethod> =
+    ExtractEndpoint<Defs[number]> extends infer E ? (E extends { method: Met; path: infer P } ? P : never) : never
+
+export type ExtractRoutesByMethod<Defs extends RouteEndpoint[], Met extends HTTPMethod> = Defs extends unknown[]
+    ? Defs extends [infer First, ...infer Rest]
+        ? First extends RouteEndpoint<infer M, infer R>
+            ? M extends Met
+                ? R | ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
+                : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
+            : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
+        : never
+    : false
+
+export type InferZod<T> = T extends z.ZodTypeAny ? z.infer<T> : T
+
+export type ToInferZod<T> = {
+    [K in keyof T]: InferZod<T[K]>
+}
+
+export type RemoveUndefined<T> = {
+    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
+}
+
+export type Find<Defs extends RouteEndpoint[], Met extends HTTPMethod, Path extends string> = Defs extends unknown[]
+    ? Defs extends [infer First, ...infer Rest]
+        ? First extends RouteEndpoint<infer M, infer R, infer C>
+            ? M extends Met
+                ? R extends Path
+                    ? RemoveUndefined<ToInferZod<NonNullable<C["schemas"]>>>
+                    : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
+                : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
+            : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
+        : never
+    : never
+
+export type Client<Defs extends RouteEndpoint[]> = {
+    [M in InferMethod<Defs> as Lowercase<M>]: <T extends ExtractRoutesByMethod<Defs, M>, Config extends Find<Defs, M, T>>(
+        ...args: Config extends EndpointSchemas
+            ? [path: T, ctx?: RequestInit]
+            : [path: T, ctx: Prettify<Omit<RequestInit, "body"> & Config>]
+    ) => Promise<Response>
+}
+
+declare const endpointsSymbol: unique symbol
+
+export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoints> & {
+    readonly [endpointsSymbol]?: Endpoints
+}
+
+export type InferEndpoints<T> = T extends Router<infer E> ? E : never
+
+export interface ClientOptions {
+    /**
+     * Base URL for the router client to make requests to the server.
+     * This is useful when the server is hosted on a different origin.
+     *
+     * baseURL: "https://api.example.com"
+     */
+    baseURL: string
+    /**
+     * Default headers to include in every request made by the client.
+     */
+    headers?: IncomingHttpHeaders
 }
