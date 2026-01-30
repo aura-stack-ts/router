@@ -295,8 +295,10 @@ export type Client<Defs extends RouteEndpoint[]> = {
     ) => Promise<Response>
 }
 
-export type Router<Endpoints extends RouteEndpoint[]> = {
-    handlers: GetHttpHandlers<Endpoints>,
+declare const endpointsSymbol: unique symbol
+
+export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoints> & {
+    readonly [endpointsSymbol]?: Endpoints
 }
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never

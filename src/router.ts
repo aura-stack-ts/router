@@ -3,16 +3,8 @@ import { HeadersBuilder } from "./headers.js"
 import { getBody, getRouteParams, getSearchParams } from "./context.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
 import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
-import type {
-    GetHttpHandlers,
-    GlobalContext,
-    HTTPMethod,
-    RouteEndpoint,
-    RoutePattern,
-    RouterConfig,
-    Client,
-    Router,
-} from "./types.js"
+import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.js"
+
 interface TrieNode {
     statics: Map<string, TrieNode>
     param?: { name: string; node: TrieNode }
@@ -169,7 +161,5 @@ export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, root)
     }
-    return {
-        handlers: server,
-    }
+    return server
 }
