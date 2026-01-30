@@ -24,7 +24,9 @@ export default defineConfig({
                 dark: "github-dark",
             },
             transformers: [
+                // @ts-expect-error - upgraded dependencies to patch vulnerabilities and have introduced type mismatches
                 ...(rehypeCodeDefaultOptions.transformers ?? []),
+                // @ts-expect-error - upgraded dependencies to patch vulnerabilities and have introduced type mismatches
                 transformerTwoslash({
                     typesCache: createFileSystemTypesCache(),
                 }),
