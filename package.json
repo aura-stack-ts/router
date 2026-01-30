@@ -84,13 +84,21 @@
   "devDependencies": {
     "@types/node": "24.6.2",
     "prettier": "^3.6.2",
-    "tsup": "^8.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.18",
     "zod": "^4.1.11"
   },
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
     "cookie": "^1.1.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "^7.5.7",
+      "mdast-util-to-hast": "^13.2.1",
+      "vite": "^7.1.11",
+      "glob": "^10.5.0"
+    }
   }
 }
