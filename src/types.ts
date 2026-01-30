@@ -306,6 +306,10 @@ export interface ClientOptions {
      */
     baseURL: string
     /**
+     * Optional base path to prepend to all request paths made by the client.
+     */
+    basePath?: RoutePattern
+    /**
      * Default headers to include in every request made by the client.
      */
     headers?: IncomingHttpHeaders
