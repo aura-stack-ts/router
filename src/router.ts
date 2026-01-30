@@ -3,9 +3,16 @@ import { HeadersBuilder } from "./headers.js"
 import { getBody, getRouteParams, getSearchParams } from "./context.js"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
 import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
-import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Client } from "./types.js"
-import { createClientHandler } from "./client.js"
-
+import type {
+    GetHttpHandlers,
+    GlobalContext,
+    HTTPMethod,
+    RouteEndpoint,
+    RoutePattern,
+    RouterConfig,
+    Client,
+    Router,
+} from "./types.js"
 interface TrieNode {
     statics: Map<string, TrieNode>
     param?: { name: string; node: TrieNode }
@@ -150,9 +157,8 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
 export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     endpoints: Endpoints,
     config: RouterConfig = {}
-): { handlers: GetHttpHandlers<Endpoints>; client: Client<Endpoints> } => {
+): Router<Endpoints> => {
     const root = createNode()
-    const client = {} as Client<Endpoints>
     const server = {} as GetHttpHandlers<Endpoints>
     const methods = new Set<HTTPMethod>()
     for (const endpoint of endpoints) {
@@ -162,13 +168,8 @@ export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     }
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, root)
-        client[method.toLowerCase() as keyof typeof client] = createClientHandler(
-            method,
-            config
-        ) as Client<Endpoints>[keyof Client<Endpoints>]
     }
     return {
         handlers: server,
-        client,
     }
 }

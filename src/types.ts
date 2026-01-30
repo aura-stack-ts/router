@@ -293,3 +293,9 @@ export type Client<Defs extends RouteEndpoint[]> = {
         ...args: Config extends EndpointSchemas ? [path: T, ctx?: RequestInit] : [path: T, ctx: RequestInit & Config]
     ) => Promise<Response>
 }
+
+export type Router<Endpoints extends RouteEndpoint[]> = {
+    handlers: GetHttpHandlers<Endpoints>
+}
+
+export type InferEndpoints<T> = T extends Router<infer E> ? E : never
