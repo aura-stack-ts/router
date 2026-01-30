@@ -27,7 +27,7 @@ export default defineConfig({
                 ...(rehypeCodeDefaultOptions.transformers ?? []),
                 transformerTwoslash({
                     typesCache: createFileSystemTypesCache(),
-                }),
+                }) as any, // upgraded dependencies to patch vulnerabilities and have introduced type mismatches,
             ],
         },
     },
