@@ -74,6 +74,11 @@
       "import": "./dist/cookie.js",
       "require": "./dist/cookie.cjs"
     },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
     "./types": "./dist/types.d.ts"
   },
   "devDependencies": {
