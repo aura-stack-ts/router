@@ -293,7 +293,7 @@ export type Client<Defs extends RouteEndpoint[]> = {
     [M in InferMethod<Defs> as Lowercase<M>]: <T extends ExtractRoutesByMethod<Defs, M>, Config extends Find<Defs, M, T>>(
         ...args: Config extends EndpointSchemas
             ? [path: T, ctx?: RequestInit]
-            : [path: T, ctx: Omit<RequestInit, "body"> & Config]
+            : [path: T, ctx: Prettify<Omit<RequestInit, "body"> & Config>]
     ) => Promise<Response>
 }
 

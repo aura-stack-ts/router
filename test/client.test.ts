@@ -57,9 +57,11 @@ describe("Client", () => {
 
     test("POST request with search parameters", async () => {
         await client.post("/users", {
-            body: {
-                name: "Jane Doe",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
             },
+            // @ts-expect-error @todo: add support for different body types
+            body: new URLSearchParams({ name: "Jane Doe" }),
         })
     })
 
