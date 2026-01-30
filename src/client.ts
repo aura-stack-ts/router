@@ -1,5 +1,21 @@
 import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "./types.js"
 
+/**
+ * Creates a client API for making requests to the specified router. It provides type-safe methods
+ * based on the router's endpoints.
+ *
+ * @param options - Configuration options for the client, including baseURL and default headers.
+ * @returns A client object with methods corresponding to HTTP methods (GET, POST, etc.).
+ * @example
+ * import { createClient } from "aura-stack/router/client";
+ * import { appRouter } from "./server";
+ *
+ * const client = createClient<typeof appRouter>({
+ *   baseURL: "http://localhost:3000/api",
+ * })
+ *
+ * client.get("/users")
+ */
 export function createClient<InferRouter extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>> {
     const { baseURL, headers: defaultHeaders } = options
     return new Proxy(

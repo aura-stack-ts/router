@@ -236,14 +236,6 @@ export interface RouterConfig extends GlobalCtx {
      * }
      */
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
-    /**
-     * Base URL for the router client to make requests to the server.
-     * This is useful when the server is hosted on a different origin.
-     *
-     * @example
-     * baseURL: "https://api.example.com"
-     */
-    baseURL?: string
 }
 
 /**
@@ -306,6 +298,15 @@ export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoint
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
 
 export interface ClientOptions {
+    /**
+     * Base URL for the router client to make requests to the server.
+     * This is useful when the server is hosted on a different origin.
+     *
+     * baseURL: "https://api.example.com"
+     */
     baseURL: string
+    /**
+     * Default headers to include in every request made by the client.
+     */
     headers?: IncomingHttpHeaders
 }
