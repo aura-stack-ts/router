@@ -96,12 +96,12 @@ describe("Client", () => {
     })
 
     test("createClient headers merging", async () => {
-        const customClient = createClient<typeof router>({
+        const client = createClient<typeof router>({
             baseURL: "http://api.example.com",
             headers: { "X-API-KEY": "secret" },
         })
 
-        await customClient.get("/users", {
+        await client.get("/users", {
             headers: { "X-Custom": "val" },
         })
 
@@ -114,5 +114,16 @@ describe("Client", () => {
                 }),
             })
         )
+    })
+
+    test("createClient with basePath", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            basePath: "/v1",
+        })
+
+        await client.get("/users")
+
+        expect(fetch).toHaveBeenCalledWith("http://api.example.com/v1/users", expect.objectContaining({}))
     })
 })
