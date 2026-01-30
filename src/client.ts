@@ -8,17 +8,22 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
             get(_, prop) {
                 const method = prop.toString().toUpperCase() as HTTPMethod
                 return async (path: string, ctx?: any) => {
-                    const searchParams = new URLSearchParams({ ...ctx?.searchParams })
+                    const searchParams = new URLSearchParams(ctx?.searchParams)
+                    let interpolatedPath = path
                     for (const [key, value] of Object.entries(ctx?.params ?? {})) {
-                        path = path.replace(`:${key}`, String(value))
+                        interpolatedPath = interpolatedPath.replace(`:${key}`, String(value))
                     }
-                    const url = new URL(path, baseURL)
-                    url.searchParams.append(searchParams.toString(), "")
+
+                    const url = new URL(interpolatedPath, baseURL)
+                    if (searchParams.size > 0) {
+                        url.search = searchParams.toString()
+                    }
+
+                    const { params: _p, searchParams: _s, ...requestInit } = ctx ?? {}
                     const response = await fetch(url.toString(), {
-                        ...ctx,
+                        ...requestInit,
                         method,
                         headers: {
-                            ...(ctx?.body && !(ctx.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
                             ...defaultHeaders,
                             ...ctx?.headers,
                         },
