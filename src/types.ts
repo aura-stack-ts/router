@@ -1,6 +1,7 @@
 import { type ZodObject, z } from "zod"
 import { RouterError } from "./error.js"
 import { HeadersBuilder } from "./headers.js"
+import { type IncomingHttpHeaders } from "http"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -295,7 +296,12 @@ export type Client<Defs extends RouteEndpoint[]> = {
 }
 
 export type Router<Endpoints extends RouteEndpoint[]> = {
-    handlers: GetHttpHandlers<Endpoints>
+    handlers: GetHttpHandlers<Endpoints>,
 }
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
+
+export interface ClientOptions {
+    baseURL: string
+    headers?: IncomingHttpHeaders
+}
