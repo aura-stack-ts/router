@@ -25,12 +25,12 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
                 const method = prop.toString().toUpperCase() as HTTPMethod
                 return async (path: string, ctx?: any) => {
                     const searchParams = new URLSearchParams(ctx?.searchParams)
-                    let interpolatedPath = path
+                    let resolvedPath = `${options.basePath ?? ""}${path}`
                     for (const [key, value] of Object.entries(ctx?.params ?? {})) {
-                        interpolatedPath = interpolatedPath.replace(`:${key}`, String(value))
+                        resolvedPath = resolvedPath.replace(`:${key}`, String(value))
                     }
 
-                    const url = new URL(interpolatedPath, baseURL)
+                    const url = new URL(resolvedPath, baseURL)
                     if (searchParams.size > 0) {
                         url.search = searchParams.toString()
                     }
