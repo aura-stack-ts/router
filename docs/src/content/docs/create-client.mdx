@@ -1,0 +1,211 @@
+---
+title: createClient
+description: Client API to access to the endpoints defined in the router
+---
+
+## `createClient`
+
+`createClient` is a declarative client API to call the endpoint definitions set in the `createRouter` function. The API provides type-safe access to HTTP methods, Route Definitions, and Zod Validations to provide inference for the required values to be passed.
+
+<Callout>For a complete type-inference is required to pass as generic argument the type of the router.</Callout>
+
+```ts lineNumbers
+import { createClient } from "@aura-stack/router/client"
+import { router } from "@/index.ts"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+})
+```
+
+---
+
+## What you'll learn
+
+Through this api reference documentation you are going to learn and understand from the basic to advanced about the `createClient` API Reference:
+
+- [Good to Know](#good-to-know)
+- [Type Inference](#type-inference)
+- [API Reference](#api-reference)
+  - [Parameters](#parameters)
+  - [Returns](#returns)
+
+---
+
+## Good to Know
+
+- `createClient` only provides type inference based on the router type passed as first generic argument. Otherwise the function couldn't infer the API.
+- The type-inference includes the endpoint paths, http methods and values parsed by zod.
+
+---
+
+## Type Inference
+
+The only way to add type-safe and type-inference to the client API is provide the router type.
+
+> The client API can be added from the main entry point `/` or `/client`.
+
+---
+
+## API Reference
+
+### Parameters
+
+Set of parameters accepted by the client API to configure it.
+
+```ts lineNumbers
+import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "@aura-stack/router/types"
+
+function createClient<InferRoute extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>>
+```
+
+| Parameter  | Type                  | Description                                                         |
+| ---------- | --------------------- | ------------------------------------------------------------------- |
+| `baseURL`  | `string`              | Base url of the router to make requests.                            |
+| `basePath` | `/${string}`          | Base path to be added to all request.                               |
+| `headers`  | `IncomingHttpHeaders` | Default headers to be included in every request made by the client. |
+
+#### `baseURL`
+
+The base URL for the client to make request to the server or router. This is useful when the server is hosted/mounted on a different origin as the client API.
+
+<Callout type="warning">
+  The `baseURL` option only accepts the origin protocol and origin. It doesn't accept an extra path. It's ignored. For adding an
+  extra path, use the `basePath` configuration option instead.
+</Callout>
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+})
+```
+
+#### `basePath`
+
+The optional base path to be added to all request paths made by the client.
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+  basePath: "/api/v1",
+})
+```
+
+#### `headers`
+
+Default headers to be attached to all requests made by the client. These headers will be merged with those defined by a specific client call.
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+  headers: {
+    accept: "application/json",
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    pragma: "no-cache",
+  },
+})
+```
+
+### Returns
+
+The `createClient` function API returns a typed object that contains only the HTTP methods defined by the endpoints in the router and with a second argument that contains the required fields defined by the zod schemas. This ensures that developers can only access valid handler methods and prevents runtime errors by leveraging TypeScript's static type system.
+
+| Return | Type                                  | Description                                                                                         |
+| ------ | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| client | `Client<InferEndpoints<InferRouter>>` | Generates an object containing only the HTTP methods defined in the endpoints by the passed router. |
+
+<Callout>
+  This return type ensures full type-safety. If an endpoint does not define a `DELETE` method, TypeScript will prevent you from
+  accessing `DELETE` on the router.
+</Callout>
+
+#### `client`
+
+The client API returns an object containing only the HTTP methods defined in the endpoints in the router. It provides complete type-safety for the client object.
+
+- Type-Safe Access to Handlers: If your router doesn't define a DELETE route, TypeScript will not allow access to it.
+- Type-safety for the endpoint routes defined per the HTTP methods loaded by the router.
+- Type-safety of the values expected by the endpoint, including zod schemas and dynamic parameters.
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+import { router } from "@/index.ts"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+})
+
+// GET/ request to /users
+client.get("/users")
+
+// GET/ request to /users/:userId
+client.get("/users/:userId", {
+  params: {
+    userId: 1,
+  },
+})
+```
+
+---
+
+## Usage
+
+### Basic Usage
+
+```ts lineNumbers title="@/client"
+import { router } from "@/index"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+})
+
+// GET/ request to http://localhost:3000/users
+client.get("/users")
+```
+
+### With `basePath`
+
+```ts lineNumbers title="@/client"
+import { router } from "@/index"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+  basePath: "/api/v1",
+})
+
+// GET/ request to http://localhost:3000/api/v1/users
+client.get("/users")
+```
+
+### With `headers`
+
+```ts lineNumbers title="@/client"
+import { router } from "@/index"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+  headers: {
+    accept: "application/json",
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    pragma: "no-cache",
+  },
+})
+
+// GET/ request to http://localhost:3000/users
+// Accept: application/json
+// Content-Type: application/json
+// Cache-Control: no-store
+// Pragma: no-cache
+client.get("/users")
+```

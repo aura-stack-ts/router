@@ -20,6 +20,9 @@ Through this quick start guide you are going to learn and understand the basics 
 - [Installation](#installation)
 - [Endpoint Definitions](#endpoints)
 - [Router](#router)
+  - [Creating a Router](#creating-a-router)
+  - [Router Configuration](#router-configuration)
+- [Client API](#client-api)
 
 ## Getting Started
 
@@ -58,7 +61,7 @@ Use `createEndpoint` to define an endpoint. It requires three arguments:
 - [`Route`](/docs/create-endpoint#route): The route pattern.
 - [`Route Handler`](/docs/create-endpoint#route-handler): The function that executes when the route is matched.
 
-```ts lineNumbers title="@/users.ts"
+```ts lineNumbers title="@/api/users.ts"
 import { createEndpoint } from "@aura-stack/router"
 
 const getUsers = createEndpoint("GET", "/users", async (ctx) => {
@@ -83,9 +86,9 @@ Routers group multiple endpoints and generate type-safe HTTP handlers for your r
 
 Use `createRouter` to combine endpoint definitions:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers])
 ```
@@ -94,35 +97,40 @@ export const router = createRouter([getUser, getUsers])
 
 <Step>
 
-## Router Configuration
+### Router Configuration
 
-### Base Path
+#### Base Path
 
 Add a prefix to all routes in the router using `basePath`:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
   basePath: "/api/v1",
 })
 ```
 
-### Global Middlewares
+#### Global Middlewares
 
 Use `middlewares` to register logic that should run before every endpoint:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
-  middlewares: [],
+  middlewares: [
+    (ctx) => {
+      console.log(`[debug]: ${ctx.request.url}`)
+      return ctx
+    },
+  ],
 })
 ```
 
-### Catching Errors
+#### Catching Errors
 
 Use `onError` to catch and customize unexpected errors:
 
@@ -130,9 +138,9 @@ Use `onError` to catch and customize unexpected errors:
 - Handler exceptions.
 - Middleware errors.
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
   onError: (error, request) => {
@@ -145,14 +153,39 @@ export const router = createRouter([getUser, getUsers], {
 
 <Step>
 
-## Get HTTP handlers
+### HTTP handlers
 
-Once your router is defined, you can export the generated handlers for use in any Fetch-compatible runtime:
+Once your router is defined, you can export the generated handlers for use in web standard for `Response` and `Request` web APIs:
 
-```ts lineNumbers title="@/main.ts"
-import { router } from "@/routes.ts"
+The HTTP Handlers exports the methods based on the methods defined in the endpoints passed to the router in [Endpoint Defintions](#creating-endpoints).
+
+```ts lineNumbers title="@/handlers.ts"
+import { router } from "@/index.ts"
 
 export const { GET } = router
+```
+
+</Step>
+
+<Step>
+
+## Client API
+
+It's provided a client API that provide type-safety to access to the endpoints defined via `createRouter` function.
+
+```ts lineNumbers title="@/main.ts"
+import { createClient } from "@aura-stack/router/client"
+import { router } from "@/router.ts"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+})
+
+await client.get("/users/:userId", {
+  params: {
+    userId: 1,
+  },
+})
 ```
 
 </Step>

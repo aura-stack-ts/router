@@ -63,13 +63,6 @@ This ensures fully typed access to:
 - `ctx.searchParams`
 - `ctx.body`
 
-> The types can be accessed from the main entry points `/` or `/types`. Available types:
-
-- `RequestContext`.
-- `ContextParams`.
-- `ContextSearchParams`.
-- `ContextBody`.
-
 ---
 
 ## Installation
@@ -77,14 +70,14 @@ This ensures fully typed access to:
 To enable schema validation, install `Zod`:
 
 ```npm
-npm install zod
+npm install @aura-stack/router zod
 ```
 
 ---
 
 ## Schema Validations
 
-Schema validations can be passed directly to an endpoint or using `createEndpointConfig`
+Schema validations can be passed directly to an endpoint or using `createEndpointConfig` function.
 
 ### Directly
 
@@ -109,6 +102,10 @@ export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx)
 ### Using `createEndpointConfig`
 
 Use `createEndpointConfig` and pass the config as the fourth argument.
+
+<Callout type="warning">
+  When the endpoint requires a dynamic parameter, as first argument should be write the route path.
+</Callout>
 
 ```ts lineNumbers
 import { zod } from "zod"
