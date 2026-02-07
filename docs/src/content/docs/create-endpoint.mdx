@@ -1,14 +1,14 @@
 ---
 title: createEndpoint
-description: Define type-safe API endpoints with automatic params inference, optional schema validation, and middleware support.
+description: Define type-safe API endpoints with automatic parameter inference, optional schema validation, and middleware support.
 ---
 
 # `createEndpoint`
 
-`createEndpoint` is a declarative API for defining type-safe, framework-agnostic endpoints with automatic parameter inference, optional schema validation, and built-in middleware support. It is the primary building block for defining routes in your application.
+The `createEndpoint` function is a declarative API for defining type-safe, framework-agnostic endpoints with automatic parameter inference, optional schema validation, and built-in middleware support. It serves as the primary building block for defining routes in an application.
 
 <Callout>
-  `createEndpoint` does not execute any real logic. It only defines endpoint metadata and provides strong type inference. At
+  `createEndpoint` does not execute any logic definition time. It defines endpoint metadata and provides strong type inference. At
   runtime, `createRouter` uses these definitions to perform route matching and execute handlers.
 </Callout>
 
@@ -29,44 +29,38 @@ const getSession = createEndpoint("GET", "/auth/session", async (ctx) => {
 
 ---
 
-## What you'll learn
+## Overview
 
-Through this api reference documentation you are going to learn and understand from basic to advanced about the `createEndpoint` API Reference:
+This documentation provides a comprehensive guide to the `createEndpoint` API, covering everything from basic usage to advanced type inference and request context.
 
-- [Good to know](#good-to-know)
-- [Type inference](#type-inference)
+- [Key Concepts](#key-concepts)
+- [Type Inference](#type-inference)
 - [API Reference](#api-reference)
   - [Parameters](#parameters)
   - [Request Context](#request-context)
   - [EndpointConfig](#endpoint-config)
-- [Usage examples](#usage)
+- [Usage Examples](#usage)
 
 ---
 
-## Good to know
+## Key Concepts
 
-- `createEndpoint` provides full type inference, including parameters, search params, request body, middleware output, and more — all derived from the endpoint definition.
+- `createEndpoint` provides full type inference, including parameters, search params, request body, middleware output, and more—all derived from the endpoint definition.
 - Configuration options can be passed directly or through the declarative [`createEndpointConfig`](/docs/create-endpoint-config) function.
 - `createEndpoint` validates all arguments at definition time:
-  - Ensures the HTTP method is valid; otherwise throws a `METHOD_NOT_ALLOWED` error.
-  - Ensures the route pattern is valid; otherwise throws a `BAD_REQUEST` error.
-  - Ensures a valid route handler is provided; otherwise throws a `BAD_REQUEST` error.
+  - Ensures the HTTP method is valid; otherwise, it throws a `METHOD_NOT_ALLOWED` error.
+  - Ensures the route pattern is valid; otherwise, it throws a `BAD_REQUEST` error.
+  - Ensures a valid route handler is provided; otherwise, it throws a `BAD_REQUEST` error.
 
 ---
 
 ## Type Inference
 
-`createEndpoint` provides full automatic type inference for all arguments and configuration options, no generics needed. You may still import explicit types if you prefer stricter definitions.
+`createEndpoint` provides full automatic type inference for all arguments and configuration options, eliminating the need for manual generics. Explicit types can still be imported if stricter definitions are preferred.
 
-> The types can be accessed from the main entry points `/` or `/types`. Available types:
+> Types can be accessed from the main entry points `/` or `/types`.
 
-- `HTTPMethod`
-- `RoutePattern`
-- `EndpointConfig`
-- `RouteHandler`
-- `GlobalContext`
-
-Example: Inferred handler types
+### Example: Inferred Handler Types
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -111,7 +105,7 @@ const signIn = createEndpoint(
 )
 ```
 
-Example: Using `createEndpointConfig` explicitly
+### Example: Using `createEndpointConfig` Explicitly
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -162,7 +156,7 @@ const signIn = createEndpoint(
 
 ### Parameters
 
-`createEndpoint` accepts a clear and structured set of parameters that define an endpoint’s method, route pattern, runtime handler, and configuration options.
+The `createEndpoint` function accepts a structured set of parameters that define an endpoint’s method, route pattern, runtime handler, and configuration options.
 
 ```ts lineNumbers
 import type { HTTPMethod, RoutePattern, EndpointConfig, RouteHandler } from "@aura-stack/router/types"
@@ -179,16 +173,16 @@ interface RouteEndpoint<
 }
 ```
 
-| Parameter | Type                                                                                                             | Description                                                                        |
-| --------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `method`  | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` \| `"DELETE"` \| `"HEAD"` \| `"CONNECT"` \| `"OPTIONS"` \| `"TRACE"` | The HTTP method used by the endpoint.                                              |
-| `route`   | `RoutePattern`                                                                                                   | The route definition, supporting static and dynamic segments (e.g., `/users/:id`). |
-| `handler` | `RouteHandler`                                                                                                   | Async function that processes the request and returns a `Response`                 |
-| `config`  | `EndpointConfig`                                                                                                 | Optional configuration for schemas and middlewares                                 |
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `method` | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` \| `"DELETE"` \| `"HEAD"` \| `"CONNECT"` \| `"OPTIONS"` \| `"TRACE"` | The HTTP method used by the endpoint. |
+| `route` | `RoutePattern` | The route definition, supporting static and dynamic segments (e.g., `/users/:id`). |
+| `handler` | `RouteHandler` | Async function that processes the request and returns a `Response` |
+| `config` | `EndpointConfig` | Optional configuration for schemas and middlewares |
 
-#### Method `HTTPMethod` [#http-method]
+#### `method` [#http-method]
 
-`method` is a required value in an endpoint definition. It specifies the HTTP method the endpoint responds to. All supported methods follow the [HTTP/1.1 RFC specification](https://datatracker.ietf.org/doc/html/rfc2616#section-9).
+The `method` is a required value in an endpoint definition. It specifies the HTTP method the endpoint responds to. All supported methods follow the [HTTP/1.1 RFC specification](https://datatracker.ietf.org/doc/html/rfc2616#section-9).
 
 ```ts lineNumbers
 import type { HTTPMethod } from "@aura-stack/router/types"
@@ -197,9 +191,9 @@ import type { HTTPMethod } from "@aura-stack/router/types"
 export type Methods = HTTPMethod
 ```
 
-#### Route `RoutePattern` [#route]
+#### `route` [#route]
 
-`route` is a required value in the endpoint definition. It defines the path pattern used for route matching, and it must always start with a leading slash.
+The `route` is a required value in the endpoint definition. It defines the path pattern used for route matching and must always start with a leading slash.
 
 ```ts lineNumbers
 import type { RoutePattern } from "@aura-stack/router/types"
@@ -208,17 +202,17 @@ import type { RoutePattern } from "@aura-stack/router/types"
 export type Route = RoutePattern
 ```
 
-<Callout>The `route` value must begin with a leading slash, e.g. `/users`, `/users/:id`, `/auth/signIn/`.</Callout>
+<Callout>The `route` value must begin with a leading slash, e.g., `/users`, `/users/:id`, `/auth/signIn/`.</Callout>
 
 ```ts lineNumbers
 import type { RoutePattern } from "@aura-stack/router/types"
 
-xport const route: RoutePattern = "/auth/signIn/:oauth"
+export const route: RoutePattern = "/auth/signIn/:oauth"
 ```
 
-#### Handler `RouteHandler` [#route-handler]
+#### `handler` [#route-handler]
 
-`handler` is a required property in every endpoint definition. It defines the logic that runs when an incoming request matches the endpoint’s route.
+The `handler` is a required property in every endpoint definition. It defines the logic that executes when an incoming request matches the endpoint’s route.
 
 ```ts lineNumbers
 import type { Prettify, RoutePattern, EndpointConfig, GetRouteParams } from "@aura-stack/router/types"
@@ -229,7 +223,7 @@ type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig> = (
 ) => Response | Promise<Response>
 ```
 
-`createEndpoint` automatically infers all generic types based on the provided route pattern and configuration. You never need to manually specify generics unless you explicitly want to.
+`createEndpoint` automatically infers all generic types based on the provided route pattern and configuration. Generics do not need to be manually specified unless explicitly required.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -253,9 +247,9 @@ export const endpoint = createEndpoint(
 )
 ```
 
-##### Explicit Context definition [!toc]
+##### Explicit Context Definition
 
-The `RouteHandler` type can also be used explicitly. This is useful if you want to manually annotate the expected `params`, `body`, or `searchParams` for advanced typing scenarios.
+The `RouteHandler` type can also be used explicitly. This is useful for manually annotating the expected `params`, `body`, or `searchParams` for advanced typing scenarios.
 
 ```ts lineNumbers
 import type { RouteHandler } from "@aura-stack/router/types"
@@ -274,42 +268,43 @@ const endpoint: RouteHandler<
 }
 ```
 
-##### Request Context `RequestContext` [#request-context]
+##### Request Context [#request-context]
 
-Every route handler receives a `RequestContext` object as the second argument. This context provides parsed, validated, and fully typed information derived from the request.
+Every route handler receives a `RequestContext` object as the argument. This context provides parsed, validated, and fully typed information derived from the request.
 
-To get the most out of type inference, define route parameters in the route path and provide Zod schemas in the endpoint config to validate and infer types for `params`, `body` and `searchParams`.
+To maximize type inference, define route parameters in the route path and provide Zod schemas in the endpoint config to validate and infer types for `params`, `body`, and `searchParams`.
 
 ```ts lineNumbers
-import type { EndpointConfig, ContextParams, ContextBody, ContextSearchParams, Headers } from "@aura-stack/router/types"
+import type { EndpointConfig, ContextParams, ContextBody, ContextSearchParams, HeadersBuilder } from "@aura-stack/router/types"
 
 interface RequestContext<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> {
-  headers: Headers
+  headers: HeadersBuilder
   params: ContextParams<Config["schemas"], RouteParams>["params"]
   body: ContextBody<Config["schemas"]>["body"]
   searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
+  request: Request
+  url: URL
+  method: HTTPMethod
+  route: RoutePattern
+  context: GlobalContext
 }
 ```
 
-| Option         | Type                                                     | Description                                                                                               |
-| -------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `request`      | `Request`                                                | Original Request.                                                                                         |
-| `url`          | `URL`                                                    | URL object of the incoming request.                                                                       |
-| `method`       | `HTTPMethod`                                             | The HTTP method defined in the endpoint.                                                                  |
-| `route`        | `RoutePattern`                                           | Complete route defined in the endpoint.                                                                   |
-| `context`      | `GlobalContext`                                          | Global context set on the `context` object in the router. For type safety the module should be augmented. |
-| `headers`      | `Headers`                                                | Headers from the incoming request.                                                                        |
-| `params`       | `ContextParams<Config<["schemas"]>>`                     | Dynamic route parameters inferred from the path or Zod definitions.                                       |
-| `body`         | `ContextBody<Config["schemas"]>["body"]`                 | Parsed and validated body based on the configured schema.                                                 |
-| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters from the request URL.                                               |
+| Option | Type | Description |
+| --- | --- | --- |
+| `request` | `Request` | Original Request object. |
+| `url` | `URL` | URL object of the incoming request. |
+| `method` | `HTTPMethod` | The HTTP method defined in the endpoint. |
+| `route` | `RoutePattern` | The complete route pattern defined in the endpoint. |
+| `context` | `GlobalContext` | Global context available via the router configuration. |
+| `headers` | `HeadersBuilder` | A utility for managing response headers and cookies. |
+| `params` | `ContextParams<Config<["schemas"]>>` | Dynamic route parameters inferred from path or Zod definitions. |
+| `body` | `ContextBody<Config["schemas"]>["body"]` | Parsed and validated body based on schema. |
+| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters. |
 
-###### Request `ctx.request` [#request]
+###### `ctx.request` [#original-request-context]
 
-`request` is present in the `RequestContext` object. It contains the original, unmodified `Request` object from the incoming HTTP request.
-
-```ts lineNumbers
-type RequestHandler = Request
-```
+The `request` property contains the original, unmodified `Request` object from the incoming HTTP request.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -320,11 +315,9 @@ const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
 })
 ```
 
-###### URL (`ctx.url`) [#url-context]
+###### `ctx.url` [#url-context]
 
-```ts lineNumbers
-type URLContext = URL
-```
+The `url` property provides the parsed `URL` object of the request.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -335,11 +328,9 @@ const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
 })
 ```
 
-###### Method (`ctx.method`) [#method-context]
+###### `ctx.method` [#method-context]
 
-```ts lineNumbers
-type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "HEAD" | "TRACE" | "CONNECT"
-```
+The `method` property indicates the HTTP method used for the request.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -354,11 +345,9 @@ const signIn = createEndpoint("POST", "/auth/signIn", async (ctx) => {
 })
 ```
 
-###### Route (`ctx.route`) [#route-context]
+###### `ctx.route` [#route-context]
 
-```ts lineNumbers
-type Route = `/${string}`
-```
+The `route` property holds the route pattern string defined for the endpoint.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -367,17 +356,15 @@ const deprecatedRoutes = new Set<string>(["/api/v1/users", "api/v1/books"])
 
 const getUsers = createEndpoint("GET", "/api/v1/users", async (ctx) => {
   if(deprecatedRoutes(ctx.route)) {
-    return Response.redirect("/api/v2/services/users)
+    return Response.redirect("/api/v2/services/users")
   }
   return Response.json({ message: "Successful" })
 })
 ```
 
-###### Context (`ctx.context`) [#global-context]
+###### `ctx.context` [#global-context]
 
-```ts lineNumbers
-interface GlobalContext {}
-```
+The `context` property provides access to the global context managed by the router.
 
 ```ts title="types.d.ts" lineNumbers
 import type { GlobalContext } from "@aura-stack/router"
@@ -401,39 +388,36 @@ const getUser = createEndpoint("GET", "/users/:userId", async (ctx) => {
 })
 ```
 
-###### Headers (`ctx.headers`) [#headers-context]
+###### `ctx.headers` [#headers-context]
 
-```ts lineNumbers
-type ContextHeaders = Headers
-```
+The `headers` property is an instance of `HeadersBuilder`, which simplifies managing response headers and cookies. It allows setting headers, reading/setting cookies, and retrieving header values.
 
-You can access and mutate headers using the standard `Headers` interface:
+**Methods:**
+
+| Method | Description |
+| --- | --- |
+| `setHeader(name, value)` | Sets a header value. |
+| `getHeader(name)` | Retrieves a header value. |
+| `setCookie(name, value, options)` | Sets a cookie with optional serialization options. |
+| `getCookie(name)` | Retrieves a specific cookie by name. |
+| `getSetCookie(name)` | Retrieves a specific `Set-Cookie` header value. |
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
 const protectedEndpoint = createEndpoint("GET", "/protected", async (ctx) => {
-  const authHeader = ctx.headers.get("authorization")
-  ctx.headers.set("x-processed-by", "api")
+  const authHeader = ctx.headers.getHeader("authorization")
+  
+  ctx.headers.setHeader("x-processed-by", "api")
+  ctx.headers.setCookie("session_id", "xyz123", { httpOnly: true, secure: true })
 
-  return Response.json({ authenticated: !!authHeader }, { headers: ctx.headers })
+  return Response.json({ authenticated: !!authHeader }, { headers: ctx.headers.toHeaders() })
 })
 ```
 
-###### Params Context (`ctx.params`) [#params-context]
+###### `ctx.params` [#params-context]
 
-```ts lineNumbers
-import { z, type ZodObject } from "zod"
-import type { EndpointConfig } from "@aura-stack/router/types"
-
-type ContextParams<Schemas extends EndpointConfig["schemas"], Default = Record<string, string>> = Schemas extends {
-  params: ZodObject
-}
-  ? { params: z.infer<Schemas["params"]> }
-  : { params: Default }
-```
-
-Dynamic segments from the route pattern are automatically extracted and typed:
+Dynamic segments from the route pattern are automatically extracted and typed.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -456,7 +440,7 @@ const getBookmark = createEndpoint("GET", "/users/:userId/books/:bookId", async 
 })
 ```
 
-With Zod schema (returns a fully typed object)
+With Zod schema (returns a fully typed object):
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -481,22 +465,11 @@ const getUser = createEndpoint(
 )
 ```
 
-###### Search Parameters (`ctx.searchParams`) [#search-params-context]
+###### `ctx.searchParams` [#search-params-context]
 
-```ts lineNumbers
-import { z, type ZodObject } from "zod"
-import type { EndpointConfig } from "@aura-stack/router/types"
+Query string parameters are accessible through `ctx.searchParams`.
 
-type ContextSearchParams<Schemas extends EndpointConfig["schemas"]> = Schemas extends { searchParams: ZodObject }
-  ? { searchParams: z.infer<Schemas["searchParams"]> }
-  : { searchParams: URLSearchParams }
-```
-
-Query string parameters are accessible through `ctx.searchParams`:
-
-**Without schema**
-
-Returns `URLSearchParams` (native browser API)
+**Without schema:** Returns `URLSearchParams` (native browser API).
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -509,9 +482,7 @@ const searchUsers = createEndpoint("GET", "/users/search", async (ctx) => {
 })
 ```
 
-**With Zod schema**
-
-Returns a fully typed object:
+**With Zod schema:** Returns a fully typed object.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -537,22 +508,11 @@ const searchUsers = createEndpoint(
 )
 ```
 
-###### Body Context (`ctx.body`) [#body-context]
+###### `ctx.body` [#body-context]
 
-```ts lineNumbers
-import { z, type ZodObject } from "zod"
-import type { EndpointConfig } from "@aura-stack/router/types"
+For `POST`, `PUT`, and `PATCH` requests, the body is parsed and available in the context.
 
-type ContextBody<Schemas extends EndpointConfig["schemas"]> = Schemas extends { body: ZodObject }
-  ? { body: z.infer<Schemas["body"]> }
-  : { body: undefined }
-```
-
-For `POST`, `PUT`, and `PATCH` requests, the body is parsed and available in the context:
-
-**Without schema**
-
-Type: `unknown`
+**Without schema:** Type is `unknown`.
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
@@ -563,9 +523,7 @@ const createPost = createEndpoint("POST", "/posts", async (ctx) => {
 })
 ```
 
-**With Zod schema**
-
-The returned value is fully typed.
+**With Zod schema:** The returned value is fully typed.
 
 ```ts lineNumbers
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
@@ -593,9 +551,9 @@ const createPost = createEndpoint(
 )
 ```
 
-#### Config `EndpointConfig` [#endpoint-config]
+#### Endpoint Configuration [#endpoint-config]
 
-The `config` argument allows you to attach Zod schemas and middlewares to an endpoint.
+The `config` argument allows defining optional Zod schemas and middlewares to an endpoint.
 
 ```ts lineNumbers
 import type { RoutePattern, EndpointSchemas, Prettify, MiddlewareFunction, GetRouteParams } from "@aura-stack/router/types"
@@ -609,14 +567,14 @@ type EndpointConfig<
 }>
 ```
 
-| Arguments     | Type              | Description                                                                                                                                           |
-| ------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RouteParams` | `RoutePattern`    | The route passed as the second argument to `createEndpoint`. Determines the dynamic parameters available in the route.                                |
-| `Schemas`     | `EndpointSchemas` | Collection of Zod schemas for validating and typing [`params`](#params-context), [`body`](#body-context) and [`searchParams`](#search-params-context) |
+| Arguments | Type | Description |
+| --- | --- | --- |
+| `RouteParams` | `RoutePattern` | The route passed as the second argument to `createEndpoint`. Determines the dynamic parameters available in the route. |
+| `Schemas` | `EndpointSchemas` | Collection of Zod schemas for validating and typing parameters. |
 
-##### Route Params `RoutePattern`
+##### Route Params
 
-`route` defines the endpoint path and determines the names of the dynamic parameters. These parameters are extracted and typed automatically.
+The `route` defines the endpoint path and determines the names of the dynamic parameters. These parameters are extracted and typed automatically.
 
 ```ts lineNumbers
 import type { GetRouteParams } from "@aura-stack/router/types"
@@ -625,15 +583,12 @@ import type { GetRouteParams } from "@aura-stack/router/types"
 type RouteParams = GetRouteParams<"/users/:userId/books/:bookId">
 ```
 
-##### Schemas `EndpointSchemas`
+##### Zod Schemas
 
-`schemas` is an optional configuration object that allows you to define Zod schemas to validate and type:
-
-For more detailed information about the endpont schemas see the:
-
-- Route parameters: #params-context
-- Query string parameters: #search-params-context
-- Request body: #body-context
+The `schemas` object allows defining Zod schemas to validate and type:
+- Route parameters: [#params-context](#params-context)
+- Query string parameters: [#search-params-context](#search-params-context)
+- Request body: [#body-context](#body-context)
 
 ```ts lineNumbers
 import type { ZodObject } from "zod"
@@ -656,7 +611,7 @@ The fourth parameter of `createEndpoint` accepts an optional configuration objec
 ```ts lineNumbers
 import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
 
-export const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (_, ctx) => {
+export const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) => {
   const { oauth } = ctx.params
   return Response.redirect("https://service.com/authorization", { status: 302 })
 })
@@ -673,7 +628,7 @@ const getProfile = createEndpoint(
   "GET",
   "/profile",
   async (ctx) => {
-    const userId = ctx.headers.get("x-user-id")
+    const userId = ctx.headers.getHeader("x-user-id")
     return Response.json({ userId })
   },
   {
@@ -687,7 +642,7 @@ const getProfile = createEndpoint(
         }
 
         // Attach user information
-        ctx.headers.set("x-user-id", "user-123")
+        ctx.headers.setHeader("x-user-id", "user-123")
         return ctx
       },
     ],
@@ -697,7 +652,7 @@ const getProfile = createEndpoint(
 
 ### With `multiple middlewares`
 
-You can chain several middlewares to compose complex request logic:
+Several middlewares can be chained to compose complex request logic:
 
 ```ts lineNumbers
 const config = createEndpointConfig({
@@ -711,13 +666,13 @@ const config = createEndpointConfig({
     // Rate limiting
     async (ctx) => {
       // Rate limit logic
-      ctx.headers.set("x-rate-limit", "100")
+      ctx.headers.setHeader("x-rate-limit", "100")
       return ctx
     },
 
     // Authentication
     async (ctx) => {
-      const token = ctx.headers.get("authorization")
+      const token = ctx.headers.getHeader("authorization")
       if (!token) throw new Error("Unauthorized")
       return ctx
     },
@@ -749,7 +704,7 @@ const endpoint = createEndpoint("POST", "/users", handler, config)
 
 #### Overload 2: Route + Config
 
-When you pass the route pattern as the first argument to `createEndpointConfig`, the dynamic route parameters become fully typed inside your middlewares. This provides better type inference and avoids manually defining generics.
+When the route pattern is passed as the first argument to `createEndpointConfig`, the dynamic route parameters become fully typed inside middlewares. This provides better type inference and avoids manually defining generics.
 
 ```ts lineNumbers
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"

@@ -1,19 +1,19 @@
 ---
 title: Zod Schemas
-description: Learn how to add type-safe validations to your endpoints using Zod.
+description: Learn how to add type-safe validations to an endpoint using Zod.
 ---
 
 # Zod Schemas
 
-Schema validations are an optional configuration in `createEndpoint` and `createEndpointConfig`. They allow you to apply **Zod-based validations** to `params`, `searchParams`, and `body`, providing full type-safety for your endpoint's request context.
+Schema validations are an optional configuration in `createEndpoint` and `createEndpointConfig`. They enable **Zod-based validations** for `params`, `searchParams`, and `body`, ensuring full type safety for the endpoint's request context.
 
 ```ts lineNumbers
-import { zod } from "zod"
+import { z } from "zod"
 import { createEndpoint } from "@aura-stack/router"
 
 export const endpoint = createEndpoint("POST", "/auth/signIn", async (ctx) => {
   const { username, password } = ctx.body
-  return Response.json({ message "Successful Login" })
+  return Response.json({ message: "Successful Login" })
 }, {
   schemas: {
     body: z.object({
@@ -26,23 +26,23 @@ export const endpoint = createEndpoint("POST", "/auth/signIn", async (ctx) => {
 
 ---
 
-## What you'll learn
+## Overview
 
-- [Good to know](#good-to-know)
+- [Key Concepts](#key-concepts)
 - [Installation](#installation)
 - [Type Inference](#type-inference)
-- [Schemas Validations](#schemas)
-  - [Search Params](#search-params)
+- [Schemas Validations](#schemas-validation)
   - [Params](#params)
+  - [Search Params](#search-params)
   - [Body](#body)
 
 ---
 
-## Good to know
+## Key Concepts
 
-- For detailed information about schema validations inside createEndpoint, see the [API Reference](/docs/create-endpoint#request-context).
-- Zod is not include in `@aura-stack/router`, so, if you need to add validatons, you need to install zod.
-- Zod schemas are optional but highly recommended to add runtime validation to:
+- Detailed information about schema validations within `createEndpoint` can be found in the [API Reference](/docs/create-endpoint#request-context).
+- Zod is not included in `@aura-stack/router`. To use validations, it must be installed separately.
+- Zod schemas are optional but highly recommended for adding runtime validation to:
   - `params` via `schemas.params`
   - `searchParams` via `schemas.searchParams`
   - `body` via `schemas.body`
@@ -51,52 +51,40 @@ export const endpoint = createEndpoint("POST", "/auth/signIn", async (ctx) => {
 
 ## Type Inference
 
-When adding Zod schemas, the endpoint automatically extracts and infers the types from them.
-These inferred types are applied to:
+When Zod schemas are added, the endpoint automatically extracts and infers types from them. These inferred types apply to:
 
 - The `Route Handler Request Context`.
 - The `Middleware Context`.
 
-This ensures fully typed access to:
-
-- `ctx.params`
-- `ctx.searchParams`
-- `ctx.body`
-
-> The types can be accessed from the main entry points `/` or `/types`. Available types:
-
-- `RequestContext`.
-- `ContextParams`.
-- `ContextSearchParams`.
-- `ContextBody`.
+This ensures fully typed access to `ctx.params`, `ctx.searchParams`, and `ctx.body`.
 
 ---
 
 ## Installation
 
-To enable schema validation, install `Zod`:
+To enable schema validation, install `zod`.
 
 ```npm
-npm install zod
+npm install @aura-stack/router zod
 ```
 
 ---
 
-## Schema Validations
+## Schemas Validation
 
-Schema validations can be passed directly to an endpoint or using `createEndpointConfig`
+Schema validations can be passed directly to an endpoint or defined using the `createEndpointConfig` function.
 
 ### Directly
 
-Pass the schema as the fourth argument of `createEndpoint`.
+The schema can be passed as the fourth argument of `createEndpoint`.
 
 ```ts lineNumbers
-import { zod } from "zod"
+import { z } from "zod"
 import { createEndpoint } from "@aura-stack/router"
 
 export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx) => {
   const { userId } = ctx.params
-  return Response.json({ message "User DELETE successfully" })
+  return Response.json({ message: "User DELETED successfully" })
 }, {
   schemas: {
     params: z.object({
@@ -108,10 +96,14 @@ export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx)
 
 ### Using `createEndpointConfig`
 
-Use `createEndpointConfig` and pass the config as the fourth argument.
+The `createEndpointConfig` function can also be used, passing the configuration object as the fourth argument to `createEndpoint`.
+
+<Callout type="warning">
+  When the endpoint requires a dynamic parameter, the route path should be provided as the first argument.
+</Callout>
 
 ```ts lineNumbers
-import { zod } from "zod"
+import { z } from "zod"
 import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
 
 const config = createEndpointConfig("/users/:userId", {
@@ -124,7 +116,7 @@ const config = createEndpointConfig("/users/:userId", {
 
 export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx) => {
   const { userId } = ctx.params
-  return Response.json({ message "User DELETE successfully" })
+  return Response.json({ message: "User DELETED successfully" })
 }, config)
 ```
 
@@ -270,7 +262,7 @@ const updateProfile = createEndpoint(
 
 ### Combined Validation
 
-Validate both `searchParams` and `body` in the same endpoint:
+Both `searchParams` and `body` can be validated in the same endpoint.
 
 ```ts lineNumbers
 import { z } from "zod"

@@ -12,6 +12,7 @@
     "---API Reference---",
     "create-router",
     "create-endpoint",
-    "create-endpoint-config"
+    "create-endpoint-config",
+    "create-client"
   ]
 }

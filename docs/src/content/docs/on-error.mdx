@@ -5,7 +5,7 @@ description: Customize error responses using the router's onError handler.
 
 ## Catching Errors
 
-`onError` is an error handler that catches all errors from route handlers, endpoint middlewares, global middlewares, and internal router logic. Use it to customize responses and add diagnostics.
+The `onError` handler captures all errors arising from route handlers, endpoint middlewares, global middlewares, and internal router logic. This provides a centralized mechanism for customizing error responses and adding diagnostics.
 
 ```ts lineNumbers
 import { createRouter, isRouterError, type RouterConfig } from "@aura-stack/router"
@@ -17,25 +17,25 @@ const onErrorHandler: RouterConfig["onError"] = (error, request) => {
 ```
 
 <Callout>
-  Internal router errors use the `RouterError` class. Use `isRouterError(error)` to detect and handle them specifically.
+  Internal router errors are instances of the `RouterError` class. The `isRouterError(error)` helper function effectively detects and handles them.
 </Callout>
 
 ---
 
-## What you'll learn
+## Overview
 
-- [Good to know](#good-to-know)
-- [Type inference](#type-inference)
+- [Key Concepts](#key-concepts)
+- [Type Inference](#type-inference)
 - [Usage](#usage)
-  - [Basic usage](#basic-usage)
+  - [Basic Usage](#basic-usage)
   - [Using RouterConfig](#using-routerconfig-type)
-  - [Advanced usage](#advanced-usage)
+  - [Advanced Usage](#advanced-usage)
 
 ---
 
-## Good to know
+## Key Concepts
 
-- All errors inside the router are caught by the `onError` handler. Common sources include:
+- All errors occurring within the router logic are intercepted by the `onError` handler. Common sources include:
   - Global middlewares
   - Endpoint middlewares
   - Route handlers
@@ -43,15 +43,14 @@ const onErrorHandler: RouterConfig["onError"] = (error, request) => {
 
 ---
 
-## Type inference
+## Type Inference
 
-The `onError` handler receives an `error` of type `Error | RouterError`. Use `isRouterError` to narrow and access router‑specific fields like `status` and `statusText`.
+The `onError` handler receives an `error` argument of type `Error | RouterError`. The `isRouterError` function narrows the type to access router-specific fields such as `status` and `statusText`.
 
-> `isRouterError` checks whether the error is an instance of `RouterError`.
-
-> Relevant type:
-
-- `RouterConfig`
+> **Relevant Types:**
+>
+> - `RouterConfig`
+> - `RouterError`
 
 ---
 
@@ -59,7 +58,7 @@ The `onError` handler receives an `error` of type `Error | RouterError`. Use `is
 
 ### Basic Usage
 
-Pass an `onError` handler directly to `createRouter`.
+The `onError` handler can be passed directly to the `createRouter` function.
 
 ```ts lineNumbers
 import { createRouter } from "@aura-stack/router"
@@ -72,9 +71,9 @@ export const router = createRouter([], {
 })
 ```
 
-### Using `RouterConfig` type
+### Using `RouterConfig` Type
 
-Define the handler with `RouterConfig["onError"]` for clarity and reuse.
+Defining the handler using `RouterConfig["onError"]` improves clarity and reusability.
 
 ```ts lineNumbers
 import { createRouter, type RouterConfig } from "@aura-stack/router"
@@ -90,6 +89,8 @@ export const router = createRouter([], {
 ```
 
 ### Advanced Usage
+
+For more complex scenarios, custom error classes and structured responses can be implemented.
 
 ```ts lineNumbers
 import { createRouter, isRouterError, statusCode, type RouterConfig } from "@aura-stack/router"

@@ -3,27 +3,30 @@ title: Quick Start
 description: Fundamental concepts of @aura-stack/router — endpoints, routes, routers, context, responses, and typing.
 ---
 
-# What is `@aura-stack/router`
+# Introduction
 
-Welcome to `@aura-stack/router` package. It is a modern, TypeScript-first router and endpoint definition library for TypeScript backends that provides supported for `Next.js`, `Nuxt`, `Sveltekit` and more.
-Build fully-typed APIs with declarative endpoints, automatic parameter inference, and first-class middleware support — all returning native Response objects for seamless compatibility with the Fetch API and modern API to be supported by the major of professional TypeScript applications.
+The `@aura-stack/router` package is a modern, TypeScript-first router and endpoint definition library for TypeScript backends, supporting runtimes like Next.js, Nuxt, SvelteKit, and more.
+It allows building fully typed APIs with declarative endpoints, automatic parameter inference, and first-class middleware support—return native `Response` objects for seamless compatibility with the Fetch API and modern web standards.
 
 <Callout type="info">
-  All of the package is built-in in TypeScript providing a strong type-safe and type-inference for a better experience coding.
+  The package is built entirely in TypeScript, providing strong type safety and type inference for an enhanced coding experience.
 </Callout>
 
-## What you'll learn
+## Contents
 
-Through this quick start guide you are going to learn and understand the basics of how to create a endpoint definitions
+This quick start guide covers the basics of creating endpoint definitions and setting up a router.
 
 - [Getting Started](#getting-started)
 - [Installation](#installation)
 - [Endpoint Definitions](#endpoints)
 - [Router](#router)
+  - [Creating a Router](#creating-a-router)
+  - [Router Configuration](#router-configuration)
+- [Client API](#client-api)
 
 ## Getting Started
 
-This guide walks you through installation, setup, and the fundamental building blocks you need to create type-safe endpoints and routers in your TypeScript project.
+This guide walks through installation, setup, and the fundamental building blocks needed to create type-safe endpoints and routers in a TypeScript project.
 
 <Steps>
 
@@ -38,8 +41,8 @@ npm install @aura-stack/router zod
 ```
 
 <Callout>
-  `zod` is an optional peer dependency used for schema validation via `createEndpoint` and `createEndpointConfig`. Install it if
-  you plan to use schema-based validation.
+  `zod` is an optional peer dependency used for schema validation via `createEndpoint` and `createEndpointConfig`. It should be
+  installed if schema-based validation is required.
 </Callout>
 
 </Step>
@@ -48,17 +51,17 @@ npm install @aura-stack/router zod
 
 ## Endpoints
 
-Endpoints are the foundation of your API. Each endpoint maps an HTTP method and route to a handler function.
+Endpoints are the foundation of the API. Each endpoint maps an HTTP method and route to a handler function.
 
 ### Creating Endpoints
 
-Use `createEndpoint` to define an endpoint. It requires three arguments:
+The `createEndpoint` function defines an endpoint. It requires three arguments:
 
 - [`HTTPMethod`](/docs/create-endpoint#http-method): The HTTP method for the endpoint.
 - [`Route`](/docs/create-endpoint#route): The route pattern.
 - [`Route Handler`](/docs/create-endpoint#route-handler): The function that executes when the route is matched.
 
-```ts lineNumbers title="@/users.ts"
+```ts lineNumbers title="@/api/users.ts"
 import { createEndpoint } from "@aura-stack/router"
 
 const getUsers = createEndpoint("GET", "/users", async (ctx) => {
@@ -77,15 +80,15 @@ const getUser = createEndpoint("GET", "/users/:userId", async (ctx) => {
 
 ## Router
 
-Routers group multiple endpoints and generate type-safe HTTP handlers for your runtime.
+Routers group multiple endpoints and generate type-safe HTTP handlers for the runtime.
 
 ### Creating a Router
 
-Use `createRouter` to combine endpoint definitions:
+The `createRouter` function combines endpoint definitions:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers])
 ```
@@ -94,45 +97,50 @@ export const router = createRouter([getUser, getUsers])
 
 <Step>
 
-## Router Configuration
+### Router Configuration
 
-### Base Path
+#### Base Path
 
-Add a prefix to all routes in the router using `basePath`:
+A prefix can be added to all routes in the router using `basePath`:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
   basePath: "/api/v1",
 })
 ```
 
-### Global Middlewares
+#### Global Middlewares
 
-Use `middlewares` to register logic that should run before every endpoint:
+The `middlewares` option registers logic that runs before every endpoint:
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
-  middlewares: [],
+  middlewares: [
+    (ctx) => {
+      console.log(`[debug]: ${ctx.request.url}`)
+      return ctx
+    },
+  ],
 })
 ```
 
-### Catching Errors
+#### Catching Errors
 
-Use `onError` to catch and customize unexpected errors:
+The `onError` option allows catching and customizing unexpected errors:
 
 - Internal router errors.
 - Handler exceptions.
 - Middleware errors.
 
-```ts lineNumbers title="@/routes.ts"
+```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
-import { getUser, getUsers } from "@/users.ts"
+import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
   onError: (error, request) => {
@@ -145,14 +153,39 @@ export const router = createRouter([getUser, getUsers], {
 
 <Step>
 
-## Get HTTP handlers
+### HTTP Handlers
 
-Once your router is defined, you can export the generated handlers for use in any Fetch-compatible runtime:
+Once the router is defined, the generated handlers can be exported for use in web standard `Response` and `Request` web APIs.
 
-```ts lineNumbers title="@/main.ts"
-import { router } from "@/routes.ts"
+The HTTP Handlers export the methods based on the methods defined in the endpoints passed to the router.
+
+```ts lineNumbers title="@/handlers.ts"
+import { router } from "@/index.ts"
 
 export const { GET } = router
+```
+
+</Step>
+
+<Step>
+
+## Client API
+
+A client API is provided to offer type-safe access to the endpoints defined via the `createRouter` function.
+
+```ts lineNumbers title="@/main.ts"
+import { createClient } from "@aura-stack/router/client"
+import { router } from "@/router.ts"
+
+export const client = createClient<typeof router>({
+  baseURL: "http://localhost:3000",
+})
+
+await client.get("/users/:userId", {
+  params: {
+    userId: 1,
+  },
+})
 ```
 
 </Step>

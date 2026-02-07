@@ -9,6 +9,12 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added `basePath` option in `createClient` function to define the base path for all requests made to the endpoints. [#30](https://github.com/aura-stack-ts/router/pull/30).
+
+- Introduced client API to access endpoints declared in the router via `createRouter`. The client API can be defined using the `createClient` function that takes the router type as a generic argument. [#28](https://github.com/aura-stack-ts/router/pull/28).
+
 ---
 
 ## [0.5.0] - 2025-12-22

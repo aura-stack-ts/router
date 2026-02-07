@@ -5,17 +5,17 @@ description: Global and endpoint middlewares for auth, logging, CORS, rate limit
 
 # Middlewares
 
-Middlewares run around your route handlers to add cross‑cutting behavior such as authentication, logging, CORS, and request/response shaping. There are two types:
+Middlewares wrap around route handlers to implement cross‑cutting behaviors such as authentication, logging, CORS, and request/response shaping. There are two types:
 
 - [Global Middlewares](#global-middlewares): Applied to every request handled by a router.
-- [Endpoint Middlewares](#endpoint-middlewares): Defined per endpoint; run with typed request context.
+- [Endpoint Middlewares](#endpoint-middlewares): Defined per endpoint; executed with typed request context.
 
 ---
 
-## What you'll learn
+## Overview
 
-- [Good to know](#good-to-know)
-- [Type inference](#type-inference)
+- [Key Concepts](#key-concepts)
+- [Type Inference](#type-inference)
 - [Middlewares](#middlewares)
   - [Endpoint Middlewares](#endpoint-middlewares)
   - [Global Middlewares](#global-middlewares)
@@ -23,19 +23,19 @@ Middlewares run around your route handlers to add cross‑cutting behavior such 
 
 ---
 
-## Good to know
+## Key Concepts
 
-- Middlewares let you verify, enrich, or modify the request/response around the handler.
-- Endpoint middlewares have full type inference for `params`, `searchParams`, and `body`.
-- Global middlewares run for all requests handled by a router and operate on the original `Request`.
+- Middlewares enable the verification, enrichment, or modification of the request/response surrounding the handler.
+- Endpoint middlewares run with full type inference for `params`, `searchParams`, and `body`.
+- Global middlewares apply to all requests handled by a router and operate on the original `Request`.
 
 ---
 
-## Type inference
+## Type Inference
 
-Endpoint middlewares are type‑safe based on the endpoint’s Zod schemas for `params`, `searchParams`, and `body`. These are inferred automatically from your endpoint configuration. For details, see [Zod Integration](/docs/concepts/zod).
+Endpoint middlewares are type‑safe based on the endpoint’s Zod schemas for `params`, `searchParams`, and `body`. These types are inferred automatically from the endpoint configuration.
 
-Global middlewares do not receive the typed context; they see the original `Request`.
+Global middlewares do not receive the typed context; they operate on the original `Request`.
 
 ---
 
@@ -43,11 +43,11 @@ Global middlewares do not receive the typed context; they see the original `Requ
 
 ### Endpoint Middlewares
 
-Use `createEndpointConfig` to declaratively attach middlewares and schemas to an endpoint.
+Endpoint middlewares are attached declaratively using `createEndpointConfig`. This approach ensures schema-based type safety.
 
 #### Basic Usage
 
-In the below example shows the basic usage of the `middlewares` and it doesn't provide usage of request context.
+The following example demonstrates basic middleware usage without relying on the request context.
 
 ```ts lineNumbers
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
@@ -67,7 +67,7 @@ const endpoint = createEndpoint("GET", "/protected", handler, config)
 
 #### Context Usage
 
-The context usage offers type-inference powerred by the [Zod Schemas](/docs/zod-schemas) which allows to add type-safe, validate and map the values, in the below example shows the usage of the endpoint middleware using context request.
+Context usage offers type inference powered by [Zod Schemas](/docs/zod-schemas), enabling type-safe validation and value mapping. The example below shows an endpoint middleware utilizing the request context.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -95,7 +95,7 @@ const authConfig = createEndpointConfig({
       /*
         Add user info to context
       */
-      ctx.headers.set("x-user-id", userId)
+      ctx.headers.setHeader("x-user-id", userId)
       return ctx
     },
   ],
@@ -105,7 +105,7 @@ const getProfile = createEndpoint(
   "GET",
   "/profile",
   async (ctx) => {
-    const userId = ctx.headers.get("x-user-id")
+    const userId = ctx.headers.getHeader("x-user-id")
     return Response.json({ userId, name: "John" })
   },
   authConfig
@@ -114,11 +114,11 @@ const getProfile = createEndpoint(
 
 ### Global Middlewares
 
-Applied to all endpoints in a router via `createRouter` config:
+Global middlewares are applied to all endpoints within a router via the `createRouter` configuration.
 
 #### Middleware Chaining
 
-Multiple middlewares execute in order:
+Multiple middlewares execute in the order they are defined.
 
 ```ts lineNumbers
 const config = createEndpointConfig({
@@ -144,7 +144,7 @@ const config = createEndpointConfig({
     */
     async (ctx) => {
       console.log("3. Adding metadata")
-      ctx.headers.set("x-processed", "true")
+      ctx.headers.setHeader("x-processed", "true")
       return ctx
     },
   ],
@@ -153,15 +153,11 @@ const config = createEndpointConfig({
 
 ### Execution Order
 
-When both global and endpoint middlewares are defined:
+When both global and endpoint middlewares are defined, they execute in the following sequence:
 
-```
-1. Global middlewares (from createRouter)
-   ↓
-2. Endpoint middlewares (from createEndpointConfig)
-   ↓
-3. Route handler
-```
+1. **Global middlewares** (from `createRouter`)
+2. **Endpoint middlewares** (from `createEndpointConfig`)
+3. **Route handler**
 
 #### Example
 
