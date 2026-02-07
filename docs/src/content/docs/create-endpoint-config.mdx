@@ -5,7 +5,7 @@ description: Declaratively define configuration options for an endpoint, includi
 
 # `createEndpointConfig`
 
-`createEndpointConfig` is a declarative API used to define the optional configuration for endpoints created with `createEndpoint`. It provides strong type inference for schemas, context, and middlewares.
+The `createEndpointConfig` function is a declarative API used to define optional configuration for endpoints created with `createEndpoint`. It provides strong type inference for schemas, context, and middlewares.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -21,15 +21,15 @@ const config = createEndpointConfig({
 })
 ```
 
-> This function improves type inference at build-time and does not perform any runtime validation.
+> This function improves type inference at build time and does not perform runtime validation.
 
 ---
 
-## What you'll learn
+## Overview
 
-Through this api reference documentation you are going to learn and understand from basic to advanced about the `createEndpointConfig` API Reference:
+This documentation provides a comprehensive guide to the `createEndpointConfig` API, covering everything from basic usage to advanced type inference.
 
-- [Good to Know](#good-to-know)
+- [Key Concepts](#key-concepts)
 - [Type Inference](#type-inference)
 - [API Reference](#api-reference)
   - [Parameters](#parameters)
@@ -38,26 +38,22 @@ Through this api reference documentation you are going to learn and understand f
 
 ---
 
-## Good to know
+## Key Concepts
 
 - `createEndpointConfig` enables full type inference for the endpoint context, schemas, and middlewares.
 - The function provides two overloads:
-  - Overload 1: Pass only the configuration object — used when your endpoint does not rely on dynamic route params.
-  - Overload 2: Pass a route pattern first — used when you want typed dynamic params inside your middlewares.
+  - **Overload 1:** Configuration object only — used when the endpoint does not rely on dynamic route parameters.
+  - **Overload 2:** Route pattern + configuration object — used when typed dynamic parameters are required within middlewares.
 
 ---
 
 ## Type Inference
 
-Configurations created through `createEndpointConfig` provide more accurate type inference than passing the configuration inline to `createEndpoint`. However, you can still import the types manually if you want explicit definitions.
+Configurations created through `createEndpointConfig` provide more accurate type inference than passing the configuration inline to `createEndpoint`. While implicit inference is recommended, explicit types can still be imported if stricter definitions are required.
 
-> The types can be accessed from the main entry points `/` or `/types`. Available type
+> Types can be accessed from the main entry points `/` or `/types`.
 
-- `RoutePattern`
-- `EndpointConfig`
-- `EndpointSchemas`
-
-Example: Inferred context with schemas
+### Example: Inferred Context with Schemas
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -80,7 +76,7 @@ const config = createEndpointConfig({
 })
 ```
 
-Example: Inferred dynamic params with explicit route
+### Example: Inferred Dynamic Params with Explicit Route
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -110,7 +106,7 @@ const config = createEndpointConfig("/auth/signIn/:oauth/", {
 
 ### Parameters
 
-Set of parameters accepted by `createEndpointConfig` to configure an endpoint.
+The `createEndpointConfig` function accepts parameters based on the chosen overload.
 
 ```ts lineNumbers
 function createEndpointConfig<Schemas extends EndpointSchemas>(
@@ -128,9 +124,9 @@ function createEndpointConfig<Route extends RoutePattern, Schemas extends Endpoi
 | `route`   | `RoutePattern`    | Optional. Defines the route pattern and enables inference for dynamic route parameters.   |
 | `config`  | `EndpointSchemas` | Configuration object containing Zod schemas and middleware declarations for the endpoint. |
 
-#### Route `RoutePattern` [#route]
+#### `route` [#route]
 
-`route` is an optional parameter used to provide the route pattern. Supplying a route pattern enables type inference for dynamic parameters declared in that route.
+The `route` parameter allows providing a route pattern. Supplying a route pattern enables type inference for dynamic parameters declared in that route.
 
 ```ts lineNumbers
 import type { RoutePattern } from "@aura-stack/router/types"
@@ -147,9 +143,9 @@ import { createEndpointConfig } from "@aura-stack/router"
 const config = createEndpointConfig("/auth/signIn/:oauth", {})
 ```
 
-#### Config `EndpointSchemas` [#config-schemas]
+#### `config` [#config-schemas]
 
-`config` allows you to define optional Zod schemas for request `params`, `searchParams`, and `body`, as well as middleware functions. Schemas are used to enhance type inference and to add optional runtime validation if you choose to implement it.
+The `config` parameter allows defining optional Zod schemas for request `params`, `searchParams`, and `body`, as well as middleware functions. Schemas enhance type inference and add optional runtime validation.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -168,9 +164,9 @@ const config = createEndpointConfig("/auth/signIn/:oauth", {
 
 ## Usage
 
-### With `basic overload`
+### With Basic Overload
 
-Use the basic overload when the endpoint does not define dynamic route parameters.
+The basic overload is used when the endpoint does not define dynamic route parameters.
 
 ```ts lineNumbers
 import type { EndpointSchemas, EndpointConfig } from "@aura-stack/router/types"
@@ -180,7 +176,7 @@ function createEndpointConfig<Schemas extends EndpointSchemas>(
 ): EndpointConfig<RoutePattern, Schemas>
 ```
 
-Example:
+**Example:**
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -196,9 +192,9 @@ const config = createEndpointConfig({
 })
 ```
 
-### With `dynamic overload`
+### With Dynamic Overload
 
-Use this overload when the endpoint includes dynamic route parameters and you want full type inference for `ctx.params`.
+This overload matches when the endpoint includes dynamic route parameters, enabling full type inference for `ctx.params`.
 
 ```ts lineNumbers
 import { z } from "zod"

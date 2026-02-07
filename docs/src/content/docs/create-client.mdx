@@ -1,13 +1,13 @@
 ---
 title: createClient
-description: Client API to access to the endpoints defined in the router
+description: Client API to access endpoints defined in the router.
 ---
 
 ## `createClient`
 
-`createClient` is a declarative client API to call the endpoint definitions set in the `createRouter` function. The API provides type-safe access to HTTP methods, Route Definitions, and Zod Validations to provide inference for the required values to be passed.
+The `createClient` function provides a declarative client API to invoke endpoints defined via `createRouter`. It offers fully type-safe access to HTTP methods, route definitions, and Zod validations, ensuring that all required values are strictly inferred and validated.
 
-<Callout>For a complete type-inference is required to pass as generic argument the type of the router.</Callout>
+<Callout>For complete type inference, the router type must be passed as a generic argument.</Callout>
 
 ```ts lineNumbers
 import { createClient } from "@aura-stack/router/client"
@@ -20,11 +20,11 @@ export const client = createClient<typeof router>({
 
 ---
 
-## What you'll learn
+## Overview
 
-Through this api reference documentation you are going to learn and understand from the basic to advanced about the `createClient` API Reference:
+This documentation provides a comprehensive guide to the `createClient` API, covering everything from basic usage to advanced type inference.
 
-- [Good to Know](#good-to-know)
+- [Key Concepts](#key-concepts)
 - [Type Inference](#type-inference)
 - [API Reference](#api-reference)
   - [Parameters](#parameters)
@@ -32,18 +32,18 @@ Through this api reference documentation you are going to learn and understand f
 
 ---
 
-## Good to Know
+## Key Concepts
 
-- `createClient` only provides type inference based on the router type passed as first generic argument. Otherwise the function couldn't infer the API.
-- The type-inference includes the endpoint paths, http methods and values parsed by zod.
+- The `createClient` function only offers type inference when the router type is provided as the first generic argument. Without it, the function cannot infer the API structure.
+- Type inference covers endpoint paths, HTTP methods, and values validated by Zod schemas.
 
 ---
 
 ## Type Inference
 
-The only way to add type-safe and type-inference to the client API is provide the router type.
+To enable type safety and inference for the client API, the router type must be explicitly provided.
 
-> The client API can be added from the main entry point `/` or `/client`.
+> The client API can be imported from the main entry point `/` or `/client`.
 
 ---
 
@@ -51,7 +51,7 @@ The only way to add type-safe and type-inference to the client API is provide th
 
 ### Parameters
 
-Set of parameters accepted by the client API to configure it.
+The `createClient` function accepts a configuration object to customize the client instance.
 
 ```ts lineNumbers
 import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "@aura-stack/router/types"
@@ -59,19 +59,19 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
 function createClient<InferRoute extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>>
 ```
 
-| Parameter  | Type                  | Description                                                         |
-| ---------- | --------------------- | ------------------------------------------------------------------- |
-| `baseURL`  | `string`              | Base url of the router to make requests.                            |
-| `basePath` | `/${string}`          | Base path to be added to all request.                               |
-| `headers`  | `IncomingHttpHeaders` | Default headers to be included in every request made by the client. |
+| Parameter  | Type                  | Description                                                  |
+| ---------- | --------------------- | ------------------------------------------------------------ |
+| `baseURL`  | `string`              | The base URL where the router is hosted.                     |
+| `basePath` | `/${string}`          | An optional base path to prepend to all requests.            |
+| `headers`  | `IncomingHttpHeaders` | Default headers to include in every request made by the client.|
 
 #### `baseURL`
 
-The base URL for the client to make request to the server or router. This is useful when the server is hosted/mounted on a different origin as the client API.
+The `baseURL` defines the destination for proper request routing. This is particularly useful when the server is hosted or mounted on a different origin than the client.
 
 <Callout type="warning">
-  The `baseURL` option only accepts the origin protocol and origin. It doesn't accept an extra path. It's ignored. For adding an
-  extra path, use the `basePath` configuration option instead.
+  The `baseURL` option accepts only the protocol and origin. Any path components are ignored. To append a path, use the
+  `basePath` configuration option instead.
 </Callout>
 
 ```ts lineNumbers title="@/client"
@@ -84,7 +84,7 @@ export const client = createClient({
 
 #### `basePath`
 
-The optional base path to be added to all request paths made by the client.
+The `basePath` option allows a path prefix to be automatically prepended to all requests made by the client.
 
 ```ts lineNumbers title="@/client"
 import { createClient } from "@aura-stack/router/client"
@@ -97,7 +97,7 @@ export const client = createClient({
 
 #### `headers`
 
-Default headers to be attached to all requests made by the client. These headers will be merged with those defined by a specific client call.
+The `headers` option specifies default headers to include in every request. These headers are merged with any headers defined in individual client calls.
 
 ```ts lineNumbers title="@/client"
 import { createClient } from "@aura-stack/router/client"
@@ -115,24 +115,24 @@ export const client = createClient({
 
 ### Returns
 
-The `createClient` function API returns a typed object that contains only the HTTP methods defined by the endpoints in the router and with a second argument that contains the required fields defined by the zod schemas. This ensures that developers can only access valid handler methods and prevents runtime errors by leveraging TypeScript's static type system.
+The `createClient` function returns a typed object containing only the HTTP methods defined by the router's endpoints. It also enforces the structure of required arguments based on Zod schemas. This design ensures that developers access only valid handler methods and prevents runtime errors through TypeScript's static type system.
 
 | Return | Type                                  | Description                                                                                         |
 | ------ | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| client | `Client<InferEndpoints<InferRouter>>` | Generates an object containing only the HTTP methods defined in the endpoints by the passed router. |
+| client | `Client<InferEndpoints<InferRouter>>` | An object containing only the HTTP methods defined in the endpoints of the provided router.         |
 
 <Callout>
-  This return type ensures full type-safety. If an endpoint does not define a `DELETE` method, TypeScript will prevent you from
-  accessing `DELETE` on the router.
+  This return type guarantees full type safety. If an endpoint does not define a `DELETE` method, TypeScript prevents access to
+  `DELETE` on the router.
 </Callout>
 
 #### `client`
 
-The client API returns an object containing only the HTTP methods defined in the endpoints in the router. It provides complete type-safety for the client object.
+The returned client object exposes only the HTTP methods corresponding to the endpoints defined in the router, ensuring type safety.
 
-- Type-Safe Access to Handlers: If your router doesn't define a DELETE route, TypeScript will not allow access to it.
-- Type-safety for the endpoint routes defined per the HTTP methods loaded by the router.
-- Type-safety of the values expected by the endpoint, including zod schemas and dynamic parameters.
+- **Type-Safe Handler Access:** If the router does not define a particular route (e.g., `DELETE`), TypeScript restricts access to it.
+- **Endpoint Route Safety:** Ensures validation for routes defined per HTTP method.
+- **Input Validation Safety:** Enforces types for expected values, including those defined by Zod schemas and dynamic parameters.
 
 ```ts lineNumbers title="@/client"
 import { createClient } from "@aura-stack/router/client"
@@ -142,10 +142,10 @@ export const client = createClient<typeof router>({
   baseURL: "http://localhost:3000",
 })
 
-// GET/ request to /users
+// GET request to /users
 client.get("/users")
 
-// GET/ request to /users/:userId
+// GET request to /users/:userId
 client.get("/users/:userId", {
   params: {
     userId: 1,
@@ -167,7 +167,7 @@ export const client = createClient<typeof router>({
   baseURL: "http://localhost:3000",
 })
 
-// GET/ request to http://localhost:3000/users
+// GET request to http://localhost:3000/users
 client.get("/users")
 ```
 
@@ -182,7 +182,7 @@ export const client = createClient<typeof router>({
   basePath: "/api/v1",
 })
 
-// GET/ request to http://localhost:3000/api/v1/users
+// GET request to http://localhost:3000/api/v1/users
 client.get("/users")
 ```
 
@@ -202,7 +202,8 @@ export const client = createClient<typeof router>({
   },
 })
 
-// GET/ request to http://localhost:3000/users
+// GET request to http://localhost:3000/users
+// Headers included:
 // Accept: application/json
 // Content-Type: application/json
 // Cache-Control: no-store
