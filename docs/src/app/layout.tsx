@@ -1,17 +1,18 @@
 import "@/app/global.css"
 import { RootProvider } from "fumadocs-ui/provider/next"
-import { Inter } from "next/font/google"
+import { Sora } from "next/font/google"
 
-const inter = Inter({
+const sora = Sora({
     subsets: ["latin"],
+    display: "swap",
 })
 
 export { metadata } from "@/lib/metadata"
 
 export default function Layout({ children }: LayoutProps<"/">) {
     return (
-        <html lang="en" className={inter.className} suppressHydrationWarning>
-            <body className="flex flex-col min-h-screen">
+        <html lang="en" className={`${sora.className} antialiased`} suppressHydrationWarning>
+            <body className="flex flex-col min-h-screen bg-black">
                 <RootProvider>{children}</RootProvider>
             </body>
         </html>
