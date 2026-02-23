@@ -19,7 +19,7 @@
     "cookie": "npm:cookie@^1.1.1"
   },
   "publish": {
-    "include": ["./src/**.ts", "./README.md", "./LICENSE", "./CHANGELOG.md"]
+    "include": ["./src/**/*.ts", "./README.md", "./LICENSE", "./CHANGELOG.md"]
   },
   "exclude": ["dist", "node_modules", "docs", "coverage"]
 }

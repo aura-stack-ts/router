@@ -14,7 +14,7 @@ out/
 pnpm-lock.yaml
 yarn.lock
 package-lock.json
-deno.ock
+deno.lock
 
 # Generated files
 *.generated.*
