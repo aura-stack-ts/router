@@ -1,4 +1,4 @@
-import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "./types.js"
+import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "./types.ts"
 
 /**
  * Creates a client API for making requests to the specified router. It provides type-safe methods

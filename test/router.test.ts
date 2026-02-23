@@ -1,10 +1,10 @@
 import z from "zod"
 import { describe, expect, expectTypeOf, test } from "vitest"
-import { RouterError } from "../src/error.js"
-import { createRouter } from "../src/router.js"
-import { isRouterError } from "../src/assert.js"
-import { createEndpoint, createEndpointConfig } from "../src/endpoint.js"
-import { HeadersBuilder } from "../src/headers.js"
+import { RouterError } from "@/error.ts"
+import { createRouter } from "@/router.ts"
+import { isRouterError } from "@/assert.ts"
+import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
+import { HeadersBuilder } from "@/headers.ts"
 
 describe("createRouter", () => {
     describe("OAuth endpoints", () => {
@@ -176,15 +176,15 @@ describe("createRouter", () => {
     })
 
     describe("Invalid endpoints", () => {
-        test("No HTTP handlers defined", async () => {
+        test("No HTTP handlers defined", () => {
             const router = createRouter([])
             const cast = router as any
             expect(cast).not.toHaveProperty("POST")
             expect(cast).not.toHaveProperty("PUT")
         })
 
-        test("No HTTP handlers defined but accessing GET", async () => {
-            const get = createEndpoint("GET", "/session", async () => {
+        test("No HTTP handlers defined but accessing GET", () => {
+            const get = createEndpoint("GET", "/session", () => {
                 return Response.json({ message: "Get user session" }, { status: 200 })
             })
             const router = createRouter([get])
@@ -199,7 +199,7 @@ describe("createRouter", () => {
         })
 
         test("Unsupported HTTP method in route", async () => {
-            const get = createEndpoint("GET", "/session", async () => {
+            const get = createEndpoint("GET", "/session", () => {
                 return Response.json({ message: "Get user session" }, { status: 200 })
             })
             const { GET } = createRouter([get])
@@ -210,7 +210,7 @@ describe("createRouter", () => {
     })
 
     describe("With base path", () => {
-        const session = createEndpoint("GET", "/session", async () => {
+        const session = createEndpoint("GET", "/session", () => {
             return Response.json({ message: "Get user session" }, { status: 200 })
         })
 
@@ -238,18 +238,18 @@ describe("createRouter", () => {
     })
 
     describe("With global middlewares", () => {
-        const session = createEndpoint("GET", "/session", async (ctx) => {
+        const session = createEndpoint("GET", "/session", (ctx) => {
             return Response.json({ message: "Get user session" }, { status: 200, headers: ctx.headers.toHeaders() })
         })
 
-        const signIn = createEndpoint("POST", "/auth/:oauth", async (ctx) => {
+        const signIn = createEndpoint("POST", "/auth/:oauth", (ctx) => {
             return Response.json({ message: "Sign in with OAuth" }, { status: 200, headers: ctx.headers.toHeaders() })
         })
 
-        describe("Add headers middleware", async () => {
+        describe("Add headers middleware", () => {
             const router = createRouter([session, signIn], {
                 middlewares: [
-                    async (ctx) => {
+                    (ctx) => {
                         ctx.request.headers.set("x-powered-by", "@aura-stack")
                         return ctx
                     },
@@ -274,7 +274,7 @@ describe("createRouter", () => {
             })
         })
 
-        describe("Block request middleware", async () => {
+        describe("Block request middleware", () => {
             const router = createRouter([session], {
                 middlewares: [
                     (ctx) => {
@@ -345,7 +345,7 @@ describe("createRouter", () => {
         })
     })
 
-    describe("Parsing context", async () => {
+    describe("Parsing context", () => {
         const getUser = createEndpoint(
             "POST",
             "/auth/credentials",
@@ -394,12 +394,12 @@ describe("createRouter", () => {
      * without module augmentation
      */
     describe("With global context", () => {
-        const endpoint = createEndpoint("GET", "/secret", async (ctx) => {
+        const endpoint = createEndpoint("GET", "/secret", (ctx) => {
             const secret = (ctx.context as any).secret
             return Response.json({ secret }, { status: 200 })
         })
 
-        const wrongEndpoint = createEndpoint("GET", "/wrong", async (ctx) => {
+        const wrongEndpoint = createEndpoint("GET", "/wrong", (ctx) => {
             const nonExistent = (ctx.context as any).nonExistent
             return Response.json({ nonExistent }, { status: 200 })
         })

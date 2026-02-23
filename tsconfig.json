@@ -15,7 +15,12 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": ["./src/*"],
+    },
+    "baseUrl": "."
   },
   "include": ["src", "test", "bench"],
   "exclude": ["node_modules", "dist"]

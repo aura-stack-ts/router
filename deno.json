@@ -1,0 +1,25 @@
+{
+  "name": "@aura-stack/router",
+  "version": "0.5.0",
+  "tasks": {
+    "dev": "deno run --watch src/index.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./router": "./src/router.ts",
+    "./endpoint": "./src/endpoint.ts",
+    "./error": "./src/error.ts",
+    "./headers": "./src/headers.ts",
+    "./cookie": "./src/cookie.ts",
+    "./client": "./src/client.ts",
+    "./types": "./src/types.ts"
+  },
+  "imports": {
+    "@/": "./src/",
+    "cookie": "npm:cookie@^1.1.1"
+  },
+  "publish": {
+    "include": ["./src/**/*.ts", "./README.md", "./LICENSE", "./CHANGELOG.md"]
+  },
+  "exclude": ["dist", "node_modules", "docs", "coverage"]
+}

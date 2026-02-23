@@ -1,8 +1,8 @@
 import z from "zod"
 import { describe, test } from "vitest"
-import { createRouter } from "../src/router.js"
-import { createEndpoint, createEndpointConfig } from "../src/endpoint.js"
-import type { HTTPMethod, RoutePattern } from "../src/types.js"
+import { createRouter } from "@/router.ts"
+import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
+import type { HTTPMethod, RoutePattern } from "@/types.ts"
 
 describe("createEndpoint", () => {
     describe("With valid configuration", () => {

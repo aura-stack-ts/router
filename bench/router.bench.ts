@@ -1,8 +1,8 @@
 import z from "zod"
 import { describe, bench } from "vitest"
-import { createRouter } from "../src/router.js"
-import { createEndpoint } from "../src/endpoint.js"
-import type { EndpointConfig, RouteEndpoint, RoutePattern } from "../src/types.js"
+import { createRouter } from "@/router.ts"
+import { createEndpoint } from "@/endpoint.ts"
+import type { EndpointConfig, RouteEndpoint, RoutePattern } from "@/types.ts"
 
 describe("router benchmark", () => {
     const endpoints = Array.from({ length: 100 }).map<RouteEndpoint>((idx) => ({

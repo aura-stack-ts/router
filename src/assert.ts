@@ -1,5 +1,5 @@
-import { InvalidZodSchemaError, RouterError } from "./error.js"
-import type { RouteHandler, HTTPMethod, RoutePattern } from "./types.js"
+import { InvalidZodSchemaError, RouterError } from "@/error.ts"
+import type { RouteHandler, HTTPMethod, RoutePattern } from "@/types.ts"
 
 const supportedMethods = new Set<HTTPMethod>(["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS", "HEAD", "TRACE", "CONNECT"])
 
