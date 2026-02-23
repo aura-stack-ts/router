@@ -15,6 +15,7 @@ pnpm-lock.yaml
 yarn.lock
 package-lock.json
 deno.lock
+bun.lock
 
 # Generated files
 *.generated.*
