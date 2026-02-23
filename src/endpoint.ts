@@ -1,6 +1,6 @@
-import { RouterError } from "./error.js"
-import { isSupportedMethod, isValidHandler, isValidRoute } from "./assert.js"
-import type { EndpointConfig, EndpointSchemas, HTTPMethod, RouteEndpoint, RouteHandler, RoutePattern } from "./types.js"
+import { RouterError } from "./error.ts"
+import { isSupportedMethod, isValidHandler, isValidRoute } from "./assert.ts"
+import type { EndpointConfig, EndpointSchemas, HTTPMethod, RouteEndpoint, RouteHandler, RoutePattern } from "./types.ts"
 
 /**
  * Defines an API endpoint for the router by specifying the HTTP method, route pattern,

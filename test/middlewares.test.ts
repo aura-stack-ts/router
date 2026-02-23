@@ -1,8 +1,8 @@
 import z from "zod"
 import { describe, expect, test } from "vitest"
-import { HeadersBuilder } from "../src/headers.js"
-import { executeGlobalMiddlewares, executeMiddlewares } from "../src/middlewares.js"
-import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "../src/types.js"
+import { HeadersBuilder } from "@/headers.ts"
+import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
+import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "@/types.ts"
 
 describe("executeGlobalMiddlewares", () => {
     test("No middlewares", async () => {
@@ -13,7 +13,7 @@ describe("executeGlobalMiddlewares", () => {
 
     test("Single middleware that modifies request", async () => {
         const request = new Request("https://example.com")
-        const middleware = async (ctx: GlobalMiddlewareContext) => {
+        const middleware = (ctx: GlobalMiddlewareContext) => {
             const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test", "true")
             return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
@@ -25,7 +25,7 @@ describe("executeGlobalMiddlewares", () => {
 
     test("Middleware updates headers directly", async () => {
         const request = new Request("https://example.com")
-        const middleware = async (ctx: GlobalMiddlewareContext) => {
+        const middleware = (ctx: GlobalMiddlewareContext) => {
             ctx.request.headers.set("X-Test-Direct", "true")
             return ctx
         }
@@ -36,12 +36,12 @@ describe("executeGlobalMiddlewares", () => {
 
     test("Multiple middlewares", async () => {
         const request = new Request("https://example.com")
-        const middleware1 = async (ctx: GlobalMiddlewareContext) => {
+        const middleware1 = (ctx: GlobalMiddlewareContext) => {
             const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test-1", "true")
             return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
         }
-        const middleware2 = async (ctx: GlobalMiddlewareContext) => {
+        const middleware2 = (ctx: GlobalMiddlewareContext) => {
             const newHeaders = new Headers(ctx.request.headers)
             newHeaders.set("X-Test-2", "true")
             return { ...ctx, request: new Request(ctx.request, { headers: newHeaders }) }
@@ -58,7 +58,7 @@ describe("executeGlobalMiddlewares", () => {
 
     test("Middleware that returns a Response", async () => {
         const request = new Request("https://example.com")
-        const middleware = async () => {
+        const middleware = () => {
             return new Response("Blocked", { status: 403 })
         }
         const result = await executeGlobalMiddlewares({ request, context: {} }, [middleware])
@@ -68,7 +68,7 @@ describe("executeGlobalMiddlewares", () => {
 
     test("override global context in middleware", async () => {
         const request = new Request("https://example.com")
-        const middleware = async (ctx: GlobalMiddlewareContext) => {
+        const middleware = (ctx: GlobalMiddlewareContext) => {
             ;(ctx.context as any).modified = true
             return { request: new Request("https://modified.com"), context: ctx.context }
         }
@@ -83,7 +83,7 @@ describe("executeGlobalMiddlewares", () => {
 describe("executeMiddlewares", () => {
     test.concurrent("Middleware with searchParams and headers context", async ({ expect }) => {
         const middlewares: MiddlewareFunction[] = [
-            async (ctx) => {
+            (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.headers.setHeader("Content-Type", "application/json")
                 return ctx
@@ -103,12 +103,12 @@ describe("executeMiddlewares", () => {
 
     test.concurrent("Two middlewares with searchParams and headers context", async ({ expect }) => {
         const middlewares: MiddlewareFunction[] = [
-            async (ctx) => {
+            (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.searchParams.set("state", "xyz")
                 return ctx
             },
-            async (ctx) => {
+            (ctx) => {
                 ctx.searchParams.set("state", "abc")
                 ctx.headers.setHeader("Authorization", "Bearer token")
                 return ctx
@@ -159,7 +159,7 @@ describe("executeMiddlewares", () => {
         })
         const middlewares: MiddlewareFunction<Record<string, string>, { schemas: { searchParams: typeof searchParamsShema } }>[] =
             [
-                async (ctx) => {
+                (ctx) => {
                     ctx.searchParams.code = "123abc"
                     ctx.searchParams.state = "xyz"
                     return ctx

@@ -1,9 +1,9 @@
-import { RouterError, statusText } from "./error.js"
-import { HeadersBuilder } from "./headers.js"
-import { getBody, getRouteParams, getSearchParams } from "./context.js"
-import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.js"
-import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.js"
-import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.js"
+import { RouterError, statusText } from "./error.ts"
+import { HeadersBuilder } from "./headers.ts"
+import { getBody, getRouteParams, getSearchParams } from "./context.ts"
+import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.ts"
+import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.ts"
+import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.ts"
 
 interface TrieNode {
     statics: Map<string, TrieNode>

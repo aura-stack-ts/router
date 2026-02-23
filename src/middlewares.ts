@@ -1,5 +1,5 @@
-import { RouterError } from "./error.js"
-import type { EndpointConfig, GlobalMiddlewareContext, MiddlewareFunction, RequestContext, RouterConfig } from "./types.js"
+import { RouterError } from "./error.ts"
+import type { EndpointConfig, GlobalMiddlewareContext, MiddlewareFunction, RequestContext, RouterConfig } from "./types.ts"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.

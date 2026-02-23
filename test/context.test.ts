@@ -1,13 +1,13 @@
 import { z } from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
-import { createNode, insert, search } from "../src/router.js"
-import { getRouteParams, getSearchParams, getBody } from "../src/context.js"
-import { HeadersBuilder } from "../src/headers.js"
-import type { RouteEndpoint } from "../src/types.js"
+import { createNode, insert, search } from "@/router.ts"
+import { getRouteParams, getSearchParams, getBody } from "@/context.ts"
+import { HeadersBuilder } from "@/headers.ts"
+import type { RouteEndpoint } from "@/types.ts"
 
 describe("getRouteParams", () => {
     const root = createNode()
-    const handler = async () => Response.json({})
+    const handler = () => Response.json({})
 
     const endpoints: RouteEndpoint[] = [
         { method: "GET", route: "/books", handler, config: {} },

@@ -1,8 +1,8 @@
 import { describe, test, expect, vi, beforeEach } from "vitest"
 import { z } from "zod"
-import { createRouter } from "../src/router.js"
-import { createEndpoint } from "../src/endpoint.js"
-import { createClient } from "../src/client.js"
+import { createRouter } from "@/router.ts"
+import { createEndpoint } from "@/endpoint.ts"
+import { createClient } from "@/client.ts"
 
 describe("Client", () => {
     beforeEach(() => {
