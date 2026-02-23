@@ -11,17 +11,22 @@ Schema validations are an optional configuration in `createEndpoint` and `create
 import { z } from "zod"
 import { createEndpoint } from "@aura-stack/router"
 
-export const endpoint = createEndpoint("POST", "/auth/signIn", async (ctx) => {
-  const { username, password } = ctx.body
-  return Response.json({ message: "Successful Login" })
-}, {
-  schemas: {
-    body: z.object({
-      username: z.string(),
-      password: z.string()
-    })
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    const { username, password } = ctx.body
+    return Response.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: z.object({
+        username: z.string(),
+        password: z.string(),
+      }),
+    },
   }
-})
+)
 ```
 
 ---
@@ -82,16 +87,21 @@ The schema can be passed as the fourth argument of `createEndpoint`.
 import { z } from "zod"
 import { createEndpoint } from "@aura-stack/router"
 
-export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx) => {
-  const { userId } = ctx.params
-  return Response.json({ message: "User DELETED successfully" })
-}, {
-  schemas: {
-    params: z.object({
-      userId: z.coerce.number()
-    })
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User DELETED successfully" })
+  },
+  {
+    schemas: {
+      params: z.object({
+        userId: z.coerce.number(),
+      }),
+    },
   }
-})
+)
 ```
 
 ### Using `createEndpointConfig`
@@ -109,15 +119,20 @@ import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
 const config = createEndpointConfig("/users/:userId", {
   schemas: {
     params: z.object({
-      userId: z.coerce.number()
-    })
-  }
+      userId: z.coerce.number(),
+    }),
+  },
 })
 
-export const deleteUser = createEndpoint("DELETE", "/users/:userId", async (ctx) => {
-  const { userId } = ctx.params
-  return Response.json({ message: "User DELETED successfully" })
-}, config)
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User DELETED successfully" })
+  },
+  config
+)
 ```
 
 ### Params

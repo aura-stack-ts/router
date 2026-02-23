@@ -173,12 +173,12 @@ interface RouteEndpoint<
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| `method` | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` \| `"DELETE"` \| `"HEAD"` \| `"CONNECT"` \| `"OPTIONS"` \| `"TRACE"` | The HTTP method used by the endpoint. |
-| `route` | `RoutePattern` | The route definition, supporting static and dynamic segments (e.g., `/users/:id`). |
-| `handler` | `RouteHandler` | Async function that processes the request and returns a `Response` |
-| `config` | `EndpointConfig` | Optional configuration for schemas and middlewares |
+| Parameter | Type                                                                                                             | Description                                                                        |
+| --------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `method`  | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` \| `"DELETE"` \| `"HEAD"` \| `"CONNECT"` \| `"OPTIONS"` \| `"TRACE"` | The HTTP method used by the endpoint.                                              |
+| `route`   | `RoutePattern`                                                                                                   | The route definition, supporting static and dynamic segments (e.g., `/users/:id`). |
+| `handler` | `RouteHandler`                                                                                                   | Async function that processes the request and returns a `Response`                 |
+| `config`  | `EndpointConfig`                                                                                                 | Optional configuration for schemas and middlewares                                 |
 
 #### `method` [#http-method]
 
@@ -290,17 +290,17 @@ interface RequestContext<RouteParams = Record<string, string>, Config extends En
 }
 ```
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `request` | `Request` | Original Request object. |
-| `url` | `URL` | URL object of the incoming request. |
-| `method` | `HTTPMethod` | The HTTP method defined in the endpoint. |
-| `route` | `RoutePattern` | The complete route pattern defined in the endpoint. |
-| `context` | `GlobalContext` | Global context available via the router configuration. |
-| `headers` | `HeadersBuilder` | A utility for managing response headers and cookies. |
-| `params` | `ContextParams<Config<["schemas"]>>` | Dynamic route parameters inferred from path or Zod definitions. |
-| `body` | `ContextBody<Config["schemas"]>["body"]` | Parsed and validated body based on schema. |
-| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters. |
+| Option         | Type                                                     | Description                                                     |
+| -------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| `request`      | `Request`                                                | Original Request object.                                        |
+| `url`          | `URL`                                                    | URL object of the incoming request.                             |
+| `method`       | `HTTPMethod`                                             | The HTTP method defined in the endpoint.                        |
+| `route`        | `RoutePattern`                                           | The complete route pattern defined in the endpoint.             |
+| `context`      | `GlobalContext`                                          | Global context available via the router configuration.          |
+| `headers`      | `HeadersBuilder`                                         | A utility for managing response headers and cookies.            |
+| `params`       | `ContextParams<Config<["schemas"]>>`                     | Dynamic route parameters inferred from path or Zod definitions. |
+| `body`         | `ContextBody<Config["schemas"]>["body"]`                 | Parsed and validated body based on schema.                      |
+| `searchParams` | `ContextSearchParams<Config["schemas"]>["searchParams"]` | Parsed and validated query parameters.                          |
 
 ###### `ctx.request` [#original-request-context]
 
@@ -355,7 +355,7 @@ import { createEndpoint } from "@aura-stack/router"
 const deprecatedRoutes = new Set<string>(["/api/v1/users", "api/v1/books"])
 
 const getUsers = createEndpoint("GET", "/api/v1/users", async (ctx) => {
-  if(deprecatedRoutes(ctx.route)) {
+  if (deprecatedRoutes(ctx.route)) {
     return Response.redirect("/api/v2/services/users")
   }
   return Response.json({ message: "Successful" })
@@ -394,20 +394,20 @@ The `headers` property is an instance of `HeadersBuilder`, which simplifies mana
 
 **Methods:**
 
-| Method | Description |
-| --- | --- |
-| `setHeader(name, value)` | Sets a header value. |
-| `getHeader(name)` | Retrieves a header value. |
+| Method                            | Description                                        |
+| --------------------------------- | -------------------------------------------------- |
+| `setHeader(name, value)`          | Sets a header value.                               |
+| `getHeader(name)`                 | Retrieves a header value.                          |
 | `setCookie(name, value, options)` | Sets a cookie with optional serialization options. |
-| `getCookie(name)` | Retrieves a specific cookie by name. |
-| `getSetCookie(name)` | Retrieves a specific `Set-Cookie` header value. |
+| `getCookie(name)`                 | Retrieves a specific cookie by name.               |
+| `getSetCookie(name)`              | Retrieves a specific `Set-Cookie` header value.    |
 
 ```ts lineNumbers
 import { createEndpoint } from "@aura-stack/router"
 
 const protectedEndpoint = createEndpoint("GET", "/protected", async (ctx) => {
   const authHeader = ctx.headers.getHeader("authorization")
-  
+
   ctx.headers.setHeader("x-processed-by", "api")
   ctx.headers.setCookie("session_id", "xyz123", { httpOnly: true, secure: true })
 
@@ -567,10 +567,10 @@ type EndpointConfig<
 }>
 ```
 
-| Arguments | Type | Description |
-| --- | --- | --- |
-| `RouteParams` | `RoutePattern` | The route passed as the second argument to `createEndpoint`. Determines the dynamic parameters available in the route. |
-| `Schemas` | `EndpointSchemas` | Collection of Zod schemas for validating and typing parameters. |
+| Arguments     | Type              | Description                                                                                                            |
+| ------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `RouteParams` | `RoutePattern`    | The route passed as the second argument to `createEndpoint`. Determines the dynamic parameters available in the route. |
+| `Schemas`     | `EndpointSchemas` | Collection of Zod schemas for validating and typing parameters.                                                        |
 
 ##### Route Params
 
@@ -586,6 +586,7 @@ type RouteParams = GetRouteParams<"/users/:userId/books/:bookId">
 ##### Zod Schemas
 
 The `schemas` object allows defining Zod schemas to validate and type:
+
 - Route parameters: [#params-context](#params-context)
 - Query string parameters: [#search-params-context](#search-params-context)
 - Request body: [#body-context](#body-context)
