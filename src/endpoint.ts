@@ -19,7 +19,7 @@ import type { EndpointConfig, EndpointSchemas, HTTPMethod, RouteEndpoint, RouteH
  * });
  */
 export const createEndpoint = <
-    const Method extends Uppercase<HTTPMethod>,
+    const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
     const Schemas extends EndpointSchemas,
 >(

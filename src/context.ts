@@ -1,6 +1,6 @@
-import { type ZodError } from "zod"
 import { isSupportedBodyMethod } from "./assert.ts"
 import { InvalidZodSchemaError, RouterError } from "./error.ts"
+import type { ZodError } from "zod"
 import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.ts"
 
 /**

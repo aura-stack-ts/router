@@ -39,10 +39,15 @@ export const insert = (root: TrieNode, endpoint: RouteEndpoint) => {
             node = node.statics.get(segment)!
         }
     }
-    if (node.endpoints.has(endpoint.method)) {
-        throw new RouterError("BAD_REQUEST", `Duplicate endpoint for ${endpoint?.method} ${endpoint?.route}`)
+    const methods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
+    for (const method of methods) {
+        if (node.endpoints.has(method)) {
+            throw new RouterError("BAD_REQUEST", `Duplicate endpoint for ${endpoint?.method} ${endpoint?.route}`)
+        }
     }
-    node.endpoints.set(endpoint.method, endpoint)
+    for (const method of methods) {
+        node.endpoints.set(method, endpoint)
+    }
 }
 
 export const search = (method: HTTPMethod, root: TrieNode, pathname: string) => {
@@ -111,7 +116,8 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
         const { endpoint, params } = search(method, root, pathnameWithBase)
-        if (endpoint.method !== globalRequestContext.request.method) {
+        const endpointMethods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
+        if (!endpointMethods.includes(globalRequestContext.request.method)) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
         const dynamicParams = getRouteParams(params, endpoint.config)
@@ -156,7 +162,10 @@ export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     for (const endpoint of endpoints) {
         const withBasePath = config.basePath ? `${config.basePath}${endpoint.route}` : endpoint.route
         insert(root, { ...endpoint, route: withBasePath as RoutePattern })
-        methods.add(endpoint.method)
+        const endpointMethods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
+        for (const method of endpointMethods) {
+            methods.add(method)
+        }
     }
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, root)
