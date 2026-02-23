@@ -1,4 +1,4 @@
-import { SerializeOptions, serialize, parse, Cookies, parseSetCookie } from "cookie"
+import { serialize, parse, parseSetCookie, type SerializeOptions, type Cookies } from "cookie"
 
 /**
  * A builder class for constructing and manipulating HTTP headers.

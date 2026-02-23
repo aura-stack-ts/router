@@ -59,19 +59,19 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
 function createClient<InferRoute extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>>
 ```
 
-| Parameter  | Type                  | Description                                                  |
-| ---------- | --------------------- | ------------------------------------------------------------ |
-| `baseURL`  | `string`              | The base URL where the router is hosted.                     |
-| `basePath` | `/${string}`          | An optional base path to prepend to all requests.            |
-| `headers`  | `IncomingHttpHeaders` | Default headers to include in every request made by the client.|
+| Parameter  | Type                                             | Description                                                     |
+| ---------- | ------------------------------------------------ | --------------------------------------------------------------- |
+| `baseURL`  | `string`                                         | The base URL where the router is hosted.                        |
+| `basePath` | `/${string}`                                     | An optional base path to prepend to all requests.               |
+| `headers`  | `Headers` \| `() => Headers \| Promise<Headers>` | Default headers to include in every request made by the client. |
 
 #### `baseURL`
 
 The `baseURL` defines the destination for proper request routing. This is particularly useful when the server is hosted or mounted on a different origin than the client.
 
 <Callout type="warning">
-  The `baseURL` option accepts only the protocol and origin. Any path components are ignored. To append a path, use the
-  `basePath` configuration option instead.
+  The `baseURL` option accepts only the protocol and origin. Any path components are ignored. To append a path, use the `basePath`
+  configuration option instead.
 </Callout>
 
 ```ts lineNumbers title="@/client"
@@ -117,9 +117,9 @@ export const client = createClient({
 
 The `createClient` function returns a typed object containing only the HTTP methods defined by the router's endpoints. It also enforces the structure of required arguments based on Zod schemas. This design ensures that developers access only valid handler methods and prevents runtime errors through TypeScript's static type system.
 
-| Return | Type                                  | Description                                                                                         |
-| ------ | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| client | `Client<InferEndpoints<InferRouter>>` | An object containing only the HTTP methods defined in the endpoints of the provided router.         |
+| Return | Type                                  | Description                                                                                 |
+| ------ | ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| client | `Client<InferEndpoints<InferRouter>>` | An object containing only the HTTP methods defined in the endpoints of the provided router. |
 
 <Callout>
   This return type guarantees full type safety. If an endpoint does not define a `DELETE` method, TypeScript prevents access to

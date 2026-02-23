@@ -8,8 +8,8 @@ description: Create routers to group endpoints and expose type-safe HTTP method 
 The `createRouter` function is a declarative API for defining routers that group endpoints and expose type-safe HTTP method handlers. The router automatically matches incoming requests based on the HTTP method and URL pattern, dispatching them to the correct endpoint.
 
 <Callout>
-  `createRouter` is designed for use **inside existing backend runtimes** such as Next.js, Nuxt.js, SvelteKit, Cloudflare
-  Workers, Bun, Deno, and Node.js (via Web APIs). It is **not** currently intended for building a backend from scratch, although this
+  `createRouter` is designed for use **inside existing backend runtimes** such as Next.js, Nuxt.js, SvelteKit, Cloudflare Workers,
+  Bun, Deno, and Node.js (via Web APIs). It is **not** currently intended for building a backend from scratch, although this
   capability is planned for the future.
 </Callout>
 
@@ -112,10 +112,10 @@ type createRouter = <const Endpoints extends RouteEndpoint[]>(
 ) => GetHttpHandlers<Endpoints>
 ```
 
-| Parameter | Type | Description |
-| --- | --- | --- |
+| Parameter   | Type              | Description                                         |
+| ----------- | ----------------- | --------------------------------------------------- |
 | `endpoints` | `RouteEndpoint[]` | The list of endpoints created via `createEndpoint`. |
-| `config` | `RouterConfig` | Optional router configuration. |
+| `config`    | `RouterConfig`    | Optional router configuration.                      |
 
 #### Endpoints [#endpoints]
 
@@ -167,12 +167,12 @@ interface RouterConfig {
 }
 ```
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `basePath` | `string` | Prefix applied to all routes (recommended: start with `/`). |
-| `middlewares` | `GlobalMiddleware[]` | Global middlewares executed before endpoint handlers. |
-| `onError` | `(error: Error \| RouterError, request: Request) => Response \| Promise<Response>` | Global error handler. |
-| `context` | `GlobalMiddlewareContext` | Global context for endpoints and middlewares. |
+| Option        | Type                                                                               | Description                                                 |
+| ------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `basePath`    | `string`                                                                           | Prefix applied to all routes (recommended: start with `/`). |
+| `middlewares` | `GlobalMiddleware[]`                                                               | Global middlewares executed before endpoint handlers.       |
+| `onError`     | `(error: Error \| RouterError, request: Request) => Response \| Promise<Response>` | Global error handler.                                       |
+| `context`     | `GlobalMiddlewareContext`                                                          | Global context for endpoints and middlewares.               |
 
 ##### `basePath` [#base-path]
 
@@ -186,9 +186,8 @@ export type BasePath = RoutePattern
 ```
 
 <Callout>
-  The `basePath` is prepended to every endpoint route upon router creation. Requests must include the full path
-  (`basePath + route`) — for example, with `basePath: "/api/v1"` and an endpoint route `/users`, the request path is
-  `/api/v1/users`.
+  The `basePath` is prepended to every endpoint route upon router creation. Requests must include the full path (`basePath +
+  route`) — for example, with `basePath: "/api/v1"` and an endpoint route `/users`, the request path is `/api/v1/users`.
 </Callout>
 
 ```ts lineNumbers
@@ -226,6 +225,7 @@ The `middlewares` configuration property defines global middleware functions tha
 </Callout>
 
 Global middlewares are ideal for cross-cutting concerns such as:
+
 - Authentication / Authorization
 - Logging and Auditing
 - Redirect Rules
@@ -307,6 +307,7 @@ export const router = createRouter([], {
 ##### Middleware Execution Order
 
 Middlewares execute in a specific sequence:
+
 1. **Global middlewares** (from `createRouter` config)
 2. **Endpoint middlewares** (from `createEndpointConfig`)
 3. **Route handler** (the main endpoint function)
@@ -352,6 +353,7 @@ type OnErrorHandler = (error: unknown, request: Request) => Response | Promise<R
 ```
 
 Use it to:
+
 - Format errors consistently across the API.
 - Map errors to HTTP status codes.
 - Differentiate between internal router errors and application errors.
@@ -363,6 +365,7 @@ Use it to:
 To detect whether the error originated from the router internals or from endpoint logic, use the helper `isRouterError`.
 
 A `RouterError` provides:
+
 - `message`
 - `statusCode`
 - `statusText`
@@ -412,11 +415,13 @@ export const { GET } = createRouter([session], {
 ##### Default Error Structure
 
 Internally, router errors use a structured format containing:
+
 - A `message` in the JSON body.
 - A relevant `status` code.
 - A `statusText` label.
 
 For example, when no route matches, the default response is:
+
 ```json
 HTTP/1.1 404 Not Found
 Content-Type: application/json
@@ -481,12 +486,13 @@ export const router = createRouter([], {
 
 The `createRouter` function returns a typed object containing only the HTTP handlers defined by the endpoints in the router. This ensures that developers can only access valid handler methods and prevents runtime errors by leveraging TypeScript's static type system.
 
-| Return | Type | Description |
-| --- | --- | --- |
+| Return        | Type                                                 | Description                                                                            |
+| ------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | http handlers | `GetHttpHandlers<Endpoints extends RouteEndpoint[]>` | Generates an object containing only the allowed HTTP methods defined in the endpoints. |
 
 <Callout>
-  This return type ensures full type safety. If an endpoint does not define a DELETE method, TypeScript prevents access to DELETE on the router.
+  This return type ensures full type safety. If an endpoint does not define a DELETE method, TypeScript prevents access to DELETE
+  on the router.
 </Callout>
 
 #### HTTP Route Handlers
@@ -494,6 +500,7 @@ The `createRouter` function returns a typed object containing only the HTTP hand
 The router returns only the HTTP handlers corresponding to the HTTP methods defined inside the configured endpoints.
 
 This provides two core benefits:
+
 1. **Type-Safe Access to Handlers:** If the router doesn’t define a `DELETE` route, TypeScript will not allow `router.DELETE`.
 2. **Zero Undefined Handlers at Runtime:** The router guarantees that all returned handlers exist and are functional—preventing accidental undefined calls.
 
@@ -519,6 +526,7 @@ export const { DELETE } = createRouter([signIn, credentials])
 #### How It Works Internally
 
 `createRouter` analyzes all endpoints and extracts their associated HTTP methods:
+
 - If at least one endpoint uses "GET" → the returned object includes GET.
 - If at least one endpoint uses "POST" → the returned object includes POST.
 - If no endpoint uses "PUT", "PATCH", etc. → they are omitted entirely.
@@ -679,6 +687,7 @@ export const { GET, POST } = createRouter([getUser, createUser], config)
 Aura Router uses a Trie-based route matcher to achieve fast and predictable routing, even across large endpoint trees.
 
 This design provides:
+
 - ⚡ O(K) lookup time (K = number of path segments).
 - 🧠 Deterministic precedence rules.
 - 🔒 Strict parameter name validation.
@@ -690,10 +699,10 @@ This design provides:
 
 The matching process follows a strict hierarchy to avoid ambiguity.
 
-| Priority | Type of Route | Description | Cases |
-| --- | --- | --- | --- |
-| **1 (highest)** | **Static routes** | Always matched before dynamic routes. | `/me`, `/users/`, etc. |
-| **2** | **Dynamic routes** | Matched only if no static route applies. | `/:id`, `:userId`, etc. |
+| Priority        | Type of Route      | Description                              | Cases                   |
+| --------------- | ------------------ | ---------------------------------------- | ----------------------- |
+| **1 (highest)** | **Static routes**  | Always matched before dynamic routes.    | `/me`, `/users/`, etc.  |
+| **2**           | **Dynamic routes** | Matched only if no static route applies. | `/:id`, `:userId`, etc. |
 
 ```ts lineNumbers
 /*
@@ -709,29 +718,34 @@ export const { GET } = createRouter([
 Each dynamic segment must use a consistent parameter name for a given path level. Otherwise, the router throws a configuration error.
 
 **Valid:**
+
 ```
 /users/:userId
 /users/:userId/books
 ```
 
 **Invalid:**
+
 ```
 /users/:userId
 /users/:id
 ```
 
 Parameter name mismatches break type inference and cause ambiguous routing. Aura Router enforces this to guarantee consistent `ctx.params`.
+
 </Callout>
 
 ### Mini Example of the Internal Trie
 
 For this set of routes:
+
 ```
 /users/me
 /users/:id
 ```
 
 The Trie becomes:
+
 ```
 root
  └── "users"
