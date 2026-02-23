@@ -11,6 +11,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
+- Added support for multiple HTTP methods in endpoint definitions via `createEndpoint`. Multiple HTTP methods can now match the same route. [#36](https://github.com/aura-stack-ts/router/pull/36)
+
 - Added support for dynamic headers in `createClient`. Headers can now be returned as an object or a `Promise` resolving to an object. [#33](https://github.com/aura-stack-ts/router/pull/33)
 
 - Added `basePath` option in `createClient` function to define the base path for all requests made to the endpoints. [#30](https://github.com/aura-stack-ts/router/pull/30).
