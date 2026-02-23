@@ -11,6 +11,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
+- Added support for dynamic headers in `createClient`. Headers can now be returned as an object or a `Promise` resolving to an object. [#33](https://github.com/aura-stack-ts/router/pull/33)
+
 - Added `basePath` option in `createClient` function to define the base path for all requests made to the endpoints. [#30](https://github.com/aura-stack-ts/router/pull/30).
 
 - Introduced client API to access endpoints declared in the router via `createRouter`. The client API can be defined using the `createClient` function that takes the router type as a generic argument. [#28](https://github.com/aura-stack-ts/router/pull/28).

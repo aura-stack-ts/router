@@ -123,7 +123,47 @@ describe("Client", () => {
         })
 
         await client.get("/users")
-
         expect(fetch).toHaveBeenCalledWith("http://api.example.com/v1/users", expect.objectContaining({}))
+    })
+
+    test("createClient with headers as a function", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            headers: () => ({ "content-type": "application/json", "x-custom-header": "custom-value" })
+        })
+        await client.get("/users")
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    "content-type": "application/json",
+                    "x-custom-header": "custom-value",
+                }),
+            })
+        )
+    })
+
+    test("createClient with dynamic headers as a function", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            headers: async () => {
+                const token = await Promise.resolve("dynamic-token")
+                return {
+                    "content-type": "application/json",
+                    "x-dynamic-token": token,
+                }
+
+            }
+        })
+        await client.get("/users")
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    "content-type": "application/json",
+                    "x-dynamic-token": "dynamic-token",
+                }),
+            })
+        )
     })
 })
