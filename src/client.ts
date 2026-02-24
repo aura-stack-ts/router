@@ -17,7 +17,7 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
  * client.get("/users")
  */
 export function createClient<InferRouter extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>> {
-    const { baseURL, headers: defaultHeaders } = options
+    const { baseURL, basePath, headers: defaultHeaders, ...clientOptions } = options
     return new Proxy(
         {},
         {
@@ -25,7 +25,8 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
                 const method = prop.toString().toUpperCase() as HTTPMethod
                 return async (path: string, ctx?: any) => {
                     const searchParams = new URLSearchParams(ctx?.searchParams)
-                    let resolvedPath = `${options.basePath ?? ""}${path}`
+
+                    let resolvedPath = `${basePath ?? ""}${path}`
                     for (const [key, value] of Object.entries(ctx?.params ?? {})) {
                         resolvedPath = resolvedPath.replace(`:${key}`, String(value))
                     }
@@ -38,7 +39,7 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
                     const { params: _p, searchParams: _s, ...requestInit } = ctx ?? {}
                     const headers = typeof defaultHeaders === "function" ? await defaultHeaders() : defaultHeaders
                     const response = await fetch(url.toString(), {
-                        ...options,
+                        ...clientOptions,
                         ...requestInit,
                         method,
                         headers: {
