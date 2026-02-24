@@ -16,7 +16,7 @@ describe("createRouter", () => {
             },
         })
         const sessionConfig = createEndpointConfig({
-            middlewares: [
+            use: [
                 (ctx) => {
                     ctx.headers.setCookie("session-token", "123abc-token")
                     return ctx
@@ -248,7 +248,7 @@ describe("createRouter", () => {
 
         describe("Add headers middleware", () => {
             const router = createRouter([session, signIn], {
-                middlewares: [
+                use: [
                     (ctx) => {
                         ctx.request.headers.set("x-powered-by", "@aura-stack")
                         return ctx
@@ -276,7 +276,7 @@ describe("createRouter", () => {
 
         describe("Block request middleware", () => {
             const router = createRouter([session], {
-                middlewares: [
+                use: [
                     (ctx) => {
                         if (!ctx.request.headers.get("authorization")) {
                             return new Response(JSON.stringify({ message: "Forbidden" }), {

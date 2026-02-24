@@ -67,7 +67,7 @@ const config = createEndpointConfig({
       state: z.string(),
     }),
   },
-  middlewares: [
+  use: [
     async (ctx) => {
       const { redirect_uri, code, state } = ctx.searchParams
       return ctx
@@ -90,7 +90,7 @@ const config = createEndpointConfig("/auth/signIn/:oauth/", {
       state: z.string(),
     }),
   },
-  middlewares: [
+  use: [
     async (ctx) => {
       const { oauth } = ctx.params
       const { redirect_uri, code, state } = ctx.searchParams

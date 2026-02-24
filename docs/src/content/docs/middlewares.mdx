@@ -53,7 +53,7 @@ The following example demonstrates basic middleware usage without relying on the
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 const config = createEndpointConfig({
-  middlewares: [
+  use: [
     async (ctx) => {
       console.log(`Request to ${ctx.url}`)
       return ctx
@@ -79,7 +79,7 @@ const verifyToken = (token: string) => {
 }
 
 const authConfig = createEndpointConfig({
-  middlewares: [
+  use: [
     async (ctx) => {
       const token = ctx.request.headers.get("authorization")
 
@@ -122,7 +122,7 @@ Multiple middlewares execute in the order they are defined.
 
 ```ts lineNumbers
 const config = createEndpointConfig({
-  middlewares: [
+  use: [
     /*
      1. First middleware - logging
     */
@@ -165,7 +165,7 @@ When both global and endpoint middlewares are defined, they execute in the follo
 import { createEndpoint, createEndpointConfig, createRouter } from "@aura-stack/router"
 
 const endpointConfig = createEndpointConfig({
-  middlewares: [
+  use: [
     async (ctx) => {
       console.log("2. Endpoint middleware")
       return ctx
@@ -184,7 +184,7 @@ const endpoint = createEndpoint(
 )
 
 const router = createRouter([endpoint], {
-  middlewares: [
+  use: [
     async (ctx) => {
       console.log("1. Global middleware")
       return ctx

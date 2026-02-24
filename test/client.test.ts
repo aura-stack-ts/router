@@ -8,7 +8,7 @@ describe("Client", () => {
     beforeEach(() => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => {
+            vi.fn(() => {
                 return new Response(JSON.stringify({ success: true }), { status: 200 })
             })
         )

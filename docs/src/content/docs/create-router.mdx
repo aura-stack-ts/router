@@ -87,7 +87,7 @@ import { createRouter, type RouterConfig } from "@aura-stack/router"
 
 const routerConfig: RouterConfig = {
   basePath: "/api/",
-  middlewares: [],
+  use: [],
   onError: undefined,
   context: {},
 }
@@ -123,7 +123,7 @@ type createRouter = <const Endpoints extends RouteEndpoint[]>(
 import type { HTTPMethod, RoutePattern, EndpointConfig, RouteHandler } from "@aura-stack/router/types"
 
 interface RouteEndpoint<
-  Method extends HTTPMethod = HTTPMethod,
+  Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
   Route extends RoutePattern = RoutePattern,
   Config extends EndpointConfig = EndpointConfig,
 > {
@@ -161,18 +161,18 @@ import type { RoutePattern, GlobalMiddleware, RouterError } from "@aura-stack/ro
 
 interface RouterConfig {
   basePath?: RoutePattern
-  middlewares?: GlobalMiddleware[]
+  use?: GlobalMiddleware[]
   onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
   context?: GlobalMiddlewareContext
 }
 ```
 
-| Option        | Type                                                                               | Description                                                 |
-| ------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `basePath`    | `string`                                                                           | Prefix applied to all routes (recommended: start with `/`). |
-| `middlewares` | `GlobalMiddleware[]`                                                               | Global middlewares executed before endpoint handlers.       |
-| `onError`     | `(error: Error \| RouterError, request: Request) => Response \| Promise<Response>` | Global error handler.                                       |
-| `context`     | `GlobalMiddlewareContext`                                                          | Global context for endpoints and middlewares.               |
+| Option     | Type                                                                               | Description                                                 |
+| ---------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `basePath` | `string`                                                                           | Prefix applied to all routes (recommended: start with `/`). |
+| `use`      | `GlobalMiddleware[]`                                                               | Global middlewares executed before endpoint handlers.       |
+| `onError`  | `(error: Error \| RouterError, request: Request) => Response \| Promise<Response>` | Global error handler.                                       |
+| `context`  | `GlobalMiddlewareContext`                                                          | Global context for endpoints and middlewares.               |
 
 ##### `basePath` [#base-path]
 
@@ -215,9 +215,9 @@ const createUser = createEndpoint("POST", "/users", async (ctx) => {
 export const { GET, POST } = createRouter([getUsers, createUser], routerConfig)
 ```
 
-##### `middlewares` [#middlewares]
+##### `use` [#use]
 
-The `middlewares` configuration property defines global middleware functions that run for every matched request. Global middlewares execute after route matching but before endpoint middlewares and the route handler.
+The `use` configuration property defines global middleware functions that run for every matched request. Global middlewares execute after route matching but before endpoint middlewares and the route handler.
 
 <Callout>
   Global middlewares access the request via the `context` property. The context must be configured on the router to be accessible
@@ -257,7 +257,7 @@ const globalMiddleware: GlobalMiddleware = async (ctx) => {
 }
 
 export const router = createRouter([], {
-  middlewares: [globalMiddleware],
+  use: [globalMiddleware],
 })
 ```
 
@@ -280,7 +280,7 @@ const auditMiddleware: GlobalMiddleware = async (ctx) => {
 }
 
 export const router = createRouter([], {
-  middlewares: [auditMiddleware],
+  use: [auditMiddleware],
 })
 ```
 
@@ -300,7 +300,7 @@ const authorizationMiddleware: GlobalMiddleware = async (ctx) => {
 }
 
 export const router = createRouter([], {
-  middlewares: [authorizationMiddleware],
+  use: [authorizationMiddleware],
 })
 ```
 
@@ -316,7 +316,7 @@ Middlewares execute in a specific sequence:
 import { createRouter, createEndpoint, createEndpointConfig } from "@aura-stack/router"
 
 const endpointConfig = createEndpointConfig({
-  middlewares: [
+  use: [
     async (ctx) => {
       console.log("2. Endpoint middleware")
       return ctx
@@ -335,7 +335,7 @@ const endpoint = createEndpoint(
 )
 
 export const router = createRouter([endpoint], {
-  middlewares: [
+  use: [
     async (ctx) => {
       console.log("1. Global middleware")
       return ctx
@@ -574,7 +574,7 @@ const config: RouterConfig = {
 export const { GET, POST } = createRouter([getUsers, createUser], config)
 ```
 
-### With `middlewares`
+### With `use`
 
 ```ts lineNumbers
 import { createRouter, createEndpoint, type RouterConfig, type GlobalMiddleware } from "@aura-stack/router"
@@ -596,10 +596,10 @@ const auditMiddleware: GlobalMiddleware = async (ctx) => {
 }
 
 const config: RouterConfig = {
-  middlewares: [auditMiddleware],
+  use: [auditMiddleware],
 }
 
-export const { GET, POST } = createRouter([getUsers, createUser])
+export const { GET, POST } = createRouter([getUsers, createUser], config)
 ```
 
 ### With `onError`

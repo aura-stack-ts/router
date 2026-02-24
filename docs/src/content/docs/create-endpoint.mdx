@@ -563,7 +563,7 @@ type EndpointConfig<
   Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
   schemas?: Schemas
-  middlewares?: MiddlewareFunction<GetRouteParams<RouteParams>, { schemas: Schemas }>[]
+  use?: MiddlewareFunction<GetRouteParams<RouteParams>, { schemas: Schemas }>[]
 }>
 ```
 
@@ -618,7 +618,7 @@ export const signIn = createEndpoint("GET", "/auth/signIn/:oauth", async (ctx) =
 })
 ```
 
-### With `middlewares`
+### With `use`
 
 Middlewares run before the route handler and have access to the parsed and typed context (`ctx`).
 
@@ -633,7 +633,7 @@ const getProfile = createEndpoint(
     return Response.json({ userId })
   },
   {
-    middlewares: [
+    use: [
       // Authentication middleware
       async (ctx) => {
         const token = ctx.request.headers.get("authorization")
@@ -657,7 +657,7 @@ Several middlewares can be chained to compose complex request logic:
 
 ```ts lineNumbers
 const config = createEndpointConfig({
-  middlewares: [
+  use: [
     // Logging
     async (ctx) => {
       console.log(`Request to ${ctx.url}`)
@@ -708,7 +708,7 @@ const config = createEndpointConfig({
   schemas: {
     body: z.object({ name: z.string() }),
   },
-  middlewares: [
+  use: [
     /* ... */
   ],
 })
@@ -725,7 +725,7 @@ When the route pattern is passed as the first argument to `createEndpointConfig`
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 const config = createEndpointConfig("/users/:userId", {
-  middlewares: [
+  use: [
     async (ctx) => {
       const { userId } = ctx.params
       console.log(`Processing request for user ${userId}`)

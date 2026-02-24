@@ -232,7 +232,7 @@ describe("createEndpoint", () => {
                     return Response.json({ oauth })
                 },
                 {
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             ctx.params = { oauth: "google" }
                             return ctx
@@ -255,7 +255,7 @@ describe("createEndpoint", () => {
                     return Response.json({ searchParams })
                 },
                 {
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             ctx.searchParams.set("state", "123abc")
                             ctx.searchParams.set("code", "123")
@@ -281,7 +281,7 @@ describe("createEndpoint", () => {
                     return Response.json({ headers })
                 },
                 {
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             ctx.headers.setHeader("Authorization", "Bearer token")
                             return ctx
@@ -313,7 +313,7 @@ describe("createEndpoint", () => {
                             password: z.string(),
                         }),
                     },
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             ctx.body.username = "John Doe"
                             return ctx
@@ -349,7 +349,7 @@ describe("createEndpoint", () => {
                             redirect_uri: z.string(),
                         }),
                     },
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             const searchParams = ctx.searchParams as any
                             searchParams.state = "123abc"
@@ -380,7 +380,7 @@ describe("createEndpoint", () => {
                 },
                 {
                     schemas: {},
-                    middlewares: [
+                    use: [
                         (ctx) => {
                             ctx.params.oauth = "google"
                             return ctx

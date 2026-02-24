@@ -104,7 +104,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
         }
         const globalContext = { request, context: config.context ?? ({} as GlobalContext) }
-        const globalRequestContext = await executeGlobalMiddlewares(globalContext, config.middlewares)
+        const globalRequestContext = await executeGlobalMiddlewares(globalContext, config.use)
 
         if (globalRequestContext instanceof Response) return globalRequestContext
 
@@ -129,7 +129,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             route: endpoint.route,
             context: config.context ?? ({} as GlobalContext),
         }
-        context = await executeMiddlewares(context, endpoint.config.middlewares)
+        context = await executeMiddlewares(context, endpoint.config.use)
         const response = await endpoint.handler(context)
         return response
     } catch (error) {
