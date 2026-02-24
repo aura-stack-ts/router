@@ -165,4 +165,94 @@ describe("Client", () => {
             })
         )
     })
+
+    test("createClient with cache option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            cache: "no-cache",
+        })
+        await client.get("/users")
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                cache: "no-cache",
+            })
+        )
+    })
+
+    test("createClient with overridden cache option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            cache: "no-cache",
+        })
+        await client.get("/users", {
+            cache: "reload",
+        })
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                cache: "reload",
+            })
+        )
+    })
+
+    test("createClient with credentials option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            credentials: "include",
+        })
+        await client.get("/users")
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                credentials: "include",
+            })
+        )
+    })
+
+    test("createClient with overridden credentials option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            credentials: "include",
+        })
+        await client.get("/users", {
+            credentials: "same-origin",
+        })
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                credentials: "same-origin",
+            })
+        )
+    })
+
+    test("createClient with mode option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            mode: "cors",
+        })
+        await client.get("/users")
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                mode: "cors",
+            })
+        )
+    })
+
+    test("createClient with overridden mode option", async () => {
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            mode: "cors",
+        })
+        await client.get("/users", {
+            mode: "no-cors",
+        })
+        expect(fetch).toHaveBeenCalledWith(
+            "http://api.example.com/users",
+            expect.objectContaining({
+                mode: "no-cors",
+            })
+        )
+    })
 })
