@@ -159,7 +159,7 @@ export type RouteHandler<Route extends RoutePattern, Config extends EndpointConf
  * handler function with inferred context types, and associated configuration.
  */
 export interface RouteEndpoint<
-    Method extends HTTPMethod = HTTPMethod,
+    Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
     Route extends RoutePattern = RoutePattern,
     Config extends EndpointConfig = EndpointConfig,
 > {
@@ -172,7 +172,13 @@ export interface RouteEndpoint<
 /**
  * Infer the HTTP methods defined in the provided array of route endpoints.
  */
-export type InferMethod<Endpoints extends RouteEndpoint[]> = Endpoints extends unknown[] ? Endpoints[number]["method"] : "unknown"
+export type InferMethod<Endpoints extends RouteEndpoint[]> = Endpoints extends (infer Endpoint)[]
+    ? Endpoint extends RouteEndpoint<infer Method, infer _, infer __>
+        ? Method extends HTTPMethod[]
+            ? Method[number]
+            : Method
+        : never
+    : never
 
 /**
  * Generates an object with HTTP methods available by the router from `createRouter` function.
@@ -242,16 +248,32 @@ export interface RouterConfig extends GlobalCtx {
  */
 export type ExtractEndpoint<T> = T extends RouteEndpoint<infer M, infer P, infer C> ? { method: M; path: P; config: C } : never
 
+type MethodIncludes<Method, Met extends HTTPMethod> = Method extends readonly HTTPMethod[]
+    ? Met extends Method[number]
+        ? true
+        : false
+    : Method extends HTTPMethod
+      ? Method extends Met
+          ? true
+          : false
+      : false
+
 /**
  * @experimental
  */
 export type RoutesByMethod<Defs extends readonly RouteEndpoint[], Met extends HTTPMethod> =
-    ExtractEndpoint<Defs[number]> extends infer E ? (E extends { method: Met; path: infer P } ? P : never) : never
+    ExtractEndpoint<Defs[number]> extends infer E
+        ? E extends { method: infer M; path: infer P }
+            ? MethodIncludes<M, Met> extends true
+                ? P
+                : never
+            : never
+        : never
 
 export type ExtractRoutesByMethod<Defs extends RouteEndpoint[], Met extends HTTPMethod> = Defs extends unknown[]
     ? Defs extends [infer First, ...infer Rest]
         ? First extends RouteEndpoint<infer M, infer R>
-            ? M extends Met
+            ? MethodIncludes<M, Met> extends true
                 ? R | ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
                 : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
             : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
@@ -271,7 +293,7 @@ export type RemoveUndefined<T> = {
 export type Find<Defs extends RouteEndpoint[], Met extends HTTPMethod, Path extends string> = Defs extends unknown[]
     ? Defs extends [infer First, ...infer Rest]
         ? First extends RouteEndpoint<infer M, infer R, infer C>
-            ? M extends Met
+            ? MethodIncludes<M, Met> extends true
                 ? R extends Path
                     ? RemoveUndefined<ToInferZod<NonNullable<C["schemas"]>>>
                     : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>

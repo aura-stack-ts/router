@@ -176,7 +176,7 @@ describe("createEndpoint", () => {
             const endpoint = createEndpoint(
                 "GET",
                 "/signIn/:oauth",
-                async (ctx) => {
+                (ctx) => {
                     const oauth = ctx.params.oauth
                     return Response.json({ oauth })
                 },
@@ -186,7 +186,7 @@ describe("createEndpoint", () => {
             const inferEndpoint = createEndpoint(
                 "GET",
                 "/type/:typeId",
-                async (ctx) => {
+                (ctx) => {
                     return Response.json({ typeId: ctx.params.typeId })
                 },
                 inferConfig
@@ -399,11 +399,11 @@ describe("createEndpoint", () => {
     })
 
     describe("With method, route, and url", () => {
-        const endpont = createEndpoint("GET", "/users", async (ctx) => {
+        const endpoint = createEndpoint("GET", "/users", (ctx) => {
             return Response.json({ method: ctx.method, route: ctx.route, url: ctx.url })
         })
 
-        const { GET } = createRouter([endpont])
+        const { GET } = createRouter([endpoint])
 
         test("Access method, route, and url from context", async ({ expect }) => {
             const get = await GET(new Request("https://example.com/users?id=123"))
@@ -412,6 +412,44 @@ describe("createEndpoint", () => {
                 method: "GET",
                 route: "/users",
                 url: "https://example.com/users?id=123",
+            })
+        })
+    })
+
+    describe("with multiple HTTP methods", () => {
+        const endpoint = createEndpoint(["GET", "POST"], "/items", (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route })
+        })
+        const deleteEndpoint = createEndpoint("DELETE", "/items/:id", (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route, id: ctx.params.id })
+        })
+        const router = createRouter([endpoint, deleteEndpoint])
+
+        test("Handle GET request", async ({ expect }) => {
+            const get = await router.GET(new Request("https://example.com/items"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                method: "GET",
+                route: "/items",
+            })
+        })
+
+        test("Handle POST request", async ({ expect }) => {
+            const post = await router.POST(new Request("https://example.com/items", { method: "POST" }))
+            expect(post.ok).toBe(true)
+            expect(await post.json()).toEqual({
+                method: "POST",
+                route: "/items",
+            })
+        })
+
+        test("Handle DELETE request with params", async ({ expect }) => {
+            const del = await router.DELETE(new Request("https://example.com/items/123", { method: "DELETE" }))
+            expect(del.ok).toBe(true)
+            expect(await del.json()).toEqual({
+                method: "DELETE",
+                route: "/items/:id",
+                id: "123",
             })
         })
     })
