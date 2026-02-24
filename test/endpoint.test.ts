@@ -399,11 +399,11 @@ describe("createEndpoint", () => {
     })
 
     describe("With method, route, and url", () => {
-        const endpont = createEndpoint("GET", "/users", (ctx) => {
+        const endpoint = createEndpoint("GET", "/users", (ctx) => {
             return Response.json({ method: ctx.method, route: ctx.route, url: ctx.url })
         })
 
-        const { GET } = createRouter([endpont])
+        const { GET } = createRouter([endpoint])
 
         test("Access method, route, and url from context", async ({ expect }) => {
             const get = await GET(new Request("https://example.com/users?id=123"))

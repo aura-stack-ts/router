@@ -44,8 +44,6 @@ export const insert = (root: TrieNode, endpoint: RouteEndpoint) => {
         if (node.endpoints.has(method)) {
             throw new RouterError("BAD_REQUEST", `Duplicate endpoint for ${endpoint?.method} ${endpoint?.route}`)
         }
-    }
-    for (const method of methods) {
         node.endpoints.set(method, endpoint)
     }
 }
@@ -116,10 +114,6 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
         const { endpoint, params } = search(method, root, pathnameWithBase)
-        const endpointMethods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
-        if (!endpointMethods.includes(globalRequestContext.request.method)) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
-        }
         const dynamicParams = getRouteParams(params, endpoint.config)
         const body = await getBody(globalRequestContext.request, endpoint.config)
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)

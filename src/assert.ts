@@ -13,7 +13,7 @@ export const supportedProtocols = new Set(["http:", "https:"])
  * @param method - The HTTP method to check.
  * @returns True if the method is supported, false otherwise.
  */
-export const isSupportedMethod = (method: string | string[]): method is HTTPMethod => {
+export const isSupportedMethod = (method: string | string[]): method is HTTPMethod | HTTPMethod[] => {
     if (Array.isArray(method)) {
         return method.every((meth) => supportedMethods.has(meth as HTTPMethod))
     }
