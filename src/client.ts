@@ -38,6 +38,7 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
                     const { params: _p, searchParams: _s, ...requestInit } = ctx ?? {}
                     const headers = typeof defaultHeaders === "function" ? await defaultHeaders() : defaultHeaders
                     const response = await fetch(url.toString(), {
+                        ...options,
                         ...requestInit,
                         method,
                         headers: {

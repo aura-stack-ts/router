@@ -59,11 +59,14 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
 function createClient<InferRoute extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>>
 ```
 
-| Parameter  | Type                                             | Description                                                     |
-| ---------- | ------------------------------------------------ | --------------------------------------------------------------- |
-| `baseURL`  | `string`                                         | The base URL where the router is hosted.                        |
-| `basePath` | `/${string}`                                     | An optional base path to prepend to all requests.               |
-| `headers`  | `Headers` \| `() => Headers \| Promise<Headers>` | Default headers to include in every request made by the client. |
+| Parameter     | Type                                             | Description                                                     |
+| ------------- | ------------------------------------------------ | --------------------------------------------------------------- |
+| `baseURL`     | `string`                                         | The base URL where the router is hosted.                        |
+| `basePath`    | `/${string}`                                     | An optional base path to prepend to all requests.               |
+| `headers`     | `Headers` \| `() => Headers \| Promise<Headers>` | Default headers to include in every request made by the client. |
+| `cache`       | `RequestCache`                                   | The cache mode to use for all requests.                         |
+| `credentials` | `RequestCredentials`                             | The credentials mode to use for all requests.                   |
+| `mode`        | `RequestMode`                                    | The mode to use for all requests                                |
 
 #### `baseURL`
 
@@ -110,6 +113,44 @@ export const client = createClient({
     "cache-control": "no-store",
     pragma: "no-cache",
   },
+})
+```
+
+#### `cache`
+
+Caching mode to use for all requests made by the client. For more details, see the [MDN documentation on RequestCache](https://developer.mozilla.org/en-US/docs/Web/API/Request/cache).
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+  cache: "no-store",
+})
+```
+
+#### `credentials`
+
+Credentials mode to use for all requests made by the client. For more details, see the [MDN documentation on RequestCredentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials).
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+  credentials: "include",
+})
+```
+
+#### `mode`
+
+Request mode to use for all requests made by the client. For more details, see the [MDN documentation on RequestMode](https://developer.mozilla.org/en-US/docs/Web/API/Request/mode).
+
+```ts lineNumbers title="@/client"
+import { createClient } from "@aura-stack/router/client"
+export const client = createClient({
+  baseURL: "http://localhost:3000",
+  mode: "cors",
 })
 ```
 

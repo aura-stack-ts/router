@@ -318,7 +318,7 @@ export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoint
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
 
-export interface ClientOptions {
+export interface ClientOptions extends Pick<RequestInit, "cache" | "credentials" | "mode"> {
     /**
      * Base URL for the router client to make requests to the server.
      * This is useful when the server is hosted on a different origin.
