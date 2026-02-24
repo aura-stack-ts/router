@@ -52,7 +52,7 @@ export const createEndpoint = <
  * @example
  * // Without route pattern
  * const config = createEndpointConfig({
- *   middlewares: [myMiddleware],
+ *   use: [myMiddleware],
  *   schemas: {
  *     searchParams: z.object({
  *       q: z.string().min(3),
@@ -66,7 +66,7 @@ export const createEndpoint = <
  *
  * // Overload with route pattern
  * const config = createEndpointConfig("/users/:userId", {
- *   middlewares: [myMiddleware],
+ *   use: [myMiddleware],
  * })
  *
  * const getUser = createEndpoint("GET", "/users/:userId", async (request, ctx) => {

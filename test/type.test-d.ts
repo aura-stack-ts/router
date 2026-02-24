@@ -154,22 +154,22 @@ describe("MiddlewareFunction", () => {
         MiddlewareFunction<
             EmptyObject,
             {
-                middlewares: []
+                use: []
             }
         >
-    >().toEqualTypeOf<(ctx: RequestContext<EmptyObject, { middlewares: [] }>) => ReturnCtx<EmptyObject, { middlewares: [] }>>()
+    >().toEqualTypeOf<(ctx: RequestContext<EmptyObject, { use: [] }>) => ReturnCtx<EmptyObject, { use: [] }>>()
 
     expectTypeOf<
         MiddlewareFunction<
             EmptyObject,
             {
-                middlewares: [(ctx: RequestContext) => Promise<RequestContext<EmptyObject, { middlewares: [] }>>]
+                use: [(ctx: RequestContext) => Promise<RequestContext<EmptyObject, { use: [] }>>]
             }
         >
-    >().toEqualTypeOf<(ctx: RequestContext<EmptyObject, { middlewares: [] }>) => ReturnCtx<EmptyObject, { middlewares: [] }>>()
+    >().toEqualTypeOf<(ctx: RequestContext<EmptyObject, { use: [] }>) => ReturnCtx<EmptyObject, { use: [] }>>()
 
     expectTypeOf<MiddlewareFunction<GetRouteParams<"/auth/:oauth">>>().toEqualTypeOf<
-        (ctx: RequestContext<{ oauth: string }, { middlewares: [] }>) => ReturnCtx<{ oauth: string }, { middlewares: [] }>
+        (ctx: RequestContext<{ oauth: string }, { use: [] }>) => ReturnCtx<{ oauth: string }, { use: [] }>
     >()
 
     expectTypeOf<
@@ -177,7 +177,7 @@ describe("MiddlewareFunction", () => {
             GetRouteParams<"/auth/:oauth">,
             {
                 schemas: { searchParams: ZodObject<{ state: ZodString }> }
-                middlewares: []
+                use: []
             }
         >
     >().toEqualTypeOf<
@@ -353,7 +353,7 @@ describe("RequestContext", () => {
 describe("EndpointConfig", () => {
     expectTypeOf<EndpointConfig<"/">>().toEqualTypeOf<{
         schemas?: EndpointSchemas
-        middlewares?: MiddlewareFunction<
+        use?: MiddlewareFunction<
             GetRouteParams<"/">,
             {
                 schemas: EndpointSchemas
@@ -370,7 +370,7 @@ describe("EndpointConfig", () => {
         >
     >().toEqualTypeOf<{
         schemas?: { body: ZodObject<{ username: ZodString; password: ZodString }> }
-        middlewares?: MiddlewareFunction<
+        use?: MiddlewareFunction<
             GetRouteParams<"/">,
             {
                 schemas: {

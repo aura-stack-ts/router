@@ -6,11 +6,11 @@ import type { EndpointConfig, GlobalMiddlewareContext, MiddlewareFunction, Reque
  *
  * @param request - Original request made from the client
  * @param middlewares - Array of global middleware functions to be executed
- * @returns - The modified request after all middlewares have been executed
+ * @returns - The modified context after all middlewares have been executed
  */
-export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext, middlewares: RouterConfig["middlewares"]) => {
-    if (!middlewares) return context
-    for (const middleware of middlewares) {
+export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext, use: RouterConfig["use"]) => {
+    if (!use) return context
+    for (const middleware of use) {
         if (typeof middleware !== "function") {
             throw new RouterError("BAD_REQUEST", "Global middlewares must be functions")
         }
@@ -36,11 +36,11 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
  */
 export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
     context: RequestContext<RouteParams, Config>,
-    middlewares: MiddlewareFunction<RouteParams, Config>[] = []
+    use: MiddlewareFunction<RouteParams, Config>[] = []
 ): Promise<RequestContext<RouteParams, Config>> => {
     try {
         let ctx = context
-        for (const middleware of middlewares) {
+        for (const middleware of use) {
             if (typeof middleware !== "function") {
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }

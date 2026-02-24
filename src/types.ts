@@ -83,7 +83,7 @@ export type EndpointConfig<
     Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
     schemas?: Schemas
-    middlewares?: MiddlewareFunction<GetRouteParams<RouteParams>, { schemas: Schemas }>[]
+    use?: MiddlewareFunction<GetRouteParams<RouteParams>, { schemas: Schemas }>[]
 }>
 
 /**
@@ -212,7 +212,7 @@ export interface RouterConfig extends GlobalCtx {
      * You can use this to modify the request or return a response early.
      *
      * @example
-     * middlewares: [
+     * use: [
      *   async (request) => {
      *     if(request.headers.get("Authorization")?.startsWith("Bearer ")) {
      *       return Response.json({ message: "Unauthorized" }, { status: 401 })
@@ -221,7 +221,7 @@ export interface RouterConfig extends GlobalCtx {
      *   }
      * ]
      */
-    middlewares?: GlobalMiddleware[]
+    use?: GlobalMiddleware[]
     /**
      * Error handler function that runs when an error is thrown in a router handler or middleware.
      * It can be used to customize the default error response provided by the router. If is an internal

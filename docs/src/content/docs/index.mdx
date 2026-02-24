@@ -114,14 +114,14 @@ export const router = createRouter([getUser, getUsers], {
 
 #### Global Middlewares
 
-The `middlewares` option registers logic that runs before every endpoint:
+The `use` option registers logic that runs before every endpoint:
 
 ```ts lineNumbers title="@/index.ts"
 import { createRouter } from "@aura-stack/router"
 import { getUser, getUsers } from "@/api/users.ts"
 
 export const router = createRouter([getUser, getUsers], {
-  middlewares: [
+  use: [
     (ctx) => {
       console.log(`[debug]: ${ctx.request.url}`)
       return ctx
