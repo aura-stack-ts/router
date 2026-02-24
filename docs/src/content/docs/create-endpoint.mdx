@@ -162,7 +162,7 @@ The `createEndpoint` function accepts a structured set of parameters that define
 import type { HTTPMethod, RoutePattern, EndpointConfig, RouteHandler } from "@aura-stack/router/types"
 
 interface RouteEndpoint<
-  Method extends HTTPMethod = HTTPMethod,
+  Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
   Route extends RoutePattern = RoutePattern,
   Config extends EndpointConfig = EndpointConfig,
 > {
@@ -188,7 +188,7 @@ The `method` is a required value in an endpoint definition. It specifies the HTT
 import type { HTTPMethod } from "@aura-stack/router/types"
 
 // Expected: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "HEAD" | "TRACE" | "CONNECT"
-export type Methods = HTTPMethod
+export type Methods = HTTPMethod | HTTPMethod[]
 ```
 
 #### `route` [#route]
@@ -678,6 +678,20 @@ const config = createEndpointConfig({
       return ctx
     },
   ],
+})
+```
+
+### With `multiple methods`
+
+`createEndpoint` also supports defining multiple HTTP methods for the same route pattern. This allows handling different methods with the same logic or configuration.
+
+```ts lineNumbers
+const multiMethodEndpoint = createEndpoint(["GET", "POST"], "/multi", async (ctx) => {
+  if (ctx.method === "GET") {
+    return Response.json({ message: "Handled GET request" })
+  } else if (ctx.method === "POST") {
+    return Response.json({ message: "Handled POST request" })
+  }
 })
 ```
 
