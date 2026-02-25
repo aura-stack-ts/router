@@ -33,7 +33,7 @@ type StatusCode = keyof typeof statusCode
 /**
  * Reverse mapping of status codes to their corresponding status text.
  */
-export const statusText = Object.keys(statusCode).reduce(
+export const statusText: Record<StatusCode, StatusCode> = Object.keys(statusCode).reduce(
     (previous, status) => {
         return { ...previous, [status]: status }
     },

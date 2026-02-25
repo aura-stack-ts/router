@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] - 2026-02-25
+
 ### BREAKING CHANGES
 
 - The `middlewares` option was renamed to `use` to align with standard conventions in backend libraries. Middleware behavior remains unchanged; only the name was updated for improved clarity. The option was renamed in `createRouter`, `createEndpoint`, and `createEndpointConfig`. [#38](https://github.com/aura-stack-ts/router/pull/38)
