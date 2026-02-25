@@ -255,4 +255,21 @@ describe("Client", () => {
             })
         )
     })
+
+    test("createClient with custom fetch implementation", async () => {
+        const customFetch = vi.fn(() => {
+            return Promise.resolve(new Response(JSON.stringify({ success: true, custom: true }), { status: 200 }))
+        })
+
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            fetch: customFetch,
+        })
+
+        const response = await client.get("/users")
+        const json = await response.json()
+        expect(json).toEqual({ success: true, custom: true })
+        expect(customFetch).toHaveBeenCalledWith("http://api.example.com/users", expect.objectContaining({ method: "GET" }))
+        expect(fetch).not.toHaveBeenCalled()
+    })
 })

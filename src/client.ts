@@ -17,7 +17,9 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
  * client.get("/users")
  */
 export function createClient<InferRouter extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>> {
-    const { baseURL, basePath, headers: defaultHeaders, ...clientOptions } = options
+    const { baseURL, basePath, headers: defaultHeaders, fetch: customFetch, ...clientOptions } = options
+    const fetchFn = customFetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
+
     return new Proxy(
         {},
         {
@@ -30,7 +32,6 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
                     for (const [key, value] of Object.entries(ctx?.params ?? {})) {
                         resolvedPath = resolvedPath.replace(`:${key}`, String(value))
                     }
-
                     const url = new URL(resolvedPath, baseURL)
                     if (searchParams.size > 0) {
                         url.search = searchParams.toString()
@@ -38,7 +39,7 @@ export function createClient<InferRouter extends Router<any>>(options: ClientOpt
 
                     const { params: _p, searchParams: _s, ...requestInit } = ctx ?? {}
                     const headers = typeof defaultHeaders === "function" ? await defaultHeaders() : defaultHeaders
-                    const response = await fetch(url.toString(), {
+                    const response = await fetchFn(url.toString(), {
                         ...clientOptions,
                         ...requestInit,
                         method,
