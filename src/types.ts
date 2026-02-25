@@ -318,6 +318,7 @@ export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoint
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
 
+/** @experimental */
 export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
 export interface ClientOptions extends Pick<RequestInit, "cache" | "credentials" | "mode"> {
@@ -337,6 +338,7 @@ export interface ClientOptions extends Pick<RequestInit, "cache" | "credentials"
      */
     headers?: RequestHeaders | (() => RequestHeaders | Promise<RequestHeaders>)
     /**
+     * @experimental
      * Custom fetch function to be used by the client instead of the global fetch.
      */
     fetch?: FetchLike

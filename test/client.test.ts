@@ -8,8 +8,8 @@ describe("Client", () => {
     beforeEach(() => {
         vi.stubGlobal(
             "fetch",
-            vi.fn((url, init) => {
-                return new Response(JSON.stringify({ success: true, url, init }), { status: 200 })
+            vi.fn(() => {
+                return new Response(JSON.stringify({ success: true }), { status: 200 })
             })
         )
     })
@@ -269,5 +269,7 @@ describe("Client", () => {
         const response = await client.get("/users")
         const json = await response.json()
         expect(json).toEqual({ success: true, custom: true })
+        expect(customFetch).toHaveBeenCalledWith("http://api.example.com/users", expect.objectContaining({ method: "GET" }))
+        expect(fetch).not.toHaveBeenCalled()
     })
 })
