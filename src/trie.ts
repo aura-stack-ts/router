@@ -1,5 +1,5 @@
-import type { RouteEndpoint, HTTPMethod } from "@/types.ts"
 import { RouterError } from "@/error.ts"
+import type { RouteEndpoint, HTTPMethod } from "@/types.ts"
 
 export class TrieNode {
     public param?: { name: string; node: TrieNode } | undefined
@@ -36,7 +36,7 @@ export class TrieRouter {
 
                 if (end > prev) {
                     const segment = route.slice(prev, end)
-                    if (segment.charCodeAt(0) === 58) {
+                    if (segment[0] === ":") {
                         const name = segment.slice(1)
                         let param = node.param
                         if (!param) {
@@ -63,6 +63,9 @@ export class TrieRouter {
                 }
                 prev = curr + 1
             }
+            for (const method of methods) {
+                node.endpoints.set(method, endpoint)
+            }
         }
         for (const method of methods) {
             this.methods.add(method)
@@ -76,14 +79,13 @@ export class TrieRouter {
         }
         let node = this.root
         const params = {} as Record<string, string>
-        const path = pathname
-        const pathLength = path.length
+        const pathLength = pathname.length
         let prev = 0
         while (prev < pathLength) {
-            const curr = path.indexOf("/", prev)
+            const curr = pathname.indexOf("/", prev)
             const end = curr === -1 ? pathLength : curr
             if (end > prev) {
-                const segment = path.slice(prev, end)
+                const segment = pathname.slice(prev, end)
                 const staticNode = node.statics.get(segment)
                 if (staticNode) {
                     node = staticNode
@@ -92,7 +94,7 @@ export class TrieRouter {
                     if (!param) {
                         return null
                     }
-                    params[param.name] = segment
+                    params[param.name] = decodeURIComponent(segment)
                     node = param.node
                 }
             }

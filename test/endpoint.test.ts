@@ -351,7 +351,7 @@ describe("createEndpoint", () => {
                     },
                     use: [
                         (ctx) => {
-                            const searchParams = ctx.searchParams as any
+                            const searchParams = ctx.searchParams as Record<string, string>
                             searchParams.state = "123abc"
                             searchParams.code = "123"
                             return ctx

@@ -1,12 +1,12 @@
 import { z } from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
-import { createNode, insert, search } from "@/router.ts"
-import { getRouteParams, getSearchParams, getBody } from "@/context.ts"
+import { TrieRouter } from "@/trie.ts"
 import { HeadersBuilder } from "@/headers.ts"
+import { getRouteParams, getSearchParams, getBody } from "@/context.ts"
 import type { RouteEndpoint } from "@/types.ts"
 
 describe("getRouteParams", () => {
-    const root = createNode()
+    const router = new TrieRouter()
     const handler = () => Response.json({})
 
     const endpoints: RouteEndpoint[] = [
@@ -20,7 +20,7 @@ describe("getRouteParams", () => {
     ]
 
     for (const endpoint of endpoints) {
-        insert(root, endpoint)
+        router.add(endpoint)
     }
 
     describe("With valid route and path without params schema", () => {
@@ -56,7 +56,8 @@ describe("getRouteParams", () => {
 
         for (const { description, path, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = search("GET", root, path).params
+                router.match("GET", path)?.params
+                const params = router.match("GET", path)?.params
                 expect(params).toEqual(expected)
             })
         }
@@ -101,7 +102,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = search("GET", root, path).params
+                const params = router.match("GET", path)?.params!
                 const dynamic = getRouteParams(params, { schemas: { params: schema } })
                 expect(dynamic).toEqual(expected)
             })
@@ -150,7 +151,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = search("GET", root, path).params
+                const params = router.match("GET", path)?.params!
                 expect(() => getRouteParams(params, { schemas: { params: schema } })).toThrowError()
             })
         }
@@ -161,7 +162,6 @@ describe("getRouteParams", () => {
             {
                 description: "Path does not match the route pattern",
                 path: "/users/123/movies",
-                expected: /No route found for path: \/users\/123\/movies/,
             },
             {
                 description: "Path with missing parameters",
@@ -179,7 +179,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                expect(() => search("GET", root, path)).toThrowError(new RegExp(`No route found for path: ${path}`))
+                expect(router.match("GET", path)).toBeNull()
             })
         }
     })

@@ -1,5 +1,4 @@
-import type { HTTPMethod, RouteEndpoint } from "@/types.ts"
-import { TrieRouter } from "@/trie.ts"
+import type { RouteEndpoint } from "@/types.ts"
 import { createRouter } from "@/router.ts"
 import { run, bench, summary } from "mitata"
 
@@ -48,39 +47,24 @@ export const requests: (Pick<RouteEndpoint, "method" | "route"> & { name: string
         method: "GET",
         route: "/very/deeply/nested/route/hello/there",
     },
-    {
-        name: "wildcard",
-        method: "GET",
-        route: "/static/index.html",
-    },
 ]
-const trieRouter = new TrieRouter()
 
 summary(() => {
     bench("createRouter insert", () => {
         createRouter(routes as RouteEndpoint[])
     })
-
-    bench("TrieRouter insert", () => {
-        routes.forEach((route) => trieRouter.add({ method: route.method, route: route.route } as RouteEndpoint))
-    })
 })
+
+const basicRouter = createRouter(routes as RouteEndpoint[])
 
 summary(() => {
     bench("createRouter match", () => {
-        const basicRouter = createRouter(routes as RouteEndpoint[])
         requests.forEach((route) => {
             if (route.method === "GET") {
-                basicRouter.GET(new Request(`http://localhost:3000/${route.route}`))
+                basicRouter.GET(new Request(`http://localhost:3000${route.route}`))
             } else if (route.method === "POST") {
-                basicRouter.POST(new Request(`http://localhost:3000/${route.route}`))
+                basicRouter.POST(new Request(`http://localhost:3000${route.route}`))
             }
-        })
-    })
-
-    bench("TrieRouter match", () => {
-        requests.forEach((route) => {
-            trieRouter.match(route.method as HTTPMethod, route.route)
         })
     })
 })

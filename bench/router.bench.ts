@@ -8,10 +8,10 @@ describe("router benchmark", () => {
     const endpoints = Array.from({ length: 100 }).map<RouteEndpoint>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
-        handler: async () => {
+        handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, {}>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
     }))
     bench("build: createRouter (100 endpoints)", () => {
         createRouter(endpoints)
@@ -22,10 +22,10 @@ describe("router benchmark making 100 requests", () => {
     const endpoints = Array.from({ length: 100 }).map<RouteEndpoint>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
-        handler: async () => {
+        handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, {}>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
     }))
     bench("match: createRouter (100 endpoints) - small representative lookup set", async () => {
         const { GET } = createRouter(endpoints)
@@ -41,10 +41,10 @@ describe("router benchmark making 1000 requests", () => {
     const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
-        handler: async () => {
+        handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, {}>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
     }))
 
     bench("match: createRouter (1000 endpoints) - small representative lookup set", async () => {
@@ -62,7 +62,7 @@ describe("router with dynamic routes without parsing benchmark", () => {
         {
             method: "GET",
             route: "/users/:userId" as RoutePattern,
-            handler: async (ctx) => {
+            handler: (ctx) => {
                 return Response.json({ message: `User endpoint`, params: ctx.params })
             },
             config: {},
@@ -70,7 +70,7 @@ describe("router with dynamic routes without parsing benchmark", () => {
         {
             method: "GET",
             route: "/posts/:postId/comments/:commentId" as RoutePattern,
-            handler: async (ctx) => {
+            handler: (ctx) => {
                 return Response.json({ message: `Post comment endpoint`, params: ctx.params })
             },
             config: {},
@@ -88,7 +88,7 @@ describe("router with dynamic routes with parsing benchmark", () => {
     const getUser = createEndpoint(
         "GET",
         "/users/:userId",
-        async (ctx) => {
+        (ctx) => {
             return Response.json({ message: `User endpoint`, params: ctx.params })
         },
         {
@@ -103,7 +103,7 @@ describe("router with dynamic routes with parsing benchmark", () => {
     const getPostComment = createEndpoint(
         "GET",
         "/posts/:postId/comments/:commentId",
-        async (ctx) => {
+        (ctx) => {
             return Response.json({ message: `Post comment endpoint`, params: ctx.params })
         },
         {
@@ -126,7 +126,7 @@ describe("router with dynamic routes with parsing benchmark", () => {
 })
 
 describe("router with body and without parsing benchmark", () => {
-    const endpoints = createEndpoint("POST", "/submit", async (ctx) => {
+    const endpoints = createEndpoint("POST", "/submit", (ctx) => {
         const body = ctx.body
         return Response.json({ message: "Data received", body })
     })
@@ -147,7 +147,7 @@ describe("router with body and parsing benchmark", () => {
     const endpoints = createEndpoint(
         "POST",
         "/submit",
-        async (ctx) => {
+        (ctx) => {
             const body = ctx.body
             return Response.json({ message: "Data received", body })
         },
@@ -173,7 +173,7 @@ describe("router with body and parsing benchmark", () => {
 })
 
 describe("router with params and without parsing benchmark", () => {
-    const endpoints = createEndpoint("GET", "/users/:id", async (ctx) => {
+    const endpoints = createEndpoint("GET", "/users/:id", (ctx) => {
         const userId = ctx.params.id
         return Response.json({ message: "Data received", userId })
     })
@@ -192,7 +192,7 @@ describe("router with body and parsing benchmark", () => {
     const endpoints = createEndpoint(
         "GET",
         "/users/:id",
-        async (ctx) => {
+        (ctx) => {
             const userId = ctx.params.id
             return Response.json({ message: "Data received", userId })
         },
