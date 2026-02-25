@@ -8,8 +8,8 @@ describe("Client", () => {
     beforeEach(() => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(() => {
-                return new Response(JSON.stringify({ success: true }), { status: 200 })
+            vi.fn((url, init) => {
+                return new Response(JSON.stringify({ success: true, url, init }), { status: 200 })
             })
         )
     })
@@ -254,5 +254,20 @@ describe("Client", () => {
                 mode: "no-cors",
             })
         )
+    })
+
+    test("createClient with custom fetch implementation", async () => {
+        const customFetch = vi.fn(() => {
+            return Promise.resolve(new Response(JSON.stringify({ success: true, custom: true }), { status: 200 }))
+        })
+
+        const client = createClient<typeof router>({
+            baseURL: "http://api.example.com",
+            fetch: customFetch,
+        })
+
+        const response = await client.get("/users")
+        const json = await response.json()
+        expect(json).toEqual({ success: true, custom: true })
     })
 })
