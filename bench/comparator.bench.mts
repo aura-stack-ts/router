@@ -16,7 +16,7 @@ export const routes: Pick<RouteEndpoint, "method" | "route">[] = [
     { method: "GET", route: "/very/deeply/nested/route/hello/there" },
 ]
 
-export const requests: (Pick<RouteEndpoint, "method" | "route"> & { name: string })[] = [
+export const calls: (Pick<RouteEndpoint, "method" | "route"> & { name: string })[] = [
     {
         name: "short static",
         method: "GET",
@@ -49,23 +49,29 @@ export const requests: (Pick<RouteEndpoint, "method" | "route"> & { name: string
     },
 ]
 
+const benchEndpoints: RouteEndpoint[] = routes.map((route) => ({
+    ...route,
+    handler: () => new Response(null, { status: 204 }),
+    config: {},
+}))
+
 summary(() => {
     bench("createRouter insert", () => {
-        createRouter(routes as RouteEndpoint[])
+        createRouter(benchEndpoints)
     })
 })
 
-const basicRouter = createRouter(routes as RouteEndpoint[])
+const basicRouter = createRouter(benchEndpoints)
 
 summary(() => {
-    bench("createRouter match", () => {
-        requests.forEach((route) => {
+    bench("createRouter match", async () => {
+        for (const route of calls) {
             if (route.method === "GET") {
-                basicRouter.GET(new Request(`http://localhost:3000${route.route}`))
+                await basicRouter.GET(new Request(`http://localhost:3000${route.route}`))
             } else if (route.method === "POST") {
-                basicRouter.POST(new Request(`http://localhost:3000${route.route}`))
+                await basicRouter.POST(new Request(`http://localhost:3000${route.route}`))
             }
-        })
+        }
     })
 })
 
