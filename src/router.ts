@@ -1,104 +1,13 @@
-import { RouterError, statusText } from "./error.ts"
+import { TrieRouter } from "./trie.ts"
+import { onError } from "./on-error.ts"
+import { RouterError } from "./error.ts"
 import { HeadersBuilder } from "./headers.ts"
+import { isSupportedMethod } from "./assert.ts"
 import { getBody, getRouteParams, getSearchParams } from "./context.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.ts"
-import { isInvalidZodSchemaError, isRouterError, isSupportedMethod } from "./assert.ts"
 import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.ts"
 
-interface TrieNode {
-    statics: Map<string, TrieNode>
-    param?: { name: string; node: TrieNode }
-    endpoints: Map<HTTPMethod, RouteEndpoint>
-}
-
-export const createNode = (): TrieNode => ({
-    statics: new Map(),
-    endpoints: new Map(),
-})
-
-export const insert = (root: TrieNode, endpoint: RouteEndpoint) => {
-    if (!root || !endpoint) return
-    let node = root
-    const segments = endpoint.route === "/" ? [] : endpoint.route.split("/").filter(Boolean)
-    for (const segment of segments) {
-        if (segment.startsWith(":")) {
-            const name = segment.slice(1)
-            if (!node.param) {
-                node.param = { name, node: createNode() }
-            } else if (node.param.name !== name) {
-                throw new RouterError(
-                    "BAD_REQUEST",
-                    `Conflicting in the route by the dynamic segment "${node.param.name}" and "${name}"`
-                )
-            }
-            node = node.param.node
-        } else {
-            if (!node.statics.has(segment)) {
-                node.statics.set(segment, createNode())
-            }
-            node = node.statics.get(segment)!
-        }
-    }
-    const methods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
-    for (const method of methods) {
-        if (node.endpoints.has(method)) {
-            throw new RouterError("BAD_REQUEST", `Duplicate endpoint for ${endpoint?.method} ${endpoint?.route}`)
-        }
-        node.endpoints.set(method, endpoint)
-    }
-}
-
-export const search = (method: HTTPMethod, root: TrieNode, pathname: string) => {
-    let node = root
-    const params = {} as Record<string, string>
-    const segments = pathname === "/" ? [] : pathname.split("/").filter(Boolean)
-    for (const segment of segments) {
-        if (node?.statics.has(segment)) {
-            node = node.statics.get(segment)!
-        } else if (node?.param) {
-            params[node.param.name] = decodeURIComponent(segment)
-            node = node.param.node
-        } else {
-            throw new RouterError("NOT_FOUND", `No route found for path: ${pathname}`)
-        }
-    }
-    if (!node.endpoints.has(method)) {
-        throw new RouterError("NOT_FOUND", `No route found for path: ${pathname}`)
-    }
-    return { endpoint: node.endpoints.get(method)!, params }
-}
-
-const handleError = async (error: unknown, request: Request, config: RouterConfig) => {
-    if (config.onError) {
-        try {
-            const response = await config.onError(error as Error | RouterError, request)
-            return response
-        } catch {
-            return Response.json(
-                { message: "A critical failure occurred during error handling" },
-                { status: 500, statusText: statusText.INTERNAL_SERVER_ERROR }
-            )
-        }
-    }
-    if (isInvalidZodSchemaError(error)) {
-        const { errors, status, statusText } = error
-        return Response.json(
-            {
-                message: "Invalid request data",
-                error: "validation_error",
-                details: errors,
-            },
-            { status, statusText }
-        )
-    }
-    if (isRouterError(error)) {
-        const { message, status, statusText } = error
-        return Response.json({ message }, { status, statusText })
-    }
-    return Response.json({ message: "Internal Server Error" }, { status: 500, statusText: statusText.INTERNAL_SERVER_ERROR })
-}
-
-const handleRequest = async (method: HTTPMethod, request: Request, config: RouterConfig, root: TrieNode) => {
+const handleRequest = async (method: HTTPMethod, request: Request, config: RouterConfig, router: TrieRouter) => {
     try {
         if (!isSupportedMethod(request.method)) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
@@ -113,7 +22,11 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         if (globalRequestContext.request.method !== method) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
         }
-        const { endpoint, params } = search(method, root, pathnameWithBase)
+        const node = router.match(method, pathnameWithBase)
+        if (!node) {
+            throw new RouterError("NOT_FOUND", `No route found for path: ${pathnameWithBase}`)
+        }
+        const { endpoint, params } = node
         const dynamicParams = getRouteParams(params, endpoint.config)
         const body = await getBody(globalRequestContext.request, endpoint.config)
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
@@ -133,7 +46,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         const response = await endpoint.handler(context)
         return response
     } catch (error) {
-        return handleError(error, request, config)
+        return onError(error, request, config)
     }
 }
 
@@ -150,19 +63,19 @@ export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     endpoints: Endpoints,
     config: RouterConfig = {}
 ): Router<Endpoints> => {
-    const root = createNode()
+    const router = new TrieRouter()
     const server = {} as GetHttpHandlers<Endpoints>
     const methods = new Set<HTTPMethod>()
     for (const endpoint of endpoints) {
         const withBasePath = config.basePath ? `${config.basePath}${endpoint.route}` : endpoint.route
-        insert(root, { ...endpoint, route: withBasePath as RoutePattern })
+        router.add({ ...endpoint, route: withBasePath as RoutePattern })
         const endpointMethods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
         for (const method of endpointMethods) {
             methods.add(method)
         }
     }
     for (const method of methods) {
-        server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, root)
+        server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, router)
     }
     return server
 }
