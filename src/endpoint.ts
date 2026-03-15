@@ -1,6 +1,15 @@
 import { RouterError } from "./error.ts"
 import { isSupportedMethod, isValidHandler, isValidRoute } from "./assert.ts"
-import type { EndpointConfig, EndpointSchemas, HTTPMethod, RouteEndpoint, RouteHandler, RoutePattern } from "./types.ts"
+import type {
+    EndpointConfig,
+    EndpointSchemas,
+    HTTPMethod,
+    InferRouteHandlerJsonResponse,
+    RouteEndpoint,
+    RouteHandler,
+    RouteHandlerReturn,
+    RoutePattern,
+} from "./types.ts"
 
 /**
  * Defines an API endpoint for the router by specifying the HTTP method, route pattern,
@@ -22,12 +31,13 @@ export const createEndpoint = <
     const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
     const Schemas extends EndpointSchemas,
+    Handler extends RouteHandler<Route, { schemas: Schemas }, RouteHandlerReturn>
 >(
     method: Method,
     route: Route,
-    handler: RouteHandler<Route, { schemas: Schemas }>,
+    handler: Handler,
     config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<Route, Schemas>
-): RouteEndpoint<Method, Route, { schemas?: Schemas }> => {
+): RouteEndpoint<Method, Route, { schemas?: Schemas }, Handler> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
     }

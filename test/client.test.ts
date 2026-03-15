@@ -15,7 +15,7 @@ describe("Client", () => {
     })
 
     const router = createRouter([
-        createEndpoint("GET", "/users", () => new Response("")),
+        createEndpoint("GET", "/users", (ctx) => ctx.json({ users: [] })),
         createEndpoint("GET", "/users/:userId", () => new Response(""), {
             schemas: { params: z.object({ userId: z.string() }) },
         }),

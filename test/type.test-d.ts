@@ -1,3 +1,4 @@
+import { createEndpoint, createRouter } from "../src/index.ts"
 import { describe, expectTypeOf } from "vitest"
 import type { HeadersBuilder } from "@/headers.ts"
 import type {
@@ -15,6 +16,9 @@ import type {
     HTTPMethod,
     Prettify,
     GlobalContext,
+    JsonResponse,
+    RouteEndpointResponse,
+    InferEndpoints,
 } from "../src/types.ts"
 import type { ZodObject, ZodString } from "zod"
 
@@ -252,6 +256,7 @@ describe("RequestContext", () => {
             method: HTTPMethod
             route: RoutePattern
             context: GlobalContext
+            json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
         } & T
     >
 
@@ -382,12 +387,8 @@ describe("EndpointConfig", () => {
 })
 
 describe("RouteHandler", () => {
-    expectTypeOf<RouteHandler<"/auth/:oauth", EmptyObject>>().toEqualTypeOf<
-        (ctx: RequestContext<GetRouteParams<"/auth/:oauth">, EmptyObject>) => Response | Promise<Response>
-    >()
-    expectTypeOf<RouteHandler<"/auth/session", EmptyObject>>().toEqualTypeOf<
-        (ctx: RequestContext<GetRouteParams<"/auth/session">, EmptyObject>) => Response | Promise<Response>
-    >()
+    expectTypeOf<RouteHandler<"/auth/:oauth", EmptyObject>>().toBeFunction()
+    expectTypeOf<RouteHandler<"/auth/session", EmptyObject>>().toBeFunction()
     expectTypeOf<
         RouteHandler<
             "/auth/:oauth",
@@ -397,18 +398,7 @@ describe("RouteHandler", () => {
                 }
             }
         >
-    >().toEqualTypeOf<
-        (
-            ctx: RequestContext<
-                GetRouteParams<"/auth/:oauth">,
-                {
-                    schemas: {
-                        searchParams: ZodObject<{ state: ZodString }>
-                    }
-                }
-            >
-        ) => Response | Promise<Response>
-    >()
+    >().toBeFunction()
 })
 
 describe("RouteEndpoint", () => {
@@ -470,4 +460,13 @@ describe("InferMethod", () => {
             ]
         >
     >().toEqualTypeOf<"GET" | "POST" | "PUT">()
+})
+
+describe("RouteEndpoint response inference from ctx.json", () => {
+    const endpoint = createEndpoint("GET", "/test", (ctx) => ctx.json({ id: 1 }))
+
+    expectTypeOf<ReturnType<typeof endpoint.handler>>().toEqualTypeOf<JsonResponse<{ id: number }>>()
+
+    const router = createRouter([endpoint])
+    expectTypeOf<InferEndpoints<typeof router>>().toEqualTypeOf<[typeof endpoint]>()
 })

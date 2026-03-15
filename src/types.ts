@@ -109,6 +109,40 @@ export type ContextParams<Schemas extends EndpointConfig["schemas"], Default = R
     ? { params: z.infer<Schemas["params"]> }
     : { params: Default }
 
+export type JsonResponse<T> = Response & {
+  json(): Promise<T>
+}
+
+export type RouteHandlerReturn =
+    | Response
+    | JsonResponse<unknown>
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | Record<string, unknown>
+    | unknown[]
+    | BodyInit
+
+export type InferRouteHandlerReturn<Handler> = Handler extends (...args: unknown[]) => infer R
+    ? R extends Promise<infer U>
+        ? U
+        : R
+    : never
+
+export type InferRouteHandlerJsonResponse<Handler> = Handler extends (...args: unknown[]) => infer R
+    ? R extends Promise<infer U>
+        ? U extends JsonResponse<infer Data>
+            ? Data
+            : never
+        : R extends JsonResponse<infer Data>
+            ? Data
+            : never
+    : never
+
+export type RouteEndpointResponse<Endpoint extends { handler: (...args: unknown[]) => any }> = InferRouteHandlerJsonResponse<Endpoint["handler"]>
+
 /**
  * Context object passed to route handlers and middlewares defined in the
  * `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
@@ -123,6 +157,7 @@ export interface RequestContext<RouteParams = Record<string, string>, Config ext
     method: HTTPMethod
     route: RoutePattern
     context: GlobalContext
+    json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
 }
 
 export interface GlobalMiddlewareContext {
@@ -150,9 +185,9 @@ export type MiddlewareFunction<RouteParams = Record<string, string>, Config exte
  * The handler receives the request object and a context containing route parameters, headers,
  * and optionally validated body and search parameters based on the endpoint configuration.
  */
-export type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig> = (
+export type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig, Return extends RouteHandlerReturn = RouteHandlerReturn> = (
     ctx: Prettify<RequestContext<GetRouteParams<Route>, Config>>
-) => Response | Promise<Response>
+) => Return | Promise<Return> | Response | Promise<Response>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,
@@ -162,10 +197,11 @@ export interface RouteEndpoint<
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
     Route extends RoutePattern = RoutePattern,
     Config extends EndpointConfig = EndpointConfig,
+    Handler extends RouteHandler<Route, Config, RouteHandlerReturn> = RouteHandler<Route, Config, RouteHandlerReturn>,
 > {
     method: Method
     route: Route
-    handler: RouteHandler<Route, Config>
+    handler: Handler
     config: Config
 }
 

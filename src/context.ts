@@ -1,7 +1,7 @@
 import { isSupportedBodyMethod } from "./assert.ts"
 import { InvalidZodSchemaError, RouterError } from "./error.ts"
 import type { ZodError } from "zod"
-import type { EndpointConfig, ContextSearchParams, ContentType } from "./types.ts"
+import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "./types.ts"
 
 /**
  * @experimental
@@ -149,4 +149,8 @@ export const getBody = async <Config extends EndpointConfig>(request: Request, c
 const createContentTypeRegex = (contentTypes: ContentType[], contenType: string): boolean => {
     const regex = new RegExp(`${contentTypes.join("|")}`)
     return regex.test(contenType)
+}
+
+export const json = <T>(data: T, init?: ResponseInit): JsonResponse<T> => {
+  return Response.json(data, init) as JsonResponse<T>;
 }
