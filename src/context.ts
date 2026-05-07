@@ -152,5 +152,5 @@ const createContentTypeRegex = (contentTypes: ContentType[], contenType: string)
 }
 
 export const json = <T>(data: T, init?: ResponseInit): JsonResponse<T> => {
-  return Response.json(data, init) as JsonResponse<T>;
+    return Response.json(data, init) as JsonResponse<T>
 }

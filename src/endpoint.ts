@@ -4,7 +4,6 @@ import type {
     EndpointConfig,
     EndpointSchemas,
     HTTPMethod,
-    InferRouteHandlerJsonResponse,
     RouteEndpoint,
     RouteHandler,
     RouteHandlerReturn,
@@ -27,17 +26,18 @@ import type {
  *   return new Response("Signed in");
  * });
  */
+
 export const createEndpoint = <
     const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
-    const Schemas extends EndpointSchemas,
-    Handler extends RouteHandler<Route, { schemas: Schemas }, RouteHandlerReturn>
+    Schemas extends EndpointSchemas,
+    Handler extends RouteHandler<Route, EndpointConfig<Route, Schemas>, RouteHandlerReturn, Method>,
 >(
     method: Method,
     route: Route,
     handler: Handler,
     config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<Route, Schemas>
-): RouteEndpoint<Method, Route, { schemas?: Schemas }, Handler> => {
+): RouteEndpoint<Method, Route, EndpointConfig<Route, Schemas>, Handler> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
     }

@@ -1,8 +1,9 @@
-import { describe, test, expect, vi, beforeEach } from "vitest"
+import { describe, test, expect, vi, beforeEach, expectTypeOf } from "vitest"
 import { z } from "zod"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
 import { createClient } from "@/client.ts"
+import type { JsonResponse } from "@/types.ts"
 
 describe("Client", () => {
     beforeEach(() => {
@@ -35,6 +36,7 @@ describe("Client", () => {
 
     test("GET request", async () => {
         await client.get("/users")
+        await client.get("/users")
         expect(fetch).toHaveBeenCalledWith(
             "http://api.example.com/users",
             expect.objectContaining({
@@ -44,6 +46,9 @@ describe("Client", () => {
     })
 
     test("GET request with dynamic params", async () => {
+        await client.get("/users/:userId", {
+            params: { userId: "123" },
+        })
         await client.get("/users/:userId", {
             params: { userId: "123" },
         })
@@ -60,7 +65,7 @@ describe("Client", () => {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            // @ts-expect-error @todo: add support for different body types
+            // @ts-ignore @todo: add support for different body types
             body: new URLSearchParams({ name: "Jane Doe" }),
         })
     })
@@ -272,4 +277,64 @@ describe("Client", () => {
         expect(customFetch).toHaveBeenCalledWith("http://api.example.com/users", expect.objectContaining({ method: "GET" }))
         expect(fetch).not.toHaveBeenCalled()
     })
+})
+
+describe("Client type inference", async () => {
+    const getItem = createEndpoint(
+        "GET",
+        "/items/:itemId",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        {
+            schemas: {
+                params: z.object({ itemId: z.string() }),
+            },
+        }
+    )
+
+    const createItem = createEndpoint("POST", "/items", (ctx) => {
+        return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItem = createEndpoint(
+        "DELETE",
+        "/items/:itemId",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        {
+            schemas: {
+                params: z.object({ itemId: z.string() }),
+                searchParams: z.object({ force: z.string().optional() }),
+            },
+        }
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem])
+
+    const client = createClient<typeof router>({
+        baseURL: "http://api.example.com",
+    })
+
+    client.get("/items/:itemId", {
+        params: { itemId: "123" },
+    })
+
+    const item = await client.get("/items/:itemId", {
+        params: { itemId: "123" },
+    })
+    expectTypeOf<typeof item>().toEqualTypeOf<JsonResponse<{ method: "GET" }>>()
+
+    const newItem = await client.post("/items", {
+        body: JSON.stringify({ name: "New Item" }),
+        headers: { "Content-Type": "application/json" },
+    })
+    expectTypeOf<typeof newItem>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const deletedItem = await client.delete("/items/:itemId", {
+        params: { itemId: "123" },
+        searchParams: { force: "true" },
+    })
+    expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
 })

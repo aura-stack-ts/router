@@ -127,8 +127,8 @@ type RemoveIndexSignature<T> = {
  * `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
 export type RequestContext<
-    Route extends RoutePattern,
-    Config extends EndpointConfig,
+    Route extends RoutePattern = RoutePattern,
+    Config extends EndpointConfig = EndpointConfig,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = Prettify<{
     params: ContextParams<Config["schemas"], GetRouteParams<Route>>["params"]
@@ -163,11 +163,8 @@ export type MiddlewareFunction<
     Route extends RoutePattern = RoutePattern,
     Config extends EndpointConfig<Route, {}> = EndpointConfig<Route, {}>,
 > = (
-    ctx: Prettify<RequestContext<Route, { schemas: Config["schemas"] }>>
-) =>
-    | Response
-    | RequestContext<Route, { schemas: Config["schemas"] }>
-    | Promise<Response | RequestContext<Route, { schemas: Config["schemas"] }>>
+    ctx: Prettify<RequestContext<Route, Config>>
+) => Response | RequestContext<Route, Config> | Promise<Response | RequestContext<Route, Config>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.
@@ -177,14 +174,8 @@ export type MiddlewareFunction<
 export type RouteHandler<
     Route extends RoutePattern,
     Config extends EndpointConfig<Route, any>,
-    /**
-     * No removal of the `ReturnType` utility type here, as it is used to infer the return type of the handler function.
-     */
-    Return extends RouteHandlerReturn = RouteHandlerReturn,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
-> = (
-    ctx: Prettify<RequestContext<Route, { schemas: Config["schemas"] }, Method>>
-) => Response | Promise<Response> | JsonResponse<unknown>
+> = (ctx: Prettify<RequestContext<Route, Config, Method>>) => Response | Promise<Response> | JsonResponse<unknown>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,
@@ -194,12 +185,7 @@ export interface RouteEndpoint<
     Method extends HTTPMethod | HTTPMethod[],
     Route extends RoutePattern,
     Config extends EndpointConfig<Route, any>,
-    Handler extends RouteHandler<Route, Config, RouteHandlerReturn, Method> = RouteHandler<
-        Route,
-        Config,
-        RouteHandlerReturn,
-        Method
-    >,
+    Handler extends RouteHandler<Route, Config, Method> = RouteHandler<Route, Config, Method>,
 > {
     method: Method
     route: Route
