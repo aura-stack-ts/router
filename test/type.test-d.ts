@@ -74,18 +74,6 @@ describe("RequestContext", () => {
             json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
         } & T
     >
-
-    type Nose = RequestContext<
-        any,
-        {
-            schemas: {
-                body: ZodObject<{
-                    username: ZodString
-                }>
-            }
-        }
-    >
-
     expectTypeOf<RequestContext>().toEqualTypeOf<
         Context<{
             params: {}

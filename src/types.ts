@@ -1,7 +1,7 @@
-import type { ZodObject, ZodString, z } from "zod"
+import type { ZodObject, z } from "zod"
 import type { RouterError } from "./error.ts"
 import type { HeadersBuilder } from "./headers.ts"
-import type { ObjectSchema, InferOutput } from "valibot"
+import type { ObjectSchema, InferOutput, StringSchema, InferInput } from "valibot"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -278,10 +278,10 @@ export interface RouterConfig extends GlobalCtx {
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
 }
 
-export type InferZod<T> = T extends z.ZodTypeAny ? z.infer<T> : T
+export type InferSchema<T> = T extends z.ZodTypeAny ? z.infer<T> : T extends ObjectSchema<any, undefined> ? InferOutput<T> : T
 
-export type ToInferZod<T> = {
-    [K in keyof T]: InferZod<T[K]>
+export type ToInferSchema<T> = {
+    [K in keyof T]: InferSchema<T[K]>
 }
 
 export type RemoveUndefined<T> = {
@@ -289,7 +289,20 @@ export type RemoveUndefined<T> = {
 }
 
 type HasSchemas<C> =
-    C extends EndpointConfig<any, infer Schemas> ? (Schemas[keyof Schemas] extends ZodObject<any> ? true : false) : false
+    C extends EndpointConfig<any, infer Schemas>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
+            ? true
+            : false
+        : false
+
+type InferContent<Config extends EndpointConfig<any, any>> =
+    Config extends EndpointConfig<any, infer Schemas>
+        ? Schemas[keyof Schemas] extends ZodObject<any>
+            ? RemoveUndefined<ToInferSchema<Schemas>>
+            : Schemas[keyof Schemas] extends ObjectSchema<any, undefined>
+              ? RemoveUndefined<ToInferSchema<Schemas>>
+              : unknown
+        : unknown
 
 export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
     ? Endpoints extends [infer First, ...infer Rest]
@@ -300,7 +313,7 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
                           ? (path: Route, ctx?: RequestInit) => ReturnType<Handler> | Promise<ReturnType<Handler>>
                           : (
                                 path: Route,
-                                ctx: Omit<RequestInit, "body"> & RemoveUndefined<ToInferZod<NonNullable<Config["schemas"]>>>
+                                ctx: Omit<RequestInit, "body"> & InferContent<Config>
                             ) => ReturnType<Handler> | Promise<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
               >

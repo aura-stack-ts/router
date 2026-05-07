@@ -11,6 +11,9 @@ export interface SchemaAdapter<T> {
  * Universal wrapper for Zod, Valibot, ArkType, etc.
  */
 export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
+    if (!isZodSchema(schema) && !isValibotSchema(schema)) {
+        throw new Error("Unsupported schema type")
+    }
     return {
         validate: (data: unknown): ValidationResult<T> => {
             try {
@@ -22,11 +25,11 @@ export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
                 }
                 if (isValibotSchema(schema)) {
                     const result = safeParse(schema, data)
-                    return result.issues
-                        ? { success: false, data: null, error: result.issues }
-                        : { success: true, data: result.output, error: null }
+                    return result.success
+                        ? { success: true, data: result.output, error: null }
+                        : { success: false, data: null, error: result.issues }
                 }
-                throw new Error("Unsupported schema type")
+                return { success: false, data: null, error: new Error("Unsupported schema type") }
             } catch (e) {
                 return { success: false, data: null, error: e }
             }
