@@ -1,6 +1,7 @@
 import type { ZodObject, z } from "zod"
 import type { RouterError } from "./error.ts"
 import type { HeadersBuilder } from "./headers.ts"
+import type { ObjectSchema, InferOutput, StringSchema, InferInput } from "valibot"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -62,9 +63,9 @@ export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
  */
 export interface EndpointSchemas {
-    body?: ZodObject<any>
-    searchParams?: ZodObject<any>
-    params?: ZodObject<any>
+    body?: ZodObject<any> | ObjectSchema<any, undefined>
+    searchParams?: ZodObject<any> | ObjectSchema<any, undefined>
+    params?: ZodObject<any> | ObjectSchema<any, undefined>
 }
 
 /**
@@ -90,35 +91,26 @@ export type EndpointConfig<
  */
 export type ContextSearchParams<Schemas extends EndpointConfig<any, any>["schemas"]> = Schemas extends { searchParams: ZodObject }
     ? { searchParams: z.infer<Schemas["searchParams"]> }
-    : { searchParams: URLSearchParams }
+    : Schemas extends { searchParams: ObjectSchema<any, undefined> }
+      ? { searchParams: InferOutput<Schemas["searchParams"]> }
+      : { searchParams: URLSearchParams }
 
 /**
  * Infer the type of body from the provided value in the `EndpointConfig`.
  */
 export type ContextBody<Schemas extends EndpointConfig<any, any>["schemas"]> = Schemas extends { body: ZodObject }
     ? { body: z.infer<Schemas["body"]> }
-    : { body: undefined }
+    : Schemas extends { body: ObjectSchema<any, undefined> }
+      ? { body: InferOutput<Schemas["body"]> }
+      : { body: undefined }
 
-type IsAny<T> = 0 extends 1 & T ? true : false
-
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-
-export type ContextParams<Schemas, Default extends Record<string, string> = Record<string, string>> = [Schemas] extends [
-    EndpointConfig<infer _, infer Schemas>,
-]
-    ? [IsAny<Schemas>] extends [true]
-        ? { params: Default }
-        : [Equals<Schemas, EndpointSchemas>] extends [true]
-          ? { params: Default }
-          : [{ params: ZodObject<any> }] extends [Schemas]
-            ? { params: z.infer<Schemas["params"]> }
-            : { params: Default }
-    : { params: Default }
-
-export type unstable__ContextParams<
-    Schemas extends EndpointConfig<any, any>["schemas"],
-    Default extends Record<string, string> = Record<string, string>,
-> = Schemas extends { params: ZodObject<any> } ? z.infer<Schemas["params"]> : Default
+export type ContextParams<Schemas extends EndpointSchemas, Default extends Record<string, string> = Record<string, string>> = [
+    Schemas,
+] extends [{ params: ZodObject<any> }]
+    ? { params: z.infer<Schemas["params"]> }
+    : [Schemas] extends [{ params: ObjectSchema<any, undefined> }]
+      ? { params: InferOutput<Schemas["params"]> }
+      : { params: Default }
 
 declare const jsonResponseBrand: unique symbol
 
@@ -138,7 +130,7 @@ export type RequestContext<
     Config extends EndpointConfig = EndpointConfig,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = {
-    params: ContextParams<Config["schemas"], GetRouteParams<Route>>["params"]
+    params: ContextParams<NonNullable<Config["schemas"]>, GetRouteParams<Route>>["params"]
     headers: HeadersBuilder
     body: ContextBody<NonNullable<Config["schemas"]>>["body"]
     searchParams: ContextSearchParams<NonNullable<Config["schemas"]>>["searchParams"]
@@ -286,10 +278,10 @@ export interface RouterConfig extends GlobalCtx {
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
 }
 
-export type InferZod<T> = T extends z.ZodTypeAny ? z.infer<T> : T
+export type InferSchema<T> = T extends z.ZodTypeAny ? z.infer<T> : T extends ObjectSchema<any, undefined> ? InferOutput<T> : T
 
-export type ToInferZod<T> = {
-    [K in keyof T]: InferZod<T[K]>
+export type ToInferSchema<T> = {
+    [K in keyof T]: InferSchema<T[K]>
 }
 
 export type RemoveUndefined<T> = {
@@ -297,7 +289,20 @@ export type RemoveUndefined<T> = {
 }
 
 type HasSchemas<C> =
-    C extends EndpointConfig<any, infer Schemas> ? (Schemas[keyof Schemas] extends ZodObject<any> ? true : false) : false
+    C extends EndpointConfig<any, infer Schemas>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
+            ? true
+            : false
+        : false
+
+type InferContent<Config extends EndpointConfig<any, any>> =
+    Config extends EndpointConfig<any, infer Schemas>
+        ? Schemas[keyof Schemas] extends ZodObject<any>
+            ? RemoveUndefined<ToInferSchema<Schemas>>
+            : Schemas[keyof Schemas] extends ObjectSchema<any, undefined>
+              ? RemoveUndefined<ToInferSchema<Schemas>>
+              : unknown
+        : unknown
 
 export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
     ? Endpoints extends [infer First, ...infer Rest]
@@ -308,7 +313,7 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
                           ? (path: Route, ctx?: RequestInit) => ReturnType<Handler> | Promise<ReturnType<Handler>>
                           : (
                                 path: Route,
-                                ctx: Omit<RequestInit, "body"> & RemoveUndefined<ToInferZod<NonNullable<Config["schemas"]>>>
+                                ctx: Omit<RequestInit, "body"> & InferContent<Config>
                             ) => ReturnType<Handler> | Promise<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
               >

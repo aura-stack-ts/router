@@ -19,8 +19,10 @@ import type {
     JsonResponse,
     InferEndpoints,
     RouteHandlerReturn,
+    ContextParams,
 } from "../src/types.ts"
-import { type ZodObject, type ZodString } from "zod"
+import { ZodEnum, type ZodObject, type ZodString } from "zod"
+import { EnumSchema, ObjectSchema, StringSchema } from "valibot"
 
 type RoutePath = "/auth/:oauth"
 type EmptyObject = Record<PropertyKey, never>
@@ -72,7 +74,6 @@ describe("RequestContext", () => {
             json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
         } & T
     >
-
     expectTypeOf<RequestContext>().toEqualTypeOf<
         Context<{
             params: {}
@@ -347,6 +348,31 @@ describe("ContextSearchParams", () => {
             }>
         >().toEqualTypeOf<{ searchParams: { code: string; state: string } }>()
     })
+
+    describe("ObjectSchema instance", () => {
+        expectTypeOf<
+            ContextSearchParams<{
+                searchParams: ObjectSchema<
+                    {
+                        code: StringSchema<undefined>
+                    },
+                    undefined
+                >
+            }>
+        >().toEqualTypeOf<{ searchParams: { code: string } }>()
+
+        expectTypeOf<
+            ContextSearchParams<{
+                searchParams: ObjectSchema<
+                    {
+                        code: StringSchema<undefined>
+                        state: StringSchema<undefined>
+                    },
+                    undefined
+                >
+            }>
+        >().toEqualTypeOf<{ searchParams: { code: string; state: string } }>()
+    })
 })
 
 describe("ContextBody", () => {
@@ -372,6 +398,117 @@ describe("ContextBody", () => {
                 }>
             }>
         >().toEqualTypeOf<{ body: { oauth: string } }>()
+    })
+
+    describe("ObjectSchema instance", () => {
+        expectTypeOf<
+            ContextBody<{
+                body: ObjectSchema<
+                    {
+                        username: StringSchema<undefined>
+                        password: StringSchema<undefined>
+                    },
+                    undefined
+                >
+            }>
+        >().toEqualTypeOf<{ body: { username: string; password: string } }>()
+
+        expectTypeOf<
+            ContextBody<{
+                body: ObjectSchema<
+                    {
+                        oauth: StringSchema<undefined>
+                    },
+                    undefined
+                >
+            }>
+        >().toEqualTypeOf<{ body: { oauth: string } }>()
+    })
+})
+
+describe("ContextParams", () => {
+    describe("No route params", () => {
+        expectTypeOf<ContextParams<{}, {}>>().toEqualTypeOf<{ params: {} }>()
+        expectTypeOf<ContextParams<{}>>().toEqualTypeOf<{ params: Record<string, string> }>()
+    })
+
+    describe("With route params", () => {
+        expectTypeOf<ContextParams<{}, GetRouteParams<RoutePath>>>().toEqualTypeOf<{ params: { oauth: string } }>()
+        expectTypeOf<ContextParams<EndpointSchemas, GetRouteParams<RoutePath>>>().toEqualTypeOf<{
+            params: { oauth: string }
+        }>()
+    })
+
+    describe("With route params and schemas", () => {
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ZodObject<{
+                        oauth: ZodString
+                    }>
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ params: { oauth: string } }>()
+
+        expectTypeOf<
+            ContextParams<{
+                params: ZodObject<{
+                    role: ZodEnum<{ admin: "admin"; user: "user"; guest: "guest" }>
+                }>
+            }>
+        >().toEqualTypeOf<{ params: { role: "admin" | "user" | "guest" } }>()
+
+        expectTypeOf<
+            ContextParams<{
+                params: ObjectSchema<
+                    {
+                        oauth: EnumSchema<{ admin: "admin"; user: "user"; guest: "guest" }, undefined>
+                    },
+                    undefined
+                >
+            }>
+        >().toEqualTypeOf<{ params: { oauth: "admin" | "user" | "guest" } }>()
+
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ZodObject<{
+                        userId: ZodString
+                        itemId: ZodString
+                    }>
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ params: { userId: string; itemId: string } }>()
+
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ObjectSchema<
+                        {
+                            oauth: StringSchema<undefined>
+                        },
+                        undefined
+                    >
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ params: { oauth: string } }>()
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ObjectSchema<
+                        {
+                            userId: StringSchema<undefined>
+                            itemId: StringSchema<undefined>
+                        },
+                        undefined
+                    >
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ params: { userId: string; itemId: string } }>()
     })
 })
 

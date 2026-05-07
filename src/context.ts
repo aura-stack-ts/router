@@ -1,7 +1,9 @@
-import { isSupportedBodyMethod } from "./assert.ts"
-import { InvalidZodSchemaError, RouterError } from "./error.ts"
+import { isSupportedBodyMethod } from "@/assert.ts"
+import { InvalidZodSchemaError, RouterError } from "@/error.ts"
+import { createValidator } from "@/validator/registry.ts"
 import type { ZodError } from "zod"
-import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "./types.ts"
+import type { BaseIssue } from "valibot"
+import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/types.ts"
 
 /**
  * @experimental
@@ -20,6 +22,14 @@ export const formatZodError = (error: ZodError<Record<string, unknown>>) => {
                 message: issue.message,
             },
         }
+    }, {})
+}
+
+export const formatValibotError = (issues: BaseIssue<unknown>[]) => {
+    if (!issues || issues.length === 0) return {}
+    return issues.reduce((prev, issue) => {
+        const key = issue.path?.map((p) => p.key).join(".") ?? ""
+        return { ...prev, [key]: { kind: issue.kind, message: issue.message } }
     }, {})
 }
 
@@ -43,9 +53,13 @@ export const formatZodError = (error: ZodError<Record<string, unknown>>) => {
  */
 export const getRouteParams = (params: Record<string, string>, config: EndpointConfig) => {
     if (config.schemas?.params) {
-        const parsed = config.schemas.params.safeParse(params)
+        const validator = createValidator(config.schemas.params)
+        const parsed = validator.validate(params)
         if (!parsed.success) {
-            throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
+            throw new InvalidZodSchemaError(
+                "UNPROCESSABLE_ENTITY",
+                Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
+            )
         }
         return parsed.data
     }
@@ -89,11 +103,15 @@ export const getSearchParams = <Config extends EndpointConfig>(
 ): ContextSearchParams<Config["schemas"]>["searchParams"] => {
     const route = new URL(url)
     if (config.schemas?.searchParams) {
-        const parsed = config.schemas.searchParams.safeParse(Object.fromEntries(route.searchParams.entries()))
+        const validator = createValidator(config.schemas.searchParams)
+        const parsed = validator.validate(Object.fromEntries(route.searchParams.entries()))
         if (!parsed.success) {
-            throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
+            throw new InvalidZodSchemaError(
+                "UNPROCESSABLE_ENTITY",
+                Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
+            )
         }
-        return parsed.data
+        return parsed.data as ContextSearchParams<Config["schemas"]>["searchParams"]
     }
     return new URLSearchParams(route.searchParams.toString())
 }
@@ -119,9 +137,13 @@ export const getBody = async <Config extends EndpointConfig>(request: Request, c
     if (contentType.includes("application/json") || config.schemas?.body) {
         const json = await clone.json()
         if (config.schemas?.body) {
-            const parsed = config.schemas.body.safeParse(json)
+            const validator = createValidator(config.schemas.body)
+            const parsed = validator.validate(json)
             if (!parsed.success) {
-                throw new InvalidZodSchemaError("UNPROCESSABLE_ENTITY", formatZodError(parsed.error))
+                throw new InvalidZodSchemaError(
+                    "UNPROCESSABLE_ENTITY",
+                    Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
+                )
             }
             return parsed.data
         }
