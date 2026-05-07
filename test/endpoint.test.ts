@@ -4,6 +4,7 @@ import { describe, test } from "vitest"
 import { createRouter } from "@/router.ts"
 import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
 import type { HTTPMethod, RoutePattern } from "@/types.ts"
+import { type } from "arktype"
 
 describe("createEndpoint", () => {
     describe("With valid configuration", () => {
@@ -168,6 +169,52 @@ describe("createEndpoint", () => {
             })
         })
 
+        describe("Arktype body schema", () => {
+            const endpoint = createEndpoint(
+                "POST",
+                "/auth/credentials",
+                (ctx) => {
+                    return Response.json({ body: ctx.body })
+                },
+                {
+                    schemas: {
+                        body: type({
+                            username: "string",
+                            password: "string",
+                        }),
+                    },
+                }
+            )
+            const { POST } = createRouter([endpoint])
+
+            test("With valid body", async ({ expect }) => {
+                const post = await POST(
+                    new Request("https://example.com/auth/credentials", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: "John", password: "secret" }),
+                    })
+                )
+                expect(post.ok).toBe(true)
+                expect(await post.json()).toEqual({
+                    body: { username: "John", password: "secret" },
+                })
+            })
+
+            test("With invalid body", async ({ expect }) => {
+                const post = await POST(
+                    new Request("https://example.com/auth/credentials", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: "John" }),
+                    })
+                )
+                expect(post.status).toBe(422)
+                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
+            })
+        })
+
         describe("Zod searchParams schema", () => {
             const endpoint = createEndpoint(
                 "GET",
@@ -215,6 +262,41 @@ describe("createEndpoint", () => {
                         searchParams: valibot.object({
                             state: valibot.string(),
                             code: valibot.string(),
+                        }),
+                    },
+                }
+            )
+
+            const { GET } = createRouter([endpoint])
+
+            test("With valid searchParams", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
+                expect(get.ok).toBe(true)
+                expect(await get.json()).toEqual({
+                    searchParams: { state: "123abc", code: "123" },
+                })
+            })
+
+            test("With invalid searchParams", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                expect(get.status).toBe(422)
+                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+            })
+        })
+
+        describe("Arktype searchParams schema", () => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/auth/:oauth",
+                (ctx) => {
+                    return Response.json({ searchParams: ctx.searchParams })
+                },
+                {
+                    schemas: {
+                        searchParams: type({
+                            state: "string",
+                            code: "string",
                         }),
                     },
                 }
@@ -316,6 +398,71 @@ describe("createEndpoint", () => {
                 schemas: {
                     params: valibot.object({
                         typeId: valibot.enum({ token: "token", code: "code" }),
+                    }),
+                },
+            })
+
+            const endpoint = createEndpoint(
+                "GET",
+                "/signIn/:oauth",
+                (ctx) => {
+                    const oauth = ctx.params.oauth
+                    return Response.json({ oauth })
+                },
+                config
+            )
+
+            const inferEndpoint = createEndpoint(
+                "GET",
+                "/type/:typeId",
+                (ctx) => {
+                    return Response.json({ typeId: ctx.params.typeId })
+                },
+                inferConfig
+            )
+
+            const { GET } = createRouter([endpoint, inferEndpoint])
+
+            test("With valid params", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/signIn/google"))
+                expect(get.ok).toBe(true)
+                expect(await get.json()).toEqual({ oauth: "google" })
+            })
+
+            test("With invalid params", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/signIn/facebook"))
+                expect(get.status).toBe(422)
+                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+            })
+
+            test("With inferred params", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/type/token"))
+                expect(get.ok).toBe(true)
+                expect(await get.json()).toEqual({ typeId: "token" })
+            })
+
+            test("With invalid inferred params", async ({ expect }) => {
+                const get = await GET(new Request("https://example.com/type/invalid"))
+                expect(get.status).toBe(422)
+                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+            })
+        })
+
+        describe("Arktype params schema", () => {
+            const config = createEndpointConfig("/signIn/:oauth", {
+                schemas: {
+                    params: type({
+                        oauth: type.enumerated("google", "github")
+                    }),
+                },
+            })
+
+            const inferConfig = createEndpointConfig("/type/:typeId", {
+                schemas: {
+                    params: type({
+                        typeId: type.enumerated("token", "code"),
                     }),
                 },
             })

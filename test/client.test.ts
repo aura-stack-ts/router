@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, expectTypeOf } from "vitest"
-import { never, z } from "zod"
+import { type } from "arktype"
+import { z } from "zod"
 import * as valibot from "valibot"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
@@ -371,6 +372,78 @@ test("Client type inference with Valibot schemas", async () => {
             schemas: {
                 params: valibot.object({ itemId: valibot.string() }),
                 searchParams: valibot.object({ force: valibot.string() }),
+            },
+        }
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem])
+
+    const client = createClient<typeof router>({
+        baseURL: "http://api.example.com",
+    })
+
+    client.get("/items/:itemId", {
+        params: {
+            itemId: "123",
+        },
+    })
+
+    client.get("/items/:itemId", {
+        params: { itemId: "123" },
+    })
+
+    const item = await client.get("/items/:itemId", {
+        params: { itemId: "123" },
+    })
+    expectTypeOf<typeof item>().toEqualTypeOf<JsonResponse<{ method: "GET" }>>()
+
+    const newItem = await client.post("/items", {
+        body: JSON.stringify({ name: "New Item" }),
+        headers: { "Content-Type": "application/json" },
+    })
+    expectTypeOf<typeof newItem>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const deletedItem = await client.delete("/items/:itemId", {
+        params: { itemId: "123" },
+        searchParams: { force: "true" },
+    })
+    expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
+})
+
+test("Client type inference with Arktype schemas", async () => {
+    const getItem = createEndpoint(
+        "GET",
+        "/items/:itemId",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        {
+            schemas: {
+                params: type({
+                    itemId: "string",
+                }),
+            },
+        }
+    )
+
+    const createItem = createEndpoint("POST", "/items", (ctx) => {
+        return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItem = createEndpoint(
+        "DELETE",
+        "/items/:itemId",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        {
+            schemas: {
+                params: type({
+                    itemId: "string",
+                }),
+                searchParams: type({
+                    force: "string",
+                }),
             },
         }
     )

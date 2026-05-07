@@ -97,13 +97,17 @@
   },
   "peerDependencies": {
     "zod": "^4.1.11",
-    "valibot": "^1.4.0"
+    "valibot": "^1.4.0",
+    "arktype": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "zod": {
       "optional": true
     },
     "valibot": {
+      "optional": true
+    },
+    "arktype": {
       "optional": true
     }
   },
