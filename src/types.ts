@@ -1,8 +1,8 @@
+import type { Type } from "arktype"
 import type { ZodObject, z } from "zod"
 import type { RouterError } from "./error.ts"
 import type { HeadersBuilder } from "./headers.ts"
 import type { ObjectSchema, InferOutput, StringSchema, InferInput } from "valibot"
-import { Type } from "arktype"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.

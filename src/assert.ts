@@ -97,5 +97,5 @@ export const isValibotSchema = (value: unknown): value is BaseSchema<any, any, a
 }
 
 export const isArkType = (value: unknown): value is Type<{}, {}> => {
-    return typeof value === "function" && value !== null && "allows" in value && "assert" in value
+    return typeof value === "function" && "allows" in value && "assert" in value
 }
