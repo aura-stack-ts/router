@@ -2,7 +2,7 @@ import type { RouteEndpoint } from "@/types.ts"
 import { createRouter } from "@/router.ts"
 import { run, bench, summary } from "mitata"
 
-export const routes: Pick<RouteEndpoint, "method" | "route">[] = [
+export const routes: Pick<RouteEndpoint<any, any, any, any>, "method" | "route">[] = [
     { method: "GET", route: "/user" },
     { method: "GET", route: "/user/comments" },
     { method: "GET", route: "/user/avatar" },
@@ -16,7 +16,7 @@ export const routes: Pick<RouteEndpoint, "method" | "route">[] = [
     { method: "GET", route: "/very/deeply/nested/route/hello/there" },
 ]
 
-export const calls: (Pick<RouteEndpoint, "method" | "route"> & { name: string })[] = [
+export const calls: (Pick<RouteEndpoint<any, any, any, any>, "method" | "route"> & { name: string })[] = [
     {
         name: "short static",
         method: "GET",
@@ -49,7 +49,7 @@ export const calls: (Pick<RouteEndpoint, "method" | "route"> & { name: string })
     },
 ]
 
-const benchEndpoints: RouteEndpoint[] = routes.map((route) => ({
+const benchEndpoints: RouteEndpoint<any, any, any, any>[] = routes.map((route) => ({
     ...route,
     handler: () => new Response(null, { status: 204 }),
     config: {},

@@ -379,7 +379,11 @@ describe("createEndpoint", () => {
                     return Response.json({ params: ctx.params })
                 },
                 {
-                    schemas: {},
+                    schemas: {
+                        params: z.object({
+                            oauth: z.enum(["google", "github"]),
+                        }),
+                    },
                     use: [
                         (ctx) => {
                             ctx.params.oauth = "google"

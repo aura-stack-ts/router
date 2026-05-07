@@ -1,5 +1,12 @@
 import { RouterError } from "./error.ts"
-import type { EndpointConfig, GlobalMiddlewareContext, MiddlewareFunction, RequestContext, RouterConfig } from "./types.ts"
+import type {
+    EndpointConfig,
+    GlobalMiddlewareContext,
+    MiddlewareFunction,
+    RequestContext,
+    RoutePattern,
+    RouterConfig,
+} from "./types.ts"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.
@@ -34,17 +41,26 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
  * @param middlewares - Array of middleware functions to be executed
  * @returns The modified context after all middlewares have been executed
  */
-export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
-    context: RequestContext<RouteParams, Config>,
-    use: MiddlewareFunction<RouteParams, Config>[] = []
-): Promise<RequestContext<RouteParams, Config>> => {
+//export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
+export const executeMiddlewares = async <
+    Route extends RoutePattern,
+    const Config extends EndpointConfig<Route, any> = EndpointConfig<Route, any>,
+>(
+    context: RequestContext<Route, { schemas: Config["schemas"] }>,
+    use: MiddlewareFunction<Route, { schemas: Config["schemas"] }>[] = []
+): Promise<RequestContext<Route, { schemas: Config["schemas"] }>> => {
     try {
         let ctx = context
         for (const middleware of use) {
             if (typeof middleware !== "function") {
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }
-            ctx = (await middleware(ctx)) as RequestContext<RouteParams, Config>
+            try {
+                ctx = (await middleware(ctx)) as RequestContext<Route, { schemas: Config["schemas"] }>
+            } catch (error) {
+                if (error instanceof RouterError) throw error
+                throw new RouterError("BAD_REQUEST", "Handler threw an error", "MiddlewareError")
+            }
         }
         return ctx
     } catch {

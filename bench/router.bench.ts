@@ -2,10 +2,10 @@ import z from "zod"
 import { describe, bench } from "vitest"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
-import type { EndpointConfig, RouteEndpoint, RoutePattern } from "@/types.ts"
+import type { EndpointConfig, RequestContext, RouteEndpoint, RoutePattern } from "@/types.ts"
 
 describe("router benchmark", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
@@ -19,7 +19,7 @@ describe("router benchmark", () => {
 })
 
 describe("router benchmark making 100 requests", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
@@ -38,7 +38,7 @@ describe("router benchmark making 100 requests", () => {
 })
 
 describe("router benchmark making 1000 requests", () => {
-    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint>((idx) => ({
+    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
@@ -58,11 +58,11 @@ describe("router benchmark making 1000 requests", () => {
 })
 
 describe("router with dynamic routes without parsing benchmark", () => {
-    const endpoints: RouteEndpoint[] = [
+    const endpoints: RouteEndpoint<any, any, any, any>[] = [
         {
             method: "GET",
             route: "/users/:userId" as RoutePattern,
-            handler: (ctx) => {
+            handler: (ctx: RequestContext) => {
                 return Response.json({ message: `User endpoint`, params: ctx.params })
             },
             config: {},
@@ -70,7 +70,7 @@ describe("router with dynamic routes without parsing benchmark", () => {
         {
             method: "GET",
             route: "/posts/:postId/comments/:commentId" as RoutePattern,
-            handler: (ctx) => {
+            handler: (ctx: RequestContext) => {
                 return Response.json({ message: `Post comment endpoint`, params: ctx.params })
             },
             config: {},
@@ -116,7 +116,7 @@ describe("router with dynamic routes with parsing benchmark", () => {
         }
     )
 
-    const endpoints: RouteEndpoint[] = [getUser, getPostComment]
+    const endpoints: RouteEndpoint<any, any, any, any>[] = [getUser, getPostComment]
 
     bench("match: createRouter dynamic routes + schema validation - 2 lookups", async () => {
         const { GET } = createRouter(endpoints)

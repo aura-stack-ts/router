@@ -9,7 +9,7 @@ describe("getRouteParams", () => {
     const router = new TrieRouter()
     const handler = () => Response.json({})
 
-    const endpoints: RouteEndpoint[] = [
+    const endpoints: RouteEndpoint<any, any, any, any>[] = [
         { method: "GET", route: "/books", handler, config: {} },
         { method: "GET", route: "/users/:userId/books", handler, config: {} },
         { method: "GET", route: "/users/:userId/books/:bookId", handler, config: {} },

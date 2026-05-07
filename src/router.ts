@@ -3,11 +3,37 @@ import { onError } from "./on-error.ts"
 import { RouterError } from "./error.ts"
 import { HeadersBuilder } from "./headers.ts"
 import { isSupportedMethod } from "./assert.ts"
-import { getBody, getRouteParams, getSearchParams } from "./context.ts"
+import { getBody, getRouteParams, getSearchParams, json } from "./context.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.ts"
 import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.ts"
 
-const handleRequest = async (method: HTTPMethod, request: Request, config: RouterConfig, router: TrieRouter) => {
+const inferHandlerResponse = (result: unknown): Response => {
+    if (result instanceof Response) return result
+    if (result === undefined) return new Response(null, { status: 204 })
+    if (typeof result === "string") {
+        return new Response(result, {
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+        })
+    }
+    if (
+        result instanceof ArrayBuffer ||
+        ArrayBuffer.isView(result) ||
+        result instanceof Blob ||
+        result instanceof FormData ||
+        result instanceof URLSearchParams ||
+        result instanceof ReadableStream
+    ) {
+        return new Response(result as BodyInit)
+    }
+    return Response.json(result)
+}
+
+const handleRequest = async (
+    method: HTTPMethod,
+    request: Request,
+    config: RouterConfig,
+    router: TrieRouter
+): Promise<Response> => {
     try {
         if (!isSupportedMethod(request.method)) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
@@ -31,7 +57,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
         const body = await getBody(globalRequestContext.request, endpoint.config)
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
         const headers = new HeadersBuilder(globalRequestContext.request.headers)
-        let context = {
+        let context: any = {
             params: dynamicParams,
             searchParams,
             headers,
@@ -40,11 +66,12 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
             url,
             method: globalRequestContext.request.method,
             route: endpoint.route,
-            context: config.context ?? ({} as GlobalContext),
+            context: globalRequestContext.context ?? ({} as GlobalContext),
+            json,
         }
         context = await executeMiddlewares(context, endpoint.config.use)
-        const response = await endpoint.handler(context)
-        return response
+        const handlerResult = await endpoint.handler(context)
+        return inferHandlerResponse(handlerResult)
     } catch (error) {
         return onError(error, request, config)
     }
@@ -59,7 +86,7 @@ const handleRequest = async (method: HTTPMethod, request: Request, config: Route
  * @param config - Optional configuration object for the router
  * @returns An object with methods corresponding to HTTP methods, each handling requests for that method
  */
-export const createRouter = <const Endpoints extends RouteEndpoint[]>(
+export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any, any>[]>(
     endpoints: Endpoints,
     config: RouterConfig = {}
 ): Router<Endpoints> => {
@@ -77,5 +104,5 @@ export const createRouter = <const Endpoints extends RouteEndpoint[]>(
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, router)
     }
-    return server
+    return server as Router<Endpoints>
 }

@@ -8,7 +8,7 @@ import type { HeadersBuilder } from "./headers.ts"
  * const getUser:RoutePattern = "/users/:userId"
  * const getPostsComments:RoutePattern = "/posts/:postId/comments/:commentId"
  */
-export type RoutePattern = `/${string}` | `/${string}/:${string}`
+export type RoutePattern = `/${string}`
 
 /**
  * HTTP methods defined in HTTP/1.1 specification.
@@ -36,6 +36,7 @@ export type Prettify<Obj extends object> = {
     [Key in keyof Obj]: Obj[Key]
 } & {}
 
+type GetParam<Route extends string> = Route extends `:${infer Param}` ? { [K in Param]: string } : {}
 /**
  * Extracts route parameters from a given route pattern through colon-prefixed segments.
  * Returns an object type where keys are parameter names and values are strings.
@@ -51,13 +52,11 @@ export type Prettify<Obj extends object> = {
  * // Expected: {}
  * type NoParams = Params<"/about">;
  */
-export type GetRouteParams<Route extends RoutePattern> = Route extends `/${string}/:${infer Param}/${infer Str}`
-    ? Prettify<{ [K in Param]: string } & GetRouteParams<`/${Str}`>>
-    : Route extends `/${string}/:${infer Param}`
-      ? Prettify<{ [K in Param]: string }>
-      : Route extends `/:${infer Param}`
-        ? Prettify<{ [K in Param]: string }>
-        : {}
+export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer Path}/${infer Str}`
+    ? Prettify<GetParam<Path> & GetRouteParams<`/${Str}`>>
+    : Route extends `/${infer Path}`
+      ? GetParam<Path>
+      : {}
 
 /**
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
@@ -79,50 +78,76 @@ export interface GlobalContext {}
  * Configuration for an endpoint, including optional schemas for request validation and middlewares.
  */
 export type EndpointConfig<
-    RouteParams extends RoutePattern = RoutePattern,
+    Route extends RoutePattern = RoutePattern,
     Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
     schemas?: Schemas
-    use?: MiddlewareFunction<GetRouteParams<RouteParams>, { schemas: Schemas }>[]
+    use?: MiddlewareFunction<Route, EndpointConfig<Route, Schemas>>[]
 }>
 
 /**
  * Infer the type of search parameters from the provided value in the `EndpointConfig`.
  */
-export type ContextSearchParams<Schemas extends EndpointConfig["schemas"]> = Schemas extends { searchParams: ZodObject }
+export type ContextSearchParams<Schemas extends EndpointConfig<any, any>["schemas"]> = Schemas extends { searchParams: ZodObject }
     ? { searchParams: z.infer<Schemas["searchParams"]> }
     : { searchParams: URLSearchParams }
 
 /**
  * Infer the type of body from the provided value in the `EndpointConfig`.
  */
-export type ContextBody<Schemas extends EndpointConfig["schemas"]> = Schemas extends { body: ZodObject }
+export type ContextBody<Schemas extends EndpointConfig<any, any>["schemas"]> = Schemas extends { body: ZodObject }
     ? { body: z.infer<Schemas["body"]> }
     : { body: undefined }
 
-/**
- * Infer the type of route parameters from the provided value in the `EndpointConfig`.
- */
-export type ContextParams<Schemas extends EndpointConfig["schemas"], Default = Record<string, string>> = Schemas extends {
-    params: ZodObject
-}
-    ? { params: z.infer<Schemas["params"]> }
+type IsAny<T> = 0 extends 1 & T ? true : false
+
+type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
+
+export type ContextParams<Schemas, Default extends Record<string, string> = Record<string, string>> = [Schemas] extends [
+    EndpointConfig<infer _, infer Schemas>,
+]
+    ? [IsAny<Schemas>] extends [true]
+        ? { params: Default }
+        : [Equals<Schemas, EndpointSchemas>] extends [true]
+          ? { params: Default }
+          : [{ params: ZodObject<any> }] extends [Schemas]
+            ? { params: z.infer<Schemas["params"]> }
+            : { params: Default }
     : { params: Default }
+
+export type unstable__ContextParams<
+    Schemas extends EndpointConfig<any, any>["schemas"],
+    Default extends Record<string, string> = Record<string, string>,
+> = Schemas extends { params: ZodObject<any> } ? z.infer<Schemas["params"]> : Default
+
+declare const jsonResponseBrand: unique symbol
+
+export type JsonResponse<T> = Omit<Response, "json"> & {
+    readonly [jsonResponseBrand]: T
+    json(): Promise<T>
+}
+
+export type RouteHandlerReturn = Response | JsonResponse<unknown>
 
 /**
  * Context object passed to route handlers and middlewares defined in the
  * `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
-export interface RequestContext<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> {
-    params: ContextParams<Config["schemas"], RouteParams>["params"]
+export type RequestContext<
+    Route extends RoutePattern = RoutePattern,
+    Config extends EndpointConfig = EndpointConfig,
+    Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
+> = {
+    params: ContextParams<Config["schemas"], GetRouteParams<Route>>["params"]
     headers: HeadersBuilder
-    body: ContextBody<Config["schemas"]>["body"]
-    searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
+    body: ContextBody<NonNullable<Config["schemas"]>>["body"]
+    searchParams: ContextSearchParams<NonNullable<Config["schemas"]>>["searchParams"]
     request: Request
     url: URL
-    method: HTTPMethod
-    route: RoutePattern
+    method: Method
+    route: Route
     context: GlobalContext
+    json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
 }
 
 export interface GlobalMiddlewareContext {
@@ -141,38 +166,56 @@ export type GlobalMiddleware = (
  * Middleware function type that represent a function that runs before the route handler
  * defined in the `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
-export type MiddlewareFunction<RouteParams = Record<string, string>, Config extends EndpointConfig = EndpointConfig> = (
-    ctx: Prettify<RequestContext<RouteParams, Config>>
-) => Response | RequestContext<RouteParams, Config> | Promise<Response | RequestContext<RouteParams, Config>>
+export type MiddlewareFunction<
+    Route extends RoutePattern = RoutePattern,
+    Config extends EndpointConfig<Route, {}> = EndpointConfig<Route, {}>,
+> = (
+    ctx: Prettify<RequestContext<Route, { schemas: Config["schemas"] }>>
+) =>
+    | Response
+    | RequestContext<Route, { schemas: Config["schemas"] }>
+    | Promise<Response | RequestContext<Route, { schemas: Config["schemas"] }>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.
  * The handler receives the request object and a context containing route parameters, headers,
  * and optionally validated body and search parameters based on the endpoint configuration.
  */
-export type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig> = (
-    ctx: Prettify<RequestContext<GetRouteParams<Route>, Config>>
-) => Response | Promise<Response>
+export type RouteHandler<
+    Route extends RoutePattern,
+    Config extends EndpointConfig<Route, any>,
+    /**
+     * No removal of the `ReturnType` utility type here, as it is used to infer the return type of the handler function.
+     */
+    Return extends RouteHandlerReturn = RouteHandlerReturn,
+    Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
+> = (ctx: Prettify<RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>>) => Return | Promise<Return>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,
  * handler function with inferred context types, and associated configuration.
  */
 export interface RouteEndpoint<
-    Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
-    Route extends RoutePattern = RoutePattern,
-    Config extends EndpointConfig = EndpointConfig,
+    Method extends HTTPMethod | HTTPMethod[],
+    Route extends RoutePattern,
+    Config extends EndpointConfig<Route, any>,
+    Handler extends RouteHandler<Route, Config, RouteHandlerReturn, Method> = RouteHandler<
+        Route,
+        Config,
+        RouteHandlerReturn,
+        Method
+    >,
 > {
     method: Method
     route: Route
-    handler: RouteHandler<Route, Config>
+    handler: Handler
     config: Config
 }
 
 /**
  * Infer the HTTP methods defined in the provided array of route endpoints.
  */
-export type InferMethod<Endpoints extends RouteEndpoint[]> = Endpoints extends (infer Endpoint)[]
+export type InferMethod<Endpoints extends readonly RouteEndpoint<any, any, any>[]> = Endpoints extends (infer Endpoint)[]
     ? Endpoint extends RouteEndpoint<infer Method, infer _, infer __>
         ? Method extends HTTPMethod[]
             ? Method[number]
@@ -184,7 +227,7 @@ export type InferMethod<Endpoints extends RouteEndpoint[]> = Endpoints extends (
  * Generates an object with HTTP methods available by the router from `createRouter` function.
  * Each method is a function that takes a request and context, returning a promise of a response.
  */
-export type GetHttpHandlers<Endpoints extends RouteEndpoint[]> = {
+export type GetHttpHandlers<Endpoints extends readonly RouteEndpoint<any, any, any>[]> = {
     [Method in InferMethod<Endpoints>]: (req: Request) => Response | Promise<Response>
 }
 
@@ -243,43 +286,6 @@ export interface RouterConfig extends GlobalCtx {
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
 }
 
-/**
- * @experimental
- */
-export type ExtractEndpoint<T> = T extends RouteEndpoint<infer M, infer P, infer C> ? { method: M; path: P; config: C } : never
-
-type MethodIncludes<Method, Met extends HTTPMethod> = Method extends readonly HTTPMethod[]
-    ? Met extends Method[number]
-        ? true
-        : false
-    : Method extends HTTPMethod
-      ? Method extends Met
-          ? true
-          : false
-      : false
-
-/**
- * @experimental
- */
-export type RoutesByMethod<Defs extends readonly RouteEndpoint[], Met extends HTTPMethod> =
-    ExtractEndpoint<Defs[number]> extends infer E
-        ? E extends { method: infer M; path: infer P }
-            ? MethodIncludes<M, Met> extends true
-                ? P
-                : never
-            : never
-        : never
-
-export type ExtractRoutesByMethod<Defs extends RouteEndpoint[], Met extends HTTPMethod> = Defs extends unknown[]
-    ? Defs extends [infer First, ...infer Rest]
-        ? First extends RouteEndpoint<infer M, infer R>
-            ? MethodIncludes<M, Met> extends true
-                ? R | ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
-                : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
-            : ExtractRoutesByMethod<Rest extends RouteEndpoint[] ? Rest : [], Met>
-        : never
-    : false
-
 export type InferZod<T> = T extends z.ZodTypeAny ? z.infer<T> : T
 
 export type ToInferZod<T> = {
@@ -290,31 +296,31 @@ export type RemoveUndefined<T> = {
     [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 }
 
-export type Find<Defs extends RouteEndpoint[], Met extends HTTPMethod, Path extends string> = Defs extends unknown[]
-    ? Defs extends [infer First, ...infer Rest]
-        ? First extends RouteEndpoint<infer M, infer R, infer C>
-            ? MethodIncludes<M, Met> extends true
-                ? R extends Path
-                    ? RemoveUndefined<ToInferZod<NonNullable<C["schemas"]>>>
-                    : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
-                : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
-            : Find<Rest extends RouteEndpoint[] ? Rest : [], Met, Path>
-        : never
-    : never
+type HasSchemas<C> =
+    C extends EndpointConfig<any, infer Schemas> ? (Schemas[keyof Schemas] extends ZodObject<any> ? true : false) : false
 
-export type Client<Defs extends RouteEndpoint[]> = {
-    [M in InferMethod<Defs> as Lowercase<M>]: <T extends ExtractRoutesByMethod<Defs, M>, Config extends Find<Defs, M, T>>(
-        ...args: Config extends EndpointSchemas
-            ? [path: T, ctx?: RequestInit]
-            : [path: T, ctx: Prettify<Omit<RequestInit, "body"> & Config>]
-    ) => Promise<Response>
-}
+export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
+    ? Endpoints extends [infer First, ...infer Rest]
+        ? First extends RouteEndpoint<infer Method, infer Route, infer Config, infer Handler>
+            ? Prettify<
+                  {
+                      [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
+                          ? (path: Route, ctx?: RequestInit) => ReturnType<Handler> | Promise<ReturnType<Handler>>
+                          : (
+                                path: Route,
+                                ctx: Omit<RequestInit, "body"> & RemoveUndefined<ToInferZod<NonNullable<Config["schemas"]>>>
+                            ) => ReturnType<Handler> | Promise<ReturnType<Handler>>
+                  } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
+              >
+            : {}
+        : {}
+    : {}
 
-declare const endpointsSymbol: unique symbol
+export declare const endpointsSymbol: unique symbol
 
-export type Router<Endpoints extends RouteEndpoint[]> = GetHttpHandlers<Endpoints> & {
-    readonly [endpointsSymbol]?: Endpoints
-}
+export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
+    readonly __endpoints: Endpoints
+} & GetHttpHandlers<Endpoints>
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
 
