@@ -154,7 +154,7 @@ describe("executeMiddlewares", () => {
 
     test.concurrent("Middleware with schema", async ({ expect }) => {
         const searchParamsShema = z.object({
-            code: z.string().optional,
+            code: z.string().optional(),
             state: z.string().optional(),
         })
         const middlewares: MiddlewareFunction<"/", { schemas: { searchParams: typeof searchParamsShema } }>[] = [

@@ -127,7 +127,7 @@ export type JsonResponse<T> = Omit<Response, "json"> & {
     json(): Promise<T>
 }
 
-export type RouteHandlerReturn = Response | JsonResponse<unknown> | Promise<Response> | Promise<JsonResponse<unknown>>
+export type RouteHandlerReturn = Response | JsonResponse<unknown>
 
 /**
  * Context object passed to route handlers and middlewares defined in the
@@ -138,7 +138,6 @@ export type RequestContext<
     Config extends EndpointConfig = EndpointConfig,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = {
-    //params: unstable__ContextParams<NonNullable<Config["schemas"]>, GetRouteParams<Route>>
     params: ContextParams<Config["schemas"], GetRouteParams<Route>>["params"]
     headers: HeadersBuilder
     body: ContextBody<NonNullable<Config["schemas"]>>["body"]
@@ -190,9 +189,7 @@ export type RouteHandler<
      */
     Return extends RouteHandlerReturn = RouteHandlerReturn,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
-> = (
-    ctx: Prettify<RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>>
-) => Response | Promise<Response> | JsonResponse<unknown>
+> = (ctx: Prettify<RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>>) => Return | Promise<Return>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,

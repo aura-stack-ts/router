@@ -175,12 +175,11 @@ describe("RequestContext", () => {
 })
 
 describe("MiddlewareFunction", () => {
-    type ReturnCtx<
-        Route extends RoutePattern = RoutePattern,
-        Config extends EndpointConfig<Route, {}> = EndpointConfig<Route, {}>,
-    > = Response | RequestContext<Route, {}> | Promise<Response | RequestContext<Route, {}>>
+    type ReturnCtx<Route extends RoutePattern = RoutePattern, Config extends EndpointConfig = EndpointConfig> =
+        | Response
+        | RequestContext<Route, Config>
+        | Promise<Response | RequestContext<Route, Config>>
 
-    type See = MiddlewareFunction
     expectTypeOf<MiddlewareFunction>().toEqualTypeOf<
         (ctx: RequestContext) => Response | RequestContext | Promise<Response | RequestContext>
     >()
@@ -431,16 +430,6 @@ describe("RouteEndpoint", () => {
         config: EndpointConfig<"/auth/:oauth">
         handler: RouteHandler<"/auth/:oauth", EndpointConfig<"/auth/:oauth">, RouteHandlerReturn, "GET">
     }>()
-
-    type See = RouteEndpoint<
-        "GET",
-        "/auth/:oauth",
-        {
-            schemas: {
-                searchParams: ZodObject<{ state: ZodString }>
-            }
-        }
-    >
 
     expectTypeOf<
         RouteEndpoint<

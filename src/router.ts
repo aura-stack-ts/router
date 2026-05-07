@@ -66,7 +66,7 @@ const handleRequest = async (
             url,
             method: globalRequestContext.request.method,
             route: endpoint.route,
-            context: config.context ?? ({} as GlobalContext),
+            context: globalRequestContext.context ?? ({} as GlobalContext),
             json,
         }
         context = await executeMiddlewares(context, endpoint.config.use)
