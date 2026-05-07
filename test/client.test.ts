@@ -5,18 +5,21 @@ import { createEndpoint } from "@/endpoint.ts"
 import { createClient } from "@/client.ts"
 import type { JsonResponse } from "@/types.ts"
 
-describe("Client", () => {
-    beforeEach(() => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(() => {
-                return new Response(JSON.stringify({ success: true }), { status: 200 })
-            })
-        )
-    })
+beforeEach(() => {
+    vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce({
+            status: 200,
+            json: () => Promise.resolve({ success: true }),
+        })
+    )
+})
 
+describe("Client", () => {
     const router = createRouter([
-        createEndpoint("GET", "/users", (ctx) => ctx.json({ users: [] })),
+        createEndpoint("GET", "/users", (ctx) => {
+            return ctx.json({ users: [] })
+        }),
         createEndpoint("GET", "/users/:userId", () => new Response(""), {
             schemas: { params: z.object({ userId: z.string() }) },
         }),
@@ -279,7 +282,7 @@ describe("Client", () => {
     })
 })
 
-describe("Client type inference", async () => {
+test("Client type inference", async () => {
     const getItem = createEndpoint(
         "GET",
         "/items/:itemId",

@@ -42,17 +42,17 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
  * @returns The modified context after all middlewares have been executed
  */
 //export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
-export const executeMiddlewares = async <Route extends RoutePattern, const Config extends EndpointConfig>(
-    context: RequestContext<Route, Config>,
-    use: MiddlewareFunction<Route, Config>[] = []
-): Promise<RequestContext<Route, Config>> => {
+export const executeMiddlewares = async <Route extends RoutePattern, const Config extends EndpointConfig<Route, {}>>(
+    context: RequestContext<Route, {}>,
+    use: MiddlewareFunction<Route, {}>[] = []
+): Promise<RequestContext<Route, { schemas: Config["schemas"] }>> => {
     try {
         let ctx = context
         for (const middleware of use) {
             if (typeof middleware !== "function") {
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }
-            ctx = (await middleware(ctx)) as RequestContext<Route, Config>
+            ctx = (await middleware(ctx)) as RequestContext<Route, { schemas: Config["schemas"] }>
         }
         return ctx
     } catch {

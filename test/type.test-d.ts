@@ -18,8 +18,9 @@ import type {
     GlobalContext,
     JsonResponse,
     InferEndpoints,
+    RouteHandlerReturn,
 } from "../src/types.ts"
-import { string, type ZodObject, type ZodString } from "zod"
+import { type ZodObject, type ZodString } from "zod"
 
 type RoutePath = "/auth/:oauth"
 type EmptyObject = Record<PropertyKey, never>
@@ -59,12 +60,127 @@ describe("GetRouteParams", () => {
     }>()
 })
 
+describe("RequestContext", () => {
+    type Context<T extends Record<string, unknown>> = Prettify<
+        {
+            headers: HeadersBuilder
+            request: Request
+            url: URL
+            method: HTTPMethod | HTTPMethod[]
+            route: RoutePattern
+            context: GlobalContext
+            json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
+        } & T
+    >
+
+    expectTypeOf<RequestContext>().toEqualTypeOf<
+        Context<{
+            params: {}
+            body: undefined
+            searchParams: URLSearchParams
+        }>
+    >()
+
+    expectTypeOf<RequestContext<RoutePath>>().toEqualTypeOf<
+        Context<{
+            params: { oauth: string }
+            body: undefined
+            searchParams: URLSearchParams
+            route: "/auth/:oauth"
+        }>
+    >()
+
+    expectTypeOf<RequestContext<"/:oauth/:provider">>().toEqualTypeOf<
+        Context<{
+            params: { oauth: string; provider: string }
+            body: undefined
+            searchParams: URLSearchParams
+            route: "/:oauth/:provider"
+        }>
+    >()
+
+    expectTypeOf<
+        RequestContext<
+            RoutePath,
+            {
+                schemas: {
+                    body: ZodObject<{ username: ZodString; password: ZodString }>
+                }
+            }
+        >
+    >().toEqualTypeOf<
+        Context<{
+            params: { oauth: string }
+            body: { username: string; password: string }
+            searchParams: URLSearchParams
+            route: "/auth/:oauth"
+        }>
+    >()
+
+    expectTypeOf<
+        RequestContext<
+            RoutePath,
+            {
+                schemas: {
+                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
+                }
+            }
+        >
+    >().toEqualTypeOf<
+        Context<{
+            params: { oauth: string }
+            body: undefined
+            searchParams: { code: string; state: string }
+            route: "/auth/:oauth"
+        }>
+    >()
+
+    expectTypeOf<
+        RequestContext<
+            RoutePath,
+            {
+                schemas: {
+                    body: ZodObject<{ username: ZodString; password: ZodString }>
+                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
+                }
+            }
+        >
+    >().toEqualTypeOf<
+        Context<{
+            params: { oauth: string }
+            body: { username: string; password: string }
+            searchParams: { code: string; state: string }
+            route: "/auth/:oauth"
+        }>
+    >()
+
+    expectTypeOf<
+        RequestContext<
+            RoutePath,
+            {
+                schemas: {
+                    body: ZodObject<{ username: ZodString; password: ZodString }>
+                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
+                }
+            }
+        >
+    >().toEqualTypeOf<
+        Context<{
+            params: { oauth: string }
+            body: { username: string; password: string }
+            searchParams: { code: string; state: string }
+            route: "/auth/:oauth"
+        }>
+    >()
+})
+
 describe("MiddlewareFunction", () => {
     type ReturnCtx<
         Route extends RoutePattern = RoutePattern,
         Config extends EndpointConfig<Route, {}> = EndpointConfig<Route, {}>,
     > = Response | RequestContext<Route, {}> | Promise<Response | RequestContext<Route, {}>>
 
+    type See = MiddlewareFunction
     expectTypeOf<MiddlewareFunction>().toEqualTypeOf<
         (ctx: RequestContext) => Response | RequestContext | Promise<Response | RequestContext>
     >()
@@ -260,128 +376,10 @@ describe("ContextBody", () => {
     })
 })
 
-describe("RequestContext", () => {
-    type Context<T extends Record<string, unknown>> = Prettify<
-        {
-            headers: HeadersBuilder
-            request: Request
-            url: URL
-            method: HTTPMethod | HTTPMethod[]
-            route: RoutePattern
-            context: GlobalContext
-            json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
-        } & T
-    >
-
-    type See = RequestContext<RoutePath, {}>
-
-    expectTypeOf<RequestContext>().toEqualTypeOf<
-        Context<{
-            params: {}
-            body: undefined
-            searchParams: URLSearchParams
-        }>
-    >()
-
-    expectTypeOf<RequestContext<RoutePath>>().toEqualTypeOf<
-        Context<{
-            params: { oauth: string }
-            body: undefined
-            searchParams: URLSearchParams
-            route: "/auth/:oauth"
-        }>
-    >()
-
-    expectTypeOf<RequestContext<"/:oauth/:provider">>().toEqualTypeOf<
-        Context<{
-            params: { oauth: string; provider: string }
-            body: undefined
-            searchParams: URLSearchParams
-            route: "/:oauth/:provider"
-        }>
-    >()
-
-    expectTypeOf<
-        RequestContext<
-            RoutePath,
-            {
-                schemas: {
-                    body: ZodObject<{ username: ZodString; password: ZodString }>
-                }
-            }
-        >
-    >().toEqualTypeOf<
-        Context<{
-            params: { oauth: string }
-            body: { username: string; password: string }
-            searchParams: URLSearchParams
-            route: "/auth/:oauth"
-        }>
-    >()
-
-    expectTypeOf<
-        RequestContext<
-            EmptyObject,
-            {
-                schemas: {
-                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
-                }
-            }
-        >
-    >().toEqualTypeOf<
-        Context<{
-            params: EmptyObject
-            body: undefined
-            searchParams: { code: string; state: string }
-        }>
-    >()
-
-    expectTypeOf<
-        RequestContext<
-            EmptyObject,
-            {
-                schemas: {
-                    body: ZodObject<{ username: ZodString; password: ZodString }>
-                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
-                }
-            }
-        >
-    >().toEqualTypeOf<
-        Context<{
-            params: EmptyObject
-            body: { username: string; password: string }
-            searchParams: { code: string; state: string }
-        }>
-    >()
-
-    expectTypeOf<
-        RequestContext<
-            { oauth: string },
-            {
-                schemas: {
-                    body: ZodObject<{ username: ZodString; password: ZodString }>
-                    searchParams: ZodObject<{ code: ZodString; state: ZodString }>
-                }
-            }
-        >
-    >().toEqualTypeOf<
-        Context<{
-            params: { oauth: string }
-            body: { username: string; password: string }
-            searchParams: { code: string; state: string }
-        }>
-    >()
-})
-
 describe("EndpointConfig", () => {
     expectTypeOf<EndpointConfig<"/">>().toEqualTypeOf<{
         schemas?: EndpointSchemas
-        use?: MiddlewareFunction<
-            GetRouteParams<"/">,
-            {
-                schemas: EndpointSchemas
-            }
-        >[]
+        use?: MiddlewareFunction<"/", EndpointConfig<"/", EndpointSchemas>>[]
     }>()
 
     expectTypeOf<
@@ -394,7 +392,7 @@ describe("EndpointConfig", () => {
     >().toEqualTypeOf<{
         schemas?: { body: ZodObject<{ username: ZodString; password: ZodString }> }
         use?: MiddlewareFunction<
-            GetRouteParams<"/">,
+            "/",
             {
                 schemas: {
                     body: ZodObject<{ username: ZodString; password: ZodString }>
@@ -420,21 +418,21 @@ describe("RouteHandler", () => {
 })
 
 describe("RouteEndpoint", () => {
-    expectTypeOf<RouteEndpoint<"GET", "/auth/:oauth", EndpointConfig>>().toEqualTypeOf<{
+    expectTypeOf<RouteEndpoint<"GET", "/auth/:oauth", EndpointConfig<"/auth/:oauth">>>().toEqualTypeOf<{
         method: "GET"
         route: "/auth/:oauth"
-        config: EndpointConfig
-        handler: RouteHandler<"/auth/:oauth", EndpointConfig>
+        config: EndpointConfig<"/auth/:oauth">
+        handler: RouteHandler<"/auth/:oauth", EndpointConfig<"/auth/:oauth">, RouteHandlerReturn, "GET">
     }>()
 
-    expectTypeOf<RouteEndpoint<"GET", "/auth/:oauth", EmptyObject>>().toEqualTypeOf<{
+    expectTypeOf<RouteEndpoint<"GET", "/auth/:oauth", EndpointConfig<"/auth/:oauth">>>().toEqualTypeOf<{
         method: "GET"
         route: "/auth/:oauth"
-        config: EmptyObject
-        handler: RouteHandler<"/auth/:oauth", EmptyObject>
+        config: EndpointConfig<"/auth/:oauth">
+        handler: RouteHandler<"/auth/:oauth", EndpointConfig<"/auth/:oauth">, RouteHandlerReturn, "GET">
     }>()
 
-    type Nose = RouteEndpoint<
+    type See = RouteEndpoint<
         "GET",
         "/auth/:oauth",
         {
@@ -458,7 +456,9 @@ describe("RouteEndpoint", () => {
         method: "GET"
         route: "/auth/:oauth"
         config: {
-            schemas: { searchParams: ZodObject<{ state: ZodString }> }
+            schemas: {
+                searchParams: ZodObject<{ state: ZodString }>
+            }
         }
         handler: RouteHandler<
             "/auth/:oauth",
@@ -467,6 +467,7 @@ describe("RouteEndpoint", () => {
                     searchParams: ZodObject<{ state: ZodString }>
                 }
             },
+            RouteHandlerReturn,
             "GET"
         >
     }>()

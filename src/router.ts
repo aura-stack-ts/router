@@ -86,7 +86,7 @@ const handleRequest = async (
  * @param config - Optional configuration object for the router
  * @returns An object with methods corresponding to HTTP methods, each handling requests for that method
  */
-export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any>[]>(
+export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any, any>[]>(
     endpoints: Endpoints,
     config: RouterConfig = {}
 ): Router<Endpoints> => {

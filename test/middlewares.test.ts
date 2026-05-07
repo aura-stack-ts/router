@@ -157,16 +157,15 @@ describe("executeMiddlewares", () => {
             code: z.string().optional,
             state: z.string().optional(),
         })
-        const middlewares: MiddlewareFunction<Record<string, string>, { schemas: { searchParams: typeof searchParamsShema } }>[] =
-            [
-                (ctx) => {
-                    ctx.searchParams.code = "123abc"
-                    ctx.searchParams.state = "xyz"
-                    return ctx
-                },
-            ]
+        const middlewares: MiddlewareFunction<"/", { schemas: { searchParams: typeof searchParamsShema } }>[] = [
+            (ctx) => {
+                ctx.searchParams.code = "123abc"
+                ctx.searchParams.state = "xyz"
+                return ctx
+            },
+        ]
 
-        const ctx = await executeMiddlewares(
+        const ctx = (await executeMiddlewares(
             {
                 headers: new HeadersBuilder(),
                 searchParams: {
@@ -176,9 +175,9 @@ describe("executeMiddlewares", () => {
                 params: {},
                 body: undefined,
                 request: new Request("https://example.com"),
-            } as RequestContext<Record<string, string>, { schemas: { searchParams: typeof searchParamsShema } }>,
+            } as RequestContext<"/", { schemas: { searchParams: typeof searchParamsShema } }>,
             middlewares
-        )
+        )) as RequestContext<"/", { schemas: { searchParams: typeof searchParamsShema } }>
 
         expect(ctx.searchParams.code).toBe("123abc")
         expect(ctx.searchParams.state).toBe("xyz")

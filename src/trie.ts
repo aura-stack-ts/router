@@ -4,12 +4,12 @@ import type { RouteEndpoint, HTTPMethod } from "@/types.ts"
 export class TrieNode {
     public param?: { name: string; node: TrieNode } | undefined
     public statics: Map<string, TrieNode> = new Map()
-    public endpoints: Map<HTTPMethod, RouteEndpoint> = new Map()
+    public endpoints: Map<HTTPMethod, RouteEndpoint<any, any, any, any>> = new Map()
 }
 
 export class TrieRouter {
     private root: TrieNode
-    private statics: Map<string, RouteEndpoint>
+    private statics: Map<string, RouteEndpoint<any, any, any, any>>
     private methods: Set<HTTPMethod>
 
     constructor() {
@@ -18,7 +18,7 @@ export class TrieRouter {
         this.root = new TrieNode()
     }
 
-    add(endpoint: RouteEndpoint) {
+    add(endpoint: RouteEndpoint<any, any, any, any>) {
         const isDynamic = endpoint.route.includes(":")
         const methods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
         if (!isDynamic) {

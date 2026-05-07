@@ -8,7 +8,7 @@ import type { HeadersBuilder } from "./headers.ts"
  * const getUser:RoutePattern = "/users/:userId"
  * const getPostsComments:RoutePattern = "/posts/:postId/comments/:commentId"
  */
-export type RoutePattern = `/${string}` | `/${string}/:${string}`
+export type RoutePattern = `/${string}`
 
 /**
  * HTTP methods defined in HTTP/1.1 specification.
@@ -82,7 +82,7 @@ export type EndpointConfig<
     Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
     schemas?: Schemas
-    use?: MiddlewareFunction<Route, EndpointConfig<Route>>[]
+    use?: MiddlewareFunction<Route, EndpointConfig<Route, Schemas>>[]
 }>
 
 /**
@@ -99,13 +99,26 @@ export type ContextBody<Schemas extends EndpointConfig<any, any>["schemas"]> = S
     ? { body: z.infer<Schemas["body"]> }
     : { body: undefined }
 
-/**
- * Infer the type of route parameters from the provided value in the `EndpointConfig`.
- */
-export type ContextParams<
+type IsAny<T> = 0 extends 1 & T ? true : false
+
+type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
+
+export type ContextParams<Schemas, Default extends Record<string, string> = Record<string, string>> = [Schemas] extends [
+    EndpointConfig<infer _, infer Schemas>,
+]
+    ? [IsAny<Schemas>] extends [true]
+        ? { params: Default }
+        : [Equals<Schemas, EndpointSchemas>] extends [true]
+          ? { params: Default }
+          : [{ params: ZodObject<any> }] extends [Schemas]
+            ? { params: z.infer<Schemas["params"]> }
+            : { params: Default }
+    : { params: Default }
+
+export type unstable__ContextParams<
     Schemas extends EndpointConfig<any, any>["schemas"],
     Default extends Record<string, string> = Record<string, string>,
-> = Schemas extends { params: ZodObject } ? { params: z.infer<Schemas["params"]> } : { params: Default }
+> = Schemas extends { params: ZodObject<any> } ? z.infer<Schemas["params"]> : Default
 
 declare const jsonResponseBrand: unique symbol
 
@@ -116,32 +129,27 @@ export type JsonResponse<T> = Omit<Response, "json"> & {
 
 export type RouteHandlerReturn = Response | JsonResponse<unknown> | Promise<Response> | Promise<JsonResponse<unknown>>
 
-type Wrap<T> = T extends object ? { [K in keyof T]: T[K] } : T
-
-type RemoveIndexSignature<T> = {
-    [K in keyof T as string extends K ? never : number extends K ? never : symbol extends K ? never : K]: T[K]
-}
-
 /**
  * Context object passed to route handlers and middlewares defined in the
  * `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
 export type RequestContext<
-    Route extends RoutePattern,
-    Config extends EndpointConfig,
+    Route extends RoutePattern = RoutePattern,
+    Config extends EndpointConfig = EndpointConfig,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
-> = Prettify<{
+> = {
+    //params: unstable__ContextParams<NonNullable<Config["schemas"]>, GetRouteParams<Route>>
     params: ContextParams<Config["schemas"], GetRouteParams<Route>>["params"]
     headers: HeadersBuilder
-    body: ContextBody<Config["schemas"]>["body"]
-    searchParams: ContextSearchParams<Config["schemas"]>["searchParams"]
+    body: ContextBody<NonNullable<Config["schemas"]>>["body"]
+    searchParams: ContextSearchParams<NonNullable<Config["schemas"]>>["searchParams"]
     request: Request
     url: URL
     method: Method
     route: Route
     context: GlobalContext
     json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
-}>
+}
 
 export interface GlobalMiddlewareContext {
     request: Request
@@ -183,7 +191,7 @@ export type RouteHandler<
     Return extends RouteHandlerReturn = RouteHandlerReturn,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = (
-    ctx: Prettify<RequestContext<Route, { schemas: Config["schemas"] }, Method>>
+    ctx: Prettify<RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>>
 ) => Response | Promise<Response> | JsonResponse<unknown>
 
 /**
@@ -313,7 +321,7 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
 
 export declare const endpointsSymbol: unique symbol
 
-export type Router<Endpoints extends RouteEndpoint<any, any, any>[]> = {
+export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
     readonly __endpoints: Endpoints
 } & GetHttpHandlers<Endpoints>
 
