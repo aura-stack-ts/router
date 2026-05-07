@@ -1,7 +1,8 @@
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import type { RouteHandler, HTTPMethod, RoutePattern } from "@/types.ts"
-import type { BaseSchema } from "valibot"
+import type { Type } from "arktype"
 import type { ZodObject } from "zod"
+import type { BaseSchema } from "valibot"
 
 const supportedMethods = new Set<HTTPMethod>(["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS", "HEAD", "TRACE", "CONNECT"])
 
@@ -93,4 +94,8 @@ export const isZodSchema = (value: unknown): value is ZodObject<any> => {
 
 export const isValibotSchema = (value: unknown): value is BaseSchema<any, any, any> => {
     return typeof value === "object" && value !== null && "~run" in value && typeof (value as any)["~run"] === "function"
+}
+
+export const isArkType = (value: unknown): value is Type<{}, {}> => {
+    return typeof value === "function" && value !== null && "allows" in value && "assert" in value
 }

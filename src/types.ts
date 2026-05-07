@@ -2,6 +2,7 @@ import type { ZodObject, z } from "zod"
 import type { RouterError } from "./error.ts"
 import type { HeadersBuilder } from "./headers.ts"
 import type { ObjectSchema, InferOutput, StringSchema, InferInput } from "valibot"
+import { Type } from "arktype"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -63,9 +64,9 @@ export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
  */
 export interface EndpointSchemas {
-    body?: ZodObject<any> | ObjectSchema<any, undefined>
-    searchParams?: ZodObject<any> | ObjectSchema<any, undefined>
-    params?: ZodObject<any> | ObjectSchema<any, undefined>
+    body?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
+    searchParams?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
+    params?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
 }
 
 /**
@@ -83,17 +84,24 @@ export type EndpointConfig<
     Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
     schemas?: Schemas
-    use?: MiddlewareFunction<Route, EndpointConfig<Route, Schemas>>[]
+    use?: MiddlewareFunction<
+        Route,
+        EndpointConfig<Route, { body: Schemas["body"]; params: Schemas["params"]; searchParams: Schemas["searchParams"] }>
+    >[]
 }>
 
 /**
  * Infer the type of search parameters from the provided value in the `EndpointConfig`.
  */
-export type ContextSearchParams<Schemas extends EndpointConfig<any, any>["schemas"]> = Schemas extends { searchParams: ZodObject }
+export type ContextSearchParams<Schemas extends EndpointConfig<any, any>["schemas"]> = [Schemas] extends [
+    { searchParams: ZodObject },
+]
     ? { searchParams: z.infer<Schemas["searchParams"]> }
-    : Schemas extends { searchParams: ObjectSchema<any, undefined> }
+    : [Schemas] extends [{ searchParams: ObjectSchema<any, undefined> }]
       ? { searchParams: InferOutput<Schemas["searchParams"]> }
-      : { searchParams: URLSearchParams }
+      : [Schemas] extends [{ searchParams: Type<infer SearchParams> }]
+        ? { searchParams: SearchParams }
+        : { searchParams: URLSearchParams }
 
 /**
  * Infer the type of body from the provided value in the `EndpointConfig`.
@@ -102,7 +110,9 @@ export type ContextBody<Schemas extends EndpointConfig<any, any>["schemas"]> = S
     ? { body: z.infer<Schemas["body"]> }
     : Schemas extends { body: ObjectSchema<any, undefined> }
       ? { body: InferOutput<Schemas["body"]> }
-      : { body: undefined }
+      : Schemas extends { body: Type<infer Body> }
+        ? { body: Body }
+        : { body: undefined }
 
 export type ContextParams<Schemas extends EndpointSchemas, Default extends Record<string, string> = Record<string, string>> = [
     Schemas,
@@ -110,7 +120,9 @@ export type ContextParams<Schemas extends EndpointSchemas, Default extends Recor
     ? { params: z.infer<Schemas["params"]> }
     : [Schemas] extends [{ params: ObjectSchema<any, undefined> }]
       ? { params: InferOutput<Schemas["params"]> }
-      : { params: Default }
+      : [Schemas] extends [{ params: Type<infer Params> }]
+        ? { params: Params }
+        : { params: Default }
 
 declare const jsonResponseBrand: unique symbol
 
@@ -284,23 +296,27 @@ export type ToInferSchema<T> = {
     [K in keyof T]: InferSchema<T[K]>
 }
 
+export type ToInferArktype<T> = {
+    [K in keyof T]: T[K] extends Type<infer U> ? U : T[K]
+}
+
 export type RemoveUndefined<T> = {
     [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 }
 
 type HasSchemas<C> =
     C extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
             ? true
             : false
         : false
 
 type InferContent<Config extends EndpointConfig<any, any>> =
     Config extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
             ? RemoveUndefined<ToInferSchema<Schemas>>
-            : Schemas[keyof Schemas] extends ObjectSchema<any, undefined>
-              ? RemoveUndefined<ToInferSchema<Schemas>>
+            : Schemas[keyof Schemas] extends Type<any>
+              ? RemoveUndefined<ToInferArktype<Schemas>>
               : unknown
         : unknown
 

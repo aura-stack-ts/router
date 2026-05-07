@@ -168,6 +168,52 @@ describe("createEndpoint", () => {
             })
         })
 
+        describe("Valibot body schema", () => {
+            const endpoint = createEndpoint(
+                "POST",
+                "/auth/credentials",
+                (ctx) => {
+                    return Response.json({ body: ctx.body })
+                },
+                {
+                    schemas: {
+                        body: valibot.object({
+                            username: valibot.string(),
+                            password: valibot.string(),
+                        }),
+                    },
+                }
+            )
+            const { POST } = createRouter([endpoint])
+
+            test("With valid body", async ({ expect }) => {
+                const post = await POST(
+                    new Request("https://example.com/auth/credentials", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: "John", password: "secret" }),
+                    })
+                )
+                expect(post.ok).toBe(true)
+                expect(await post.json()).toEqual({
+                    body: { username: "John", password: "secret" },
+                })
+            })
+
+            test("With invalid body", async ({ expect }) => {
+                const post = await POST(
+                    new Request("https://example.com/auth/credentials", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: "John" }),
+                    })
+                )
+                expect(post.status).toBe(422)
+                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
+            })
+        })
+
         describe("Zod searchParams schema", () => {
             const endpoint = createEndpoint(
                 "GET",
@@ -320,15 +366,10 @@ describe("createEndpoint", () => {
                 },
             })
 
-            const endpoint = createEndpoint(
-                "GET",
-                "/signIn/:oauth",
-                (ctx) => {
-                    const oauth = ctx.params.oauth
-                    return Response.json({ oauth })
-                },
-                config
-            )
+            const endpoint = createEndpoint("GET", "/signIn/:oauth", (ctx) => {
+                const oauth = ctx.params.oauth
+                return Response.json({ oauth })
+            })
 
             const inferEndpoint = createEndpoint(
                 "GET",
