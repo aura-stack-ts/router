@@ -90,7 +90,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "valibot": "^1.4.0"
   },
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
