@@ -366,10 +366,15 @@ describe("createEndpoint", () => {
                 },
             })
 
-            const endpoint = createEndpoint("GET", "/signIn/:oauth", (ctx) => {
-                const oauth = ctx.params.oauth
-                return Response.json({ oauth })
-            })
+            const endpoint = createEndpoint(
+                "GET",
+                "/signIn/:oauth",
+                (ctx) => {
+                    const oauth = ctx.params.oauth
+                    return Response.json({ oauth })
+                },
+                config
+            )
 
             const inferEndpoint = createEndpoint(
                 "GET",
