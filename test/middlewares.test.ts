@@ -2,7 +2,7 @@ import z from "zod"
 import { describe, expect, test } from "vitest"
 import { HeadersBuilder } from "@/headers.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
-import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "@/types.ts"
+import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "@/@types/index.ts"
 
 describe("executeGlobalMiddlewares", () => {
     test("No middlewares", async () => {

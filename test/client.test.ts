@@ -5,7 +5,7 @@ import * as valibot from "valibot"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
 import { createClient } from "@/client.ts"
-import type { JsonResponse } from "@/types.ts"
+import type { JsonResponse } from "@/@types/index.ts"
 
 beforeEach(() => {
     vi.stubGlobal(

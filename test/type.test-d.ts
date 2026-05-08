@@ -22,7 +22,7 @@ import type {
     ContextParams,
 } from "@/@types/index.ts"
 import { ZodEnum, type ZodObject, type ZodString } from "zod"
-import { EnumSchema, ObjectSchema, StringSchema } from "valibot"
+import type { EnumSchema, ObjectSchema, StringSchema } from "valibot"
 
 type RoutePath = "/auth/:oauth"
 type EmptyObject = Record<PropertyKey, never>

@@ -1,4 +1,4 @@
-import type { RouteEndpoint } from "@/types.ts"
+import type { RouteEndpoint } from "@/@types/index.ts"
 import { createRouter } from "@/router.ts"
 import { run, bench, summary } from "mitata"
 

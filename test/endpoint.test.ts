@@ -1,10 +1,10 @@
 import z from "zod"
 import * as valibot from "valibot"
+import { type } from "arktype"
 import { describe, test } from "vitest"
 import { createRouter } from "@/router.ts"
 import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
-import type { HTTPMethod, RoutePattern } from "@/types.ts"
-import { type } from "arktype"
+import type { HTTPMethod, RoutePattern } from "@/@types/index.ts"
 
 describe("createEndpoint", () => {
     describe("With valid configuration", () => {

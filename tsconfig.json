@@ -10,6 +10,7 @@
     "strict": true,
     "allowJs": true,
     "checkJs": true,
+    "alwaysStrict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
@@ -19,6 +20,18 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "noErrorTruncation": true,
+
+    /* Type checking */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "verbatimModuleSyntax": true,
+
+    /* Path Aliases */
     "paths": {
       "@/*": ["./src/*"]
     }

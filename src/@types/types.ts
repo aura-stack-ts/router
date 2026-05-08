@@ -70,13 +70,12 @@ export type EndpointConfig<
  * Utility type to infer the output type of a Valibot ObjectSchema. This utility is used instead
  * of `InferOutput` directly to avoid performance issues caused by deeply nested conditional types.
  */
-export type InferValibotSchema<S extends ObjectSchema<any, undefined>, Fallback = never> =
-    NonNullable<S["~types"]> extends { output: infer Output } ? Output : Fallback
+export type InferValibotSchema<S extends ObjectSchema<any, undefined>> = NonNullable<S["~types"]>["output"]
 
 type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
     ? z.infer<S>
     : [S] extends [ObjectSchema<any, undefined>]
-      ? InferValibotSchema<S, Fallback>
+      ? InferValibotSchema<S>
       : [S] extends [Type<infer T>]
         ? T
         : Fallback

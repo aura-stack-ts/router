@@ -3,7 +3,7 @@ import { describe, expectTypeOf, test } from "vitest"
 import { TrieRouter } from "@/trie.ts"
 import { HeadersBuilder } from "@/headers.ts"
 import { getRouteParams, getSearchParams, getBody } from "@/context.ts"
-import type { RouteEndpoint } from "@/types.ts"
+import type { RouteEndpoint } from "@/@types/index.ts"
 
 describe("getRouteParams", () => {
     const router = new TrieRouter()
@@ -216,6 +216,7 @@ describe("getSearchParams", () => {
 
         for (const { description, url, config, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
+                // @ts-ignore
                 const searchParams = getSearchParams(url, config)
                 expect(searchParams instanceof URLSearchParams).toBe(true)
                 expect(searchParams).toBeDefined()
