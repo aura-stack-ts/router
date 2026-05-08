@@ -69,6 +69,8 @@ export type EndpointConfig<
 /**
  * Utility type to infer the output type of a Valibot ObjectSchema. This utility is used instead
  * of `InferOutput` directly to avoid performance issues caused by deeply nested conditional types.
+ *
+ * Note: relies on Valibot's internal `~types` field. Verify compatibility on every Valibot major/minor bump.
  */
 export type InferValibotSchema<S extends ObjectSchema<any, undefined>> = NonNullable<S["~types"]>["output"]
 

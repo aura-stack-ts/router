@@ -2,8 +2,7 @@ import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { ZodObject, ZodTypeAny, infer as Infer } from "zod"
-import type { InferValibotSchema, RoutePattern } from "@/@types/types.ts"
-import type { EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
+import type { InferValibotSchema, RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
 
 export type InferSchema<T> = T extends ZodTypeAny ? Infer<T> : T extends ObjectSchema<any, undefined> ? InferValibotSchema<T> : T
 
