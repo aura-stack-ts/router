@@ -1,5 +1,5 @@
 import { isInvalidZodSchemaError, isRouterError } from "./assert.ts"
-import type { RouterConfig } from "@/types.ts"
+import type { RouterConfig } from "@/@types/index.ts"
 import { type RouterError, statusText } from "@/error.ts"
 
 export const onError = async (error: unknown, request: Request, config: RouterConfig) => {

@@ -31,7 +31,8 @@ export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
                 }
                 if (isArkType(schema)) {
                     const parsed = schema(data)
-                    const isError = parsed !== null &&
+                    const isError =
+                        parsed !== null &&
                         typeof parsed === "object" &&
                         "summary" in parsed &&
                         typeof (parsed as any).summary === "string"

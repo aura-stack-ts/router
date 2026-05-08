@@ -19,10 +19,18 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "noErrorTruncation": true,
+
+    /* Type checking */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+
+    /* Path Aliases */
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": ["src", "test", "bench"],
   "exclude": ["node_modules", "dist"]

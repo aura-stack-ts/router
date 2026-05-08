@@ -1,11 +1,19 @@
-import { TrieRouter } from "./trie.ts"
-import { onError } from "./on-error.ts"
-import { RouterError } from "./error.ts"
-import { HeadersBuilder } from "./headers.ts"
-import { isSupportedMethod } from "./assert.ts"
-import { getBody, getRouteParams, getSearchParams, json } from "./context.ts"
-import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.ts"
-import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.ts"
+import { TrieRouter } from "@/trie.ts"
+import { onError } from "@/on-error.ts"
+import { RouterError } from "@/error.ts"
+import { HeadersBuilder } from "@/headers.ts"
+import { isSupportedMethod } from "@/assert.ts"
+import { getBody, getRouteParams, getSearchParams, json } from "@/context.ts"
+import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
+import type {
+    GetHttpHandlers,
+    GlobalContext,
+    HTTPMethod,
+    RouteEndpoint,
+    RoutePattern,
+    RouterConfig,
+    Router,
+} from "@/@types/index.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
@@ -55,6 +63,7 @@ const handleRequest = async (
         const { endpoint, params } = node
         const dynamicParams = getRouteParams(params, endpoint.config)
         const body = await getBody(globalRequestContext.request, endpoint.config)
+        // @ts-ignore Skip type checking here because there's overlapping types
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
         const headers = new HeadersBuilder(globalRequestContext.request.headers)
         let context: any = {

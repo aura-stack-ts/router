@@ -1,4 +1,4 @@
-import type { JsonResponse } from "@/types.ts"
+import type { JsonResponse } from "@/@types/index.ts"
 
 export class AuraResponse extends Response {
     static json<T>(data: T, init?: ResponseInit): JsonResponse<T> {
