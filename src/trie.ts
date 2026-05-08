@@ -1,5 +1,5 @@
 import { RouterError } from "@/error.ts"
-import type { RouteEndpoint, HTTPMethod } from "@/types.ts"
+import type { RouteEndpoint, HTTPMethod } from "@/@types/index.ts"
 
 export class TrieNode {
     public param?: { name: string; node: TrieNode } | undefined

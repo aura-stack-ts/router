@@ -12,7 +12,7 @@
     "./headers": "./src/headers.ts",
     "./cookie": "./src/cookie.ts",
     "./client": "./src/client.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/@types/index.ts"
   },
   "imports": {
     "@/": "./src/",

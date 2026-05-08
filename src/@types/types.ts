@@ -1,8 +1,9 @@
 import type { Type } from "arktype"
 import type { ZodObject, z } from "zod"
-import type { RouterError } from "./error.ts"
-import type { HeadersBuilder } from "./headers.ts"
-import type { ObjectSchema, InferOutput, StringSchema, InferInput, StandardProps } from "valibot"
+import type { ObjectSchema } from "valibot"
+import type { RouterError } from "@/error.ts"
+import type { HeadersBuilder } from "@/headers.ts"
+import type { HTTPMethod } from "@/@types/http.ts"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -11,28 +12,6 @@ import type { ObjectSchema, InferOutput, StringSchema, InferInput, StandardProps
  * const getPostsComments:RoutePattern = "/posts/:postId/comments/:commentId"
  */
 export type RoutePattern = `/${string}`
-
-/**
- * HTTP methods defined in HTTP/1.1 specification.
- * @see https://datatracker.ietf.org/doc/html/rfc7231#section-4.3
- */
-export type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "HEAD" | "TRACE" | "CONNECT"
-
-/**
- * Content types supported by the router.
- */
-export type ContentType =
-    | "application/json"
-    | "application/x-www-form-urlencoded"
-    | "text/plain"
-    | "multipart/form-data"
-    | "application/xml"
-    | "application/octet-stream"
-    | `text/${string}`
-    | `image/${string}`
-    | `video/${string}`
-    | `audio/${string}`
-    | "application/pdf"
 
 export type Prettify<Obj extends object> = {
     [Key in keyof Obj]: Obj[Key]
@@ -87,13 +66,17 @@ export type EndpointConfig<
     use?: MiddlewareFunction<Route, Schemas>[]
 }>
 
+/**
+ * Utility type to infer the output type of a Valibot ObjectSchema. This utility is used instead
+ * of `InferOutput` directly to avoid performance issues caused by deeply nested conditional types.
+ */
+export type InferValibotSchema<S extends ObjectSchema<any, undefined>, Fallback = never> =
+    NonNullable<S["~types"]> extends { output: infer Output } ? Output : Fallback
+
 type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
     ? z.infer<S>
     : [S] extends [ObjectSchema<any, undefined>]
-      ? // Not use `InferOutput<S>` directly because it's too deeply and cause performance issues.
-        NonNullable<S["~types"]> extends { output: infer Output }
-          ? Output
-          : false
+      ? InferValibotSchema<S, Fallback>
       : [S] extends [Type<infer T>]
         ? T
         : Fallback
@@ -275,53 +258,6 @@ export interface RouterConfig extends GlobalCtx {
     onError?: (error: Error | RouterError, request: Request) => Response | Promise<Response>
 }
 
-export type InferSchema<T> = T extends z.ZodTypeAny ? z.infer<T> : T extends ObjectSchema<any, undefined> ? InferOutput<T> : T
-
-export type ToInferSchema<T> = {
-    [K in keyof T]: InferSchema<T[K]>
-}
-
-export type ToInferArktype<T> = {
-    [K in keyof T]: T[K] extends Type<infer U> ? U : T[K]
-}
-
-export type RemoveUndefined<T> = {
-    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
-}
-
-type HasSchemas<C> =
-    C extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
-            ? true
-            : false
-        : false
-
-type InferContent<Config extends EndpointConfig<any, any>> =
-    Config extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
-            ? RemoveUndefined<ToInferSchema<Schemas>>
-            : Schemas[keyof Schemas] extends Type<any>
-              ? RemoveUndefined<ToInferArktype<Schemas>>
-              : unknown
-        : unknown
-
-export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
-    ? Endpoints extends [infer First, ...infer Rest]
-        ? First extends RouteEndpoint<infer Method, infer Route, infer Config, infer Handler>
-            ? Prettify<
-                  {
-                      [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
-                          ? (path: Route, ctx?: RequestInit) => ReturnType<Handler> | Promise<ReturnType<Handler>>
-                          : (
-                                path: Route,
-                                ctx: Omit<RequestInit, "body"> & InferContent<Config>
-                            ) => ReturnType<Handler> | Promise<ReturnType<Handler>>
-                  } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
-              >
-            : {}
-        : {}
-    : {}
-
 export declare const endpointsSymbol: unique symbol
 
 export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
@@ -329,100 +265,3 @@ export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
 } & GetHttpHandlers<Endpoints>
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
-
-/** @experimental */
-export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
-
-export interface ClientOptions extends Pick<RequestInit, "cache" | "credentials" | "mode"> {
-    /**
-     * Base URL for the router client to make requests to the server.
-     * This is useful when the server is hosted on a different origin.
-     *
-     * baseURL: "https://api.example.com"
-     */
-    baseURL: string
-    /**
-     * Optional base path to prepend to all request paths made by the client.
-     */
-    basePath?: RoutePattern
-    /**
-     * Default headers to include in every request made by the client.
-     */
-    headers?: RequestHeaders | (() => RequestHeaders | Promise<RequestHeaders>)
-    /**
-     * @experimental
-     * Custom fetch function to be used by the client instead of the global fetch.
-     */
-    fetch?: FetchLike
-}
-
-export interface RequestHeaders extends Record<string, number | string | string[] | undefined> {
-    accept?: string | undefined
-    "accept-encoding"?: string | undefined
-    "accept-language"?: string | undefined
-    "accept-patch"?: string | undefined
-    "accept-ranges"?: string | undefined
-    "access-control-allow-credentials"?: string | undefined
-    "access-control-allow-headers"?: string | undefined
-    "access-control-allow-methods"?: string | undefined
-    "access-control-allow-origin"?: string | undefined
-    "access-control-expose-headers"?: string | undefined
-    "access-control-max-age"?: string | undefined
-    "access-control-request-headers"?: string | undefined
-    "access-control-request-method"?: string | undefined
-    age?: string | undefined
-    allow?: string | undefined
-    "alt-svc"?: string | undefined
-    authorization?: string | undefined
-    "cache-control"?: string | undefined
-    connection?: string | undefined
-    "content-disposition"?: string | undefined
-    "content-encoding"?: string | undefined
-    "content-language"?: string | undefined
-    "content-length"?: string | undefined
-    "content-location"?: string | undefined
-    "content-range"?: string | undefined
-    "content-type"?: string | undefined
-    cookie?: string | undefined
-    date?: string | undefined
-    etag?: string | undefined
-    expect?: string | undefined
-    expires?: string | undefined
-    forwarded?: string | undefined
-    from?: string | undefined
-    host?: string | undefined
-    "if-match"?: string | undefined
-    "if-modified-since"?: string | undefined
-    "if-none-match"?: string | undefined
-    "if-unmodified-since"?: string | undefined
-    "last-modified"?: string | undefined
-    location?: string | undefined
-    origin?: string | undefined
-    pragma?: string | undefined
-    "proxy-authenticate"?: string | undefined
-    "proxy-authorization"?: string | undefined
-    "public-key-pins"?: string | undefined
-    range?: string | undefined
-    referer?: string | undefined
-    "retry-after"?: string | undefined
-    "sec-fetch-site"?: string | undefined
-    "sec-fetch-mode"?: string | undefined
-    "sec-fetch-user"?: string | undefined
-    "sec-fetch-dest"?: string | undefined
-    "sec-websocket-accept"?: string | undefined
-    "sec-websocket-extensions"?: string | undefined
-    "sec-websocket-key"?: string | undefined
-    "sec-websocket-protocol"?: string | undefined
-    "sec-websocket-version"?: string | undefined
-    "set-cookie"?: string[] | undefined
-    "strict-transport-security"?: string | undefined
-    tk?: string | undefined
-    trailer?: string | undefined
-    "transfer-encoding"?: string | undefined
-    upgrade?: string | undefined
-    "user-agent"?: string | undefined
-    vary?: string | undefined
-    via?: string | undefined
-    warning?: string | undefined
-    "www-authenticate"?: string | undefined
-}

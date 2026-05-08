@@ -80,7 +80,7 @@
       "import": "./dist/client.js",
       "require": "./dist/client.cjs"
     },
-    "./types": "./dist/types.d.ts"
+    "./types": "./dist/@types/index.d.ts"
   },
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {

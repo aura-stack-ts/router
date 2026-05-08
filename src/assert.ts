@@ -1,8 +1,8 @@
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
-import type { RouteHandler, HTTPMethod, RoutePattern } from "@/types.ts"
 import type { Type } from "arktype"
 import type { ZodObject } from "zod"
 import type { BaseSchema } from "valibot"
+import type { RouteHandler, HTTPMethod, RoutePattern } from "@/@types/index.ts"
 
 const supportedMethods = new Set<HTTPMethod>(["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS", "HEAD", "TRACE", "CONNECT"])
 

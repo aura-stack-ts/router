@@ -6,7 +6,7 @@ import type {
     RequestContext,
     RoutePattern,
     RouterConfig,
-} from "@/types.ts"
+} from "@/@types/index.ts"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.

@@ -20,7 +20,7 @@ import type {
     InferEndpoints,
     RouteHandlerReturn,
     ContextParams,
-} from "../src/types.ts"
+} from "@/@types/index.ts"
 import { ZodEnum, type ZodObject, type ZodString } from "zod"
 import { EnumSchema, ObjectSchema, StringSchema } from "valibot"
 

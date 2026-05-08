@@ -3,7 +3,7 @@ import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import { createValidator } from "@/validator/registry.ts"
 import type { ZodError } from "zod"
 import type { BaseIssue } from "valibot"
-import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/types.ts"
+import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
 
 /**
  * @experimental

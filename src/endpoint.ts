@@ -1,5 +1,5 @@
-import { RouterError } from "./error.ts"
-import { isSupportedMethod, isValidHandler, isValidRoute } from "./assert.ts"
+import { RouterError } from "@/error.ts"
+import { isSupportedMethod, isValidHandler, isValidRoute } from "@/assert.ts"
 import type {
     EndpointConfig,
     EndpointSchemas,
@@ -8,7 +8,7 @@ import type {
     RouteHandler,
     RouteHandlerReturn,
     RoutePattern,
-} from "./types.ts"
+} from "@/@types/index.ts"
 
 /**
  * Defines an API endpoint for the router by specifying the HTTP method, route pattern,

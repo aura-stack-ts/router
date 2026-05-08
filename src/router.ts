@@ -1,11 +1,19 @@
-import { TrieRouter } from "./trie.ts"
-import { onError } from "./on-error.ts"
-import { RouterError } from "./error.ts"
-import { HeadersBuilder } from "./headers.ts"
-import { isSupportedMethod } from "./assert.ts"
-import { getBody, getRouteParams, getSearchParams, json } from "./context.ts"
-import { executeGlobalMiddlewares, executeMiddlewares } from "./middlewares.ts"
-import type { GetHttpHandlers, GlobalContext, HTTPMethod, RouteEndpoint, RoutePattern, RouterConfig, Router } from "./types.ts"
+import { TrieRouter } from "@/trie.ts"
+import { onError } from "@/on-error.ts"
+import { RouterError } from "@/error.ts"
+import { HeadersBuilder } from "@/headers.ts"
+import { isSupportedMethod } from "@/assert.ts"
+import { getBody, getRouteParams, getSearchParams, json } from "@/context.ts"
+import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
+import type {
+    GetHttpHandlers,
+    GlobalContext,
+    HTTPMethod,
+    RouteEndpoint,
+    RoutePattern,
+    RouterConfig,
+    Router,
+} from "@/@types/index.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
