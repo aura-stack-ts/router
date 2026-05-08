@@ -157,7 +157,7 @@ describe("executeMiddlewares", () => {
             code: z.string().optional(),
             state: z.string().optional(),
         })
-        const middlewares: MiddlewareFunction<"/", { schemas: { searchParams: typeof searchParamsShema } }>[] = [
+        const middlewares: MiddlewareFunction<"/", { searchParams: typeof searchParamsShema }>[] = [
             (ctx) => {
                 ctx.searchParams.code = "123abc"
                 ctx.searchParams.state = "xyz"

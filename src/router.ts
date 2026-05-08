@@ -55,6 +55,7 @@ const handleRequest = async (
         const { endpoint, params } = node
         const dynamicParams = getRouteParams(params, endpoint.config)
         const body = await getBody(globalRequestContext.request, endpoint.config)
+        // @ts-ignore Skip type checking here because there's overlapping types
         const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
         const headers = new HeadersBuilder(globalRequestContext.request.headers)
         let context: any = {

@@ -100,7 +100,7 @@ export const getRouteParams = (params: Record<string, string>, config: EndpointC
 export const getSearchParams = <Config extends EndpointConfig>(
     url: string,
     config: Config
-): ContextSearchParams<Config["schemas"]>["searchParams"] => {
+): ContextSearchParams<NonNullable<Config["schemas"]>> => {
     const route = new URL(url)
     if (config.schemas?.searchParams) {
         const validator = createValidator(config.schemas.searchParams)
@@ -111,9 +111,9 @@ export const getSearchParams = <Config extends EndpointConfig>(
                 Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
             )
         }
-        return parsed.data as ContextSearchParams<Config["schemas"]>["searchParams"]
+        return parsed.data as ContextSearchParams<NonNullable<Config["schemas"]>>
     }
-    return new URLSearchParams(route.searchParams.toString())
+    return new URLSearchParams(route.searchParams.toString()) as ContextSearchParams<NonNullable<Config["schemas"]>>
 }
 
 /**

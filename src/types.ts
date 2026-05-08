@@ -2,7 +2,7 @@ import type { Type } from "arktype"
 import type { ZodObject, z } from "zod"
 import type { RouterError } from "./error.ts"
 import type { HeadersBuilder } from "./headers.ts"
-import type { ObjectSchema, InferOutput, StringSchema, InferInput } from "valibot"
+import type { ObjectSchema, InferOutput, StringSchema, InferInput, StandardProps } from "valibot"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -84,43 +84,34 @@ export type EndpointConfig<
     Schemas extends EndpointSchemas = EndpointSchemas,
 > = Prettify<{
     schemas?: Schemas
-    //use?: MiddlewareFunction<Route, Schemas>[]
-    use?: MiddlewareFunction<Route, EndpointConfig<Route, Schemas>>[]
+    use?: MiddlewareFunction<Route, Schemas>[]
 }>
+
+type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
+    ? z.infer<S>
+    : [S] extends [ObjectSchema<any, undefined>]
+      ? // Not use `InferOutput<S>` directly because it's too deeply and cause performance issues.
+        NonNullable<S["~types"]> extends { output: infer Output }
+          ? Output
+          : false
+      : [S] extends [Type<infer T>]
+        ? T
+        : Fallback
 
 /**
  * Infer the type of search parameters from the provided value in the `EndpointConfig`.
  */
-export type ContextSearchParams<Schemas extends EndpointConfig<any, any>["schemas"]> = [Schemas] extends [
-    { searchParams: ZodObject },
-]
-    ? { searchParams: z.infer<Schemas["searchParams"]> }
-    : [Schemas] extends [{ searchParams: ObjectSchema<any, undefined> }]
-      ? { searchParams: InferOutput<Schemas["searchParams"]> }
-      : [Schemas] extends [{ searchParams: Type<infer SearchParams> }]
-        ? { searchParams: SearchParams }
-        : { searchParams: URLSearchParams }
+export type ContextSearchParams<Schemas extends EndpointSchemas> = UnwrapSchema<Schemas["searchParams"], URLSearchParams>
 
 /**
  * Infer the type of body from the provided value in the `EndpointConfig`.
  */
-export type ContextBody<Schemas extends EndpointConfig<any, any>["schemas"]> = [Schemas] extends [{ body: ZodObject }]
-    ? { body: z.infer<Schemas["body"]> }
-    : [Schemas] extends [{ body: ObjectSchema<any, undefined> }]
-      ? { body: InferOutput<Schemas["body"]> }
-      : [Schemas] extends [{ body: Type<infer Body> }]
-        ? { body: Body }
-        : { body: undefined }
+export type ContextBody<Schemas extends EndpointSchemas> = UnwrapSchema<Schemas["body"], undefined>
 
-export type ContextParams<Schemas extends EndpointSchemas, Default extends Record<string, string> = Record<string, string>> = [
-    Schemas,
-] extends [{ params: ZodObject<any> }]
-    ? { params: z.infer<Schemas["params"]> }
-    : [Schemas] extends [{ params: ObjectSchema<any, undefined> }]
-      ? { params: InferOutput<Schemas["params"]> }
-      : [Schemas] extends [{ params: Type<infer Params> }]
-        ? { params: Params }
-        : { params: Default }
+export type ContextParams<
+    Schemas extends EndpointSchemas,
+    Default extends Record<string, string> = Record<string, string>,
+> = UnwrapSchema<Schemas["params"], Default>
 
 declare const jsonResponseBrand: unique symbol
 
@@ -137,14 +128,13 @@ export type RouteHandlerReturn = Response | JsonResponse<unknown>
  */
 export type RequestContext<
     Route extends RoutePattern = RoutePattern,
-    Config extends EndpointConfig = EndpointConfig,
-    //Config extends { schemas?: EndpointSchemas } = { schemas: EndpointSchemas },
+    Config extends { schemas?: EndpointSchemas } = { schemas?: EndpointSchemas },
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = {
-    params: ContextParams<NonNullable<Config["schemas"]>, GetRouteParams<Route>>["params"]
+    params: ContextParams<NonNullable<Config["schemas"]>, GetRouteParams<Route>>
+    body: ContextBody<NonNullable<Config["schemas"]>>
+    searchParams: ContextSearchParams<NonNullable<Config["schemas"]>>
     headers: HeadersBuilder
-    body: ContextBody<NonNullable<Config["schemas"]>>["body"]
-    searchParams: ContextSearchParams<NonNullable<Config["schemas"]>>["searchParams"]
     request: Request
     url: URL
     method: Method
@@ -169,19 +159,12 @@ export type GlobalMiddleware = (
  * Middleware function type that represent a function that runs before the route handler
  * defined in the `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
-export type MiddlewareFunction<
-    Route extends RoutePattern = RoutePattern,
-    Config extends EndpointConfig<Route, {}> = EndpointConfig<Route, {}>,
-    //Schemas extends EndpointSchemas | undefined = undefined
-> = (
-    ctx: Prettify<RequestContext<Route, { schemas: Config["schemas"] }>>
-    //ctx: Prettify<RequestContext<Route, { schemas: Schemas }>>
+export type MiddlewareFunction<Route extends RoutePattern = RoutePattern, Schemas extends EndpointSchemas = {}> = (
+    ctx: Prettify<RequestContext<Route, { schemas: Schemas }>>
 ) =>
     | Response
-    | RequestContext<Route, { schemas: Config["schemas"] }>
-    | Promise<Response | RequestContext<Route, { schemas: Config["schemas"] }>>
-//| RequestContext<Route, { schemas: Schemas }>
-//| Promise<Response | Prettify<RequestContext<Route, { schemas: Schemas }>>>
+    | RequestContext<Route, { schemas: Schemas }>
+    | Promise<Response | Prettify<RequestContext<Route, { schemas: Schemas }>>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.

@@ -454,7 +454,7 @@ describe("createEndpoint", () => {
             const config = createEndpointConfig("/signIn/:oauth", {
                 schemas: {
                     params: type({
-                        oauth: type.enumerated("google", "github")
+                        oauth: type.enumerated("google", "github"),
                     }),
                 },
             })

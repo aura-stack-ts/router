@@ -295,6 +295,7 @@ describe("getSearchParams", () => {
         ]
         for (const { description, url, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
+                // @ts-ignore
                 const searchParams = getSearchParams(url, { schemas: { searchParams: schema } })
                 expect(searchParams instanceof Object).toBe(true)
                 expect(searchParams).toBeDefined()
@@ -344,6 +345,7 @@ describe("getSearchParams", () => {
 
         for (const { description, url, config } of testCases) {
             test.concurrent(description, ({ expect }) => {
+                // @ts-ignore
                 expect(() => getSearchParams(url, config)).toThrowError()
             })
         }

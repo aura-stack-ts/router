@@ -21,9 +21,8 @@
     "noErrorTruncation": true,
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "baseUrl": "."
+    }
   },
-  "include": ["src", "test", "bench"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,12 +1,12 @@
 import { RouterError } from "./error.ts"
 import type {
-    EndpointConfig,
+    EndpointSchemas,
     GlobalMiddlewareContext,
     MiddlewareFunction,
     RequestContext,
     RoutePattern,
     RouterConfig,
-} from "./types.ts"
+} from "@/types.ts"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.
@@ -41,14 +41,10 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
  * @param middlewares - Array of middleware functions to be executed
  * @returns The modified context after all middlewares have been executed
  */
-//export const executeMiddlewares = async <const RouteParams extends Record<string, string>, const Config extends EndpointConfig>(
-export const executeMiddlewares = async <
-    Route extends RoutePattern,
-    const Config extends EndpointConfig<Route, any> = EndpointConfig<Route, any>,
->(
-    context: RequestContext<Route, { schemas: Config["schemas"] }>,
-    use: MiddlewareFunction<Route, { schemas: Config["schemas"] }>[] = []
-): Promise<RequestContext<Route, { schemas: Config["schemas"] }>> => {
+export const executeMiddlewares = async <Route extends RoutePattern, Config extends EndpointSchemas = EndpointSchemas>(
+    context: RequestContext<Route, { schemas: Config }>,
+    use: MiddlewareFunction<Route, Config>[] = []
+) => {
     try {
         let ctx = context
         for (const middleware of use) {
@@ -56,7 +52,7 @@ export const executeMiddlewares = async <
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }
             try {
-                ctx = (await middleware(ctx)) as RequestContext<Route, { schemas: Config["schemas"] }>
+                ctx = (await middleware(ctx)) as RequestContext<Route, { schemas: Config }>
             } catch (error) {
                 if (error instanceof RouterError) throw error
                 throw new RouterError("BAD_REQUEST", "Handler threw an error", "MiddlewareError")
