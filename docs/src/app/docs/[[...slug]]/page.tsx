@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getPageImage, source } from "@/lib/source"
+import { source } from "@/lib/source"
 import { DocsBody, DocsPage } from "fumadocs-ui/page"
 import { getMDXComponents } from "@/mdx-components"
 import { createRelativeLink } from "fumadocs-ui/mdx"

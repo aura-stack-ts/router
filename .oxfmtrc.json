@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "tabWidth": 4,
+  "printWidth": 130,
+  "trailingComma": "es5",
+  "overrides": [
+    {
+      "files": ["*.json", "*.md", "*.mdx", "*.yaml", "*.yml"],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ],
+  "sortPackageJson": false,
+  "ignorePatterns": ["pnpm-lock.yaml", "deno.lock", "bun.lock", "dist", "node_modules", "coverage"]
+}

@@ -56,8 +56,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                router.match("GET", path)?.params
-                const params = router.match("GET", path)?.params
+                const params = router.match("GET", path)?.params || {}
                 expect(params).toEqual(expected)
             })
         }
@@ -102,7 +101,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = router.match("GET", path)?.params!
+                const params = router.match("GET", path)?.params || {}
                 const dynamic = getRouteParams(params, { schemas: { params: schema } })
                 expect(dynamic).toEqual(expected)
             })
@@ -151,7 +150,7 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = router.match("GET", path)?.params!
+                const params = router.match("GET", path)?.params || {}
                 expect(() => getRouteParams(params, { schemas: { params: schema } })).toThrowError()
             })
         }
