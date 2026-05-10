@@ -5,9 +5,9 @@
   "type": "module",
   "description": "A lightweight TypeScript library for building, managing, and validating API routes and endpoints in Node.js applications.",
   "scripts": {
-    "dev": "tsup --watch",
+    "dev": "tsdown --watch",
     "dev:docs": "pnpm --filter docs dev",
-    "build": "tsup",
+    "build": "tsdown",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint",
@@ -93,7 +93,7 @@
     "mitata": "^1.0.34",
     "oxfmt": "^0.41.0",
     "oxlint": "^1.56.0",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
@@ -101,9 +101,9 @@
     "cookie": "^1.1.1"
   },
   "peerDependencies": {
-    "zod": "^4.1.11",
+    "arktype": "^2.0.0",
     "valibot": "^1.4.0",
-    "arktype": "^2.0.0"
+    "zod": "^4.1.11"
   },
   "peerDependenciesMeta": {
     "zod": {
