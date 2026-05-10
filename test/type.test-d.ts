@@ -41,14 +41,14 @@ describe("GetRouteParams", () => {
     expectTypeOf<GetRouteParams<"/:id/:userId">>().toEqualTypeOf<{
         id: string
         userId: string
-    }>
+    }>()
     expectTypeOf<GetRouteParams<"/:id/:userId/books">>().toEqualTypeOf<{
         id: string
         userId: string
     }>()
     expectTypeOf<GetRouteParams<"/:userId/books/path">>().toEqualTypeOf<{
         userId: string
-    }>
+    }>()
     expectTypeOf<GetRouteParams<"/users/:userId">>().toEqualTypeOf<{
         userId: string
     }>()
