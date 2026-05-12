@@ -103,7 +103,8 @@
   "peerDependencies": {
     "arktype": "^2.0.0",
     "valibot": "^1.4.0",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "typebox": "^1.1.38"
   },
   "peerDependenciesMeta": {
     "zod": {
@@ -113,6 +114,9 @@
       "optional": true
     },
     "arktype": {
+      "optional": true
+    },
+    "typebox": {
       "optional": true
     }
   },

@@ -23,6 +23,7 @@ import type {
 } from "@/@types/index.ts"
 import { ZodEnum, type ZodObject, type ZodString } from "zod"
 import type { EnumSchema, ObjectSchema, StringSchema } from "valibot"
+import type { TObject, TString, TEnum } from "typebox"
 
 type RoutePath = "/auth/:oauth"
 type EmptyObject = Record<PropertyKey, never>
@@ -337,6 +338,29 @@ describe("ContextSearchParams", () => {
             }>
         >().toEqualTypeOf<{ code: string; state: string }>()
     })
+
+    describe("Typebox instance", () => {
+        expectTypeOf<
+            ContextSearchParams<{
+                searchParams: TObject<
+                    {
+                        code: TString
+                    }
+                >
+            }>
+        >().toEqualTypeOf<{ code: string }>()
+
+        expectTypeOf<
+            ContextSearchParams<{
+                searchParams: TObject<
+                    {
+                        code: TString
+                        state: TString
+                    }
+                >
+            }>
+        >().toEqualTypeOf<{ code: string; state: string }>()
+    })
 })
 
 describe("ContextBody", () => {
@@ -387,6 +411,29 @@ describe("ContextBody", () => {
             }>
         >().toEqualTypeOf<{ oauth: string }>()
     })
+
+    describe("Typebox instance", () => {
+        expectTypeOf<
+            ContextBody<{
+                body: TObject<
+                    {
+                        username: TString
+                        password: TString
+                    }
+                >
+            }>
+        >().toEqualTypeOf<{ username: string; password: string }>()
+
+        expectTypeOf<
+            ContextBody<{
+                body: TObject<
+                    {
+                        oauth: TString
+                    }
+                >
+            }>
+        >().toEqualTypeOf<{ oauth: string }>()
+    })
 })
 
 describe("ContextParams", () => {
@@ -413,6 +460,26 @@ describe("ContextParams", () => {
                 GetRouteParams<RoutePath>
             >
         >().toEqualTypeOf<{ oauth: string }>()
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ObjectSchema<{
+                        oauth: StringSchema<undefined>
+                    }, undefined>
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ oauth: string }>()
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: TObject<{
+                        oauth: TString
+                    }>
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ oauth: string }>()
 
         expectTypeOf<
             ContextParams<{
@@ -421,7 +488,6 @@ describe("ContextParams", () => {
                 }>
             }>
         >().toEqualTypeOf<{ role: "admin" | "user" | "guest" }>()
-
         expectTypeOf<
             ContextParams<{
                 params: ObjectSchema<
@@ -432,6 +498,13 @@ describe("ContextParams", () => {
                 >
             }>
         >().toEqualTypeOf<{ oauth: "admin" | "user" | "guest" }>()
+        expectTypeOf<
+            ContextParams<{
+                params: TObject<{
+                    role: TEnum<["admin", "user", "guest"]>
+                }>
+            }>
+        >().toEqualTypeOf<{ role: "admin" | "user" | "guest" }>()
 
         expectTypeOf<
             ContextParams<
@@ -444,34 +517,59 @@ describe("ContextParams", () => {
                 GetRouteParams<RoutePath>
             >
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
-
         expectTypeOf<
             ContextParams<
                 {
-                    params: ObjectSchema<
-                        {
-                            oauth: StringSchema<undefined>
-                        },
-                        undefined
-                    >
-                },
-                GetRouteParams<RoutePath>
-            >
-        >().toEqualTypeOf<{ oauth: string }>()
-        expectTypeOf<
-            ContextParams<
-                {
-                    params: ObjectSchema<
-                        {
-                            userId: StringSchema<undefined>
-                            itemId: StringSchema<undefined>
-                        },
-                        undefined
-                    >
+                    params: ObjectSchema<{
+                        userId: StringSchema<undefined>
+                        itemId: StringSchema<undefined>
+                    }, undefined>
                 },
                 GetRouteParams<RoutePath>
             >
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
+         expectTypeOf<
+            ContextParams<
+                {
+                    params: TObject<{
+                        userId: TString
+                        itemId: TString
+                    }>
+                },
+                GetRouteParams<RoutePath>
+            >
+        >().toEqualTypeOf<{ userId: string; itemId: string }>()
+
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ZodObject<{
+                        userId: ZodString
+                        itemId: ZodString
+                    }>
+                }
+            >
+        >().toEqualTypeOf<{ userId: string; itemId: string }>()
+        expectTypeOf<
+            ContextParams<
+                {
+                    params: ObjectSchema<{
+                        userId: StringSchema<undefined>
+                        itemId: StringSchema<undefined>
+                    }, undefined>
+                }
+            >
+        >().toEqualTypeOf<{ userId: string; itemId: string }>()
+         expectTypeOf<
+            ContextParams<
+                {
+                    params: TObject<{
+                        userId: TString
+                        itemId: TString
+                    }>
+                }
+            >
+        >().toEqualTypeOf<{ userId: string; itemId: string }>()    
     })
 })
 

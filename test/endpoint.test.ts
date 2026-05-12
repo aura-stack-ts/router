@@ -1,5 +1,6 @@
 import z from "zod"
 import * as valibot from "valibot"
+import * as typebox from "typebox"
 import { type } from "arktype"
 import { describe, test } from "vitest"
 import { createRouter } from "@/router.ts"
@@ -77,441 +78,593 @@ describe("createEndpoint", () => {
     })
 
     describe("With schemas", () => {
-        describe("Zod body schema", () => {
-            const endpoint = createEndpoint(
-                "POST",
-                "/auth/credentials",
-                (ctx) => {
-                    return Response.json({ body: ctx.body })
-                },
-                {
-                    schemas: {
-                        body: z.object({
-                            username: z.string(),
-                            password: z.string(),
-                        }),
+        describe("With body", () => {
+            describe("Zod body schema", () => {
+                const endpoint = createEndpoint(
+                    "POST",
+                    "/auth/credentials",
+                    (ctx) => {
+                        return Response.json({ body: ctx.body })
                     },
-                }
-            )
-            const { POST } = createRouter([endpoint])
-
-            test("With valid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John", password: "secret" }),
-                    })
+                    {
+                        schemas: {
+                            body: z.object({
+                                username: z.string(),
+                                password: z.string(),
+                            }),
+                        },
+                    }
                 )
-                expect(post.ok).toBe(true)
-                expect(await post.json()).toEqual({
-                    body: { username: "John", password: "secret" },
+                const { POST } = createRouter([endpoint])
+
+                test("With valid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John", password: "secret" }),
+                        })
+                    )
+                    expect(post.ok).toBe(true)
+                    expect(await post.json()).toEqual({
+                        body: { username: "John", password: "secret" },
+                    })
+                })
+
+                test("With invalid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John" }),
+                        })
+                    )
+                    expect(post.status).toBe(422)
+                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John" }),
-                    })
-                )
-                expect(post.status).toBe(422)
-                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
-            })
-        })
-
-        describe("Valibot body schema", () => {
-            const endpoint = createEndpoint(
-                "POST",
-                "/auth/credentials",
-                (ctx) => {
-                    return Response.json({ body: ctx.body })
-                },
-                {
-                    schemas: {
-                        body: valibot.object({
-                            username: valibot.string(),
-                            password: valibot.string(),
-                        }),
+            describe("Valibot body schema", () => {
+                const endpoint = createEndpoint(
+                    "POST",
+                    "/auth/credentials",
+                    (ctx) => {
+                        return Response.json({ body: ctx.body })
                     },
-                }
-            )
-            const { POST } = createRouter([endpoint])
-
-            test("With valid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John", password: "secret" }),
-                    })
+                    {
+                        schemas: {
+                            body: valibot.object({
+                                username: valibot.string(),
+                                password: valibot.string(),
+                            }),
+                        },
+                    }
                 )
-                expect(post.ok).toBe(true)
-                expect(await post.json()).toEqual({
-                    body: { username: "John", password: "secret" },
+                const { POST } = createRouter([endpoint])
+
+                test("With valid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John", password: "secret" }),
+                        })
+                    )
+                    expect(post.ok).toBe(true)
+                    expect(await post.json()).toEqual({
+                        body: { username: "John", password: "secret" },
+                    })
+                })
+
+                test("With invalid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John" }),
+                        })
+                    )
+                    expect(post.status).toBe(422)
+                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John" }),
-                    })
+            describe("Arktype body schema", () => {
+                const endpoint = createEndpoint(
+                    "POST",
+                    "/auth/credentials",
+                    (ctx) => {
+                        return Response.json({ body: ctx.body })
+                    },
+                    {
+                        schemas: {
+                            body: type({
+                                username: "string",
+                                password: "string",
+                            }),
+                        },
+                    }
                 )
-                expect(post.status).toBe(422)
-                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
-            })
-        })
+                const { POST } = createRouter([endpoint])
 
-        describe("Arktype body schema", () => {
-            const endpoint = createEndpoint(
-                "POST",
-                "/auth/credentials",
-                (ctx) => {
-                    return Response.json({ body: ctx.body })
-                },
-                {
-                    schemas: {
-                        body: type({
-                            username: "string",
-                            password: "string",
-                        }),
-                    },
-                }
-            )
-            const { POST } = createRouter([endpoint])
-
-            test("With valid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John", password: "secret" }),
+                test("With valid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John", password: "secret" }),
+                        })
+                    )
+                    expect(post.ok).toBe(true)
+                    expect(await post.json()).toEqual({
+                        body: { username: "John", password: "secret" },
                     })
-                )
-                expect(post.ok).toBe(true)
-                expect(await post.json()).toEqual({
-                    body: { username: "John", password: "secret" },
+                })
+
+                test("With invalid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John" }),
+                        })
+                    )
+                    expect(post.status).toBe(422)
+                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid body", async ({ expect }) => {
-                const post = await POST(
-                    new Request("https://example.com/auth/credentials", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: "John" }),
+            describe("Typebox body schema", () => {
+                const endpoint = createEndpoint(
+                    "POST",
+                    "/auth/credentials",
+                    (ctx) => {
+                        return Response.json({ body: ctx.body })
+                    },
+                    {
+                        schemas: {
+                            body: typebox.Object({
+                                username: typebox.String(),
+                                password: typebox.String(),
+                            })
+                        },
+                    }
+                )
+                const { POST } = createRouter([endpoint])
+
+                test("With valid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John", password: "secret" }),
+                        })
+                    )
+                    expect(post.ok).toBe(true)
+                    expect(await post.json()).toEqual({
+                        body: { username: "John", password: "secret" },
                     })
+                })
+
+                test("With invalid body", async ({ expect }) => {
+                    const post = await POST(
+                        new Request("https://example.com/auth/credentials", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: "John" }),
+                        })
+                    )
+                    expect(post.status).toBe(422)
+                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
+                })
+            })
+        })
+
+        describe("With searchParams", () => {
+            describe("Zod searchParams schema", () => {
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/auth/:oauth",
+                    (ctx) => {
+                        return Response.json({ searchParams: ctx.searchParams })
+                    },
+                    {
+                        schemas: {
+                            searchParams: z.object({
+                                state: z.string(),
+                                code: z.string(),
+                            }),
+                        },
+                    }
                 )
-                expect(post.status).toBe(422)
-                expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
-            })
-        })
 
-        describe("Zod searchParams schema", () => {
-            const endpoint = createEndpoint(
-                "GET",
-                "/auth/:oauth",
-                (ctx) => {
-                    return Response.json({ searchParams: ctx.searchParams })
-                },
-                {
-                    schemas: {
-                        searchParams: z.object({
-                            state: z.string(),
-                            code: z.string(),
-                        }),
-                    },
-                }
-            )
+                const { GET } = createRouter([endpoint])
 
-            const { GET } = createRouter([endpoint])
+                test("With valid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        searchParams: { state: "123abc", code: "123" },
+                    })
+                })
 
-            test("With valid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({
-                    searchParams: { state: "123abc", code: "123" },
+                test("With invalid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-            })
-        })
-
-        describe("Valibot searchParams schema", () => {
-            const endpoint = createEndpoint(
-                "GET",
-                "/auth/:oauth",
-                (ctx) => {
-                    return Response.json({ searchParams: ctx.searchParams })
-                },
-                {
-                    schemas: {
-                        searchParams: valibot.object({
-                            state: valibot.string(),
-                            code: valibot.string(),
-                        }),
+            describe("Valibot searchParams schema", () => {
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/auth/:oauth",
+                    (ctx) => {
+                        return Response.json({ searchParams: ctx.searchParams })
                     },
-                }
-            )
+                    {
+                        schemas: {
+                            searchParams: valibot.object({
+                                state: valibot.string(),
+                                code: valibot.string(),
+                            }),
+                        },
+                    }
+                )
 
-            const { GET } = createRouter([endpoint])
+                const { GET } = createRouter([endpoint])
 
-            test("With valid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({
-                    searchParams: { state: "123abc", code: "123" },
+                test("With valid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        searchParams: { state: "123abc", code: "123" },
+                    })
+                })
+
+                test("With invalid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-            })
-        })
-
-        describe("Arktype searchParams schema", () => {
-            const endpoint = createEndpoint(
-                "GET",
-                "/auth/:oauth",
-                (ctx) => {
-                    return Response.json({ searchParams: ctx.searchParams })
-                },
-                {
-                    schemas: {
-                        searchParams: type({
-                            state: "string",
-                            code: "string",
-                        }),
+            describe("Arktype searchParams schema", () => {
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/auth/:oauth",
+                    (ctx) => {
+                        return Response.json({ searchParams: ctx.searchParams })
                     },
-                }
-            )
+                    {
+                        schemas: {
+                            searchParams: type({
+                                state: "string",
+                                code: "string",
+                            }),
+                        },
+                    }
+                )
 
-            const { GET } = createRouter([endpoint])
+                const { GET } = createRouter([endpoint])
 
-            test("With valid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({
-                    searchParams: { state: "123abc", code: "123" },
+                test("With valid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        searchParams: { state: "123abc", code: "123" },
+                    })
+                })
+
+                test("With invalid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
 
-            test("With invalid searchParams", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+            describe("Typebox searchParams schema", () => {
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/auth/:oauth",
+                    (ctx) => {
+                        return Response.json({ searchParams: ctx.searchParams })
+                    },
+                    {
+                        schemas: {
+                            searchParams: typebox.Object({
+                                state: typebox.String(),
+                                code: typebox.String(),
+                            }),
+                        },
+                    }
+                )
+
+                const { GET } = createRouter([endpoint])
+
+                test("With valid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc&code=123"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        searchParams: { state: "123abc", code: "123" },
+                    })
+                })
+
+                test("With invalid searchParams", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                })
             })
         })
 
-        describe("Zod params schema", () => {
-            const config = createEndpointConfig("/signIn/:oauth", {
-                schemas: {
-                    params: z.object({
-                        oauth: z.enum(["google", "github"]),
-                    }),
-                },
+        describe("With params", () => {
+            describe("Zod params schema", () => {
+                const config = createEndpointConfig("/signIn/:oauth", {
+                    schemas: {
+                        params: z.object({
+                            oauth: z.enum(["google", "github"]),
+                        }),
+                    },
+                })
+
+                const inferConfig = createEndpointConfig("/type/:typeId", {
+                    schemas: {
+                        params: z.object({
+                            typeId: z.enum(["token", "code"]),
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/signIn/:oauth",
+                    (ctx) => {
+                        const oauth = ctx.params.oauth
+                        return Response.json({ oauth })
+                    },
+                    config
+                )
+
+                const inferEndpoint = createEndpoint(
+                    "GET",
+                    "/type/:typeId",
+                    (ctx) => {
+                        return Response.json({ typeId: ctx.params.typeId })
+                    },
+                    inferConfig
+                )
+
+                const { GET } = createRouter([endpoint, inferEndpoint])
+
+                test("With valid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/google"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ oauth: "google" })
+                })
+
+                test("With invalid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/facebook"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
+
+                test("With inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/token"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ typeId: "token" })
+                })
+
+                test("With invalid inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/invalid"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
             })
 
-            const inferConfig = createEndpointConfig("/type/:typeId", {
-                schemas: {
-                    params: z.object({
-                        typeId: z.enum(["token", "code"]),
-                    }),
-                },
+            describe("Valibot params schema", () => {
+                const config = createEndpointConfig("/signIn/:oauth", {
+                    schemas: {
+                        params: valibot.object({
+                            oauth: valibot.enum({ google: "google", github: "github" }),
+                        }),
+                    },
+                })
+
+                const inferConfig = createEndpointConfig("/type/:typeId", {
+                    schemas: {
+                        params: valibot.object({
+                            typeId: valibot.enum({ token: "token", code: "code" }),
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/signIn/:oauth",
+                    (ctx) => {
+                        const oauth = ctx.params.oauth
+                        return Response.json({ oauth })
+                    },
+                    config
+                )
+
+                const inferEndpoint = createEndpoint(
+                    "GET",
+                    "/type/:typeId",
+                    (ctx) => {
+                        return Response.json({ typeId: ctx.params.typeId })
+                    },
+                    inferConfig
+                )
+
+                const { GET } = createRouter([endpoint, inferEndpoint])
+
+                test("With valid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/google"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ oauth: "google" })
+                })
+
+                test("With invalid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/facebook"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
+
+                test("With inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/token"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ typeId: "token" })
+                })
+
+                test("With invalid inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/invalid"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
             })
 
-            const endpoint = createEndpoint(
-                "GET",
-                "/signIn/:oauth",
-                (ctx) => {
-                    const oauth = ctx.params.oauth
-                    return Response.json({ oauth })
-                },
-                config
-            )
+            describe("Arktype params schema", () => {
+                const config = createEndpointConfig("/signIn/:oauth", {
+                    schemas: {
+                        params: type({
+                            oauth: type.enumerated("google", "github"),
+                        }),
+                    },
+                })
 
-            const inferEndpoint = createEndpoint(
-                "GET",
-                "/type/:typeId",
-                (ctx) => {
-                    return Response.json({ typeId: ctx.params.typeId })
-                },
-                inferConfig
-            )
+                const inferConfig = createEndpointConfig("/type/:typeId", {
+                    schemas: {
+                        params: type({
+                            typeId: type.enumerated("token", "code"),
+                        }),
+                    },
+                })
 
-            const { GET } = createRouter([endpoint, inferEndpoint])
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/signIn/:oauth",
+                    (ctx) => {
+                        const oauth = ctx.params.oauth
+                        return Response.json({ oauth })
+                    },
+                    config
+                )
 
-            test("With valid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/google"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ oauth: "google" })
+                const inferEndpoint = createEndpoint(
+                    "GET",
+                    "/type/:typeId",
+                    (ctx) => {
+                        return Response.json({ typeId: ctx.params.typeId })
+                    },
+                    inferConfig
+                )
+
+                const { GET } = createRouter([endpoint, inferEndpoint])
+
+                test("With valid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/google"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ oauth: "google" })
+                })
+
+                test("With invalid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/facebook"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
+
+                test("With inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/token"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ typeId: "token" })
+                })
+
+                test("With invalid inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/invalid"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
             })
 
-            test("With invalid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/facebook"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-            })
+            describe("Typebox params schema", () => {
+                const config = createEndpointConfig("/signIn/:oauth", {
+                    schemas: {
+                        params: typebox.Object({
+                            oauth: typebox.Enum(["google", "github"]),
+                        }),
+                    },
+                })
 
-            test("With inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/token"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ typeId: "token" })
-            })
+                const inferConfig = createEndpointConfig("/type/:typeId", {
+                    schemas: {
+                        params: typebox.Object({
+                            typeId: typebox.Enum(["token", "code"]),
+                        }),
+                    },
+                })
 
-            test("With invalid inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/invalid"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-            })
-        })
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/signIn/:oauth",
+                    (ctx) => {
+                        const oauth = ctx.params.oauth
+                        return Response.json({ oauth })
+                    },
+                    config
+                )
 
-        describe("Valibot params schema", () => {
-            const config = createEndpointConfig("/signIn/:oauth", {
-                schemas: {
-                    params: valibot.object({
-                        oauth: valibot.enum({ google: "google", github: "github" }),
-                    }),
-                },
-            })
+                const inferEndpoint = createEndpoint(
+                    "GET",
+                    "/type/:typeId",
+                    (ctx) => {
+                        return Response.json({ typeId: ctx.params.typeId })
+                    },
+                    inferConfig
+                )
 
-            const inferConfig = createEndpointConfig("/type/:typeId", {
-                schemas: {
-                    params: valibot.object({
-                        typeId: valibot.enum({ token: "token", code: "code" }),
-                    }),
-                },
-            })
+                const { GET } = createRouter([endpoint, inferEndpoint])
 
-            const endpoint = createEndpoint(
-                "GET",
-                "/signIn/:oauth",
-                (ctx) => {
-                    const oauth = ctx.params.oauth
-                    return Response.json({ oauth })
-                },
-                config
-            )
+                test("With valid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/google"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ oauth: "google" })
+                })
 
-            const inferEndpoint = createEndpoint(
-                "GET",
-                "/type/:typeId",
-                (ctx) => {
-                    return Response.json({ typeId: ctx.params.typeId })
-                },
-                inferConfig
-            )
+                test("With invalid params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/signIn/facebook"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
 
-            const { GET } = createRouter([endpoint, inferEndpoint])
+                test("With inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/token"))
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({ typeId: "token" })
+                })
 
-            test("With valid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/google"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ oauth: "google" })
-            })
-
-            test("With invalid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/facebook"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-            })
-
-            test("With inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/token"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ typeId: "token" })
-            })
-
-            test("With invalid inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/invalid"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-            })
-        })
-
-        describe("Arktype params schema", () => {
-            const config = createEndpointConfig("/signIn/:oauth", {
-                schemas: {
-                    params: type({
-                        oauth: type.enumerated("google", "github"),
-                    }),
-                },
-            })
-
-            const inferConfig = createEndpointConfig("/type/:typeId", {
-                schemas: {
-                    params: type({
-                        typeId: type.enumerated("token", "code"),
-                    }),
-                },
-            })
-
-            const endpoint = createEndpoint(
-                "GET",
-                "/signIn/:oauth",
-                (ctx) => {
-                    const oauth = ctx.params.oauth
-                    return Response.json({ oauth })
-                },
-                config
-            )
-
-            const inferEndpoint = createEndpoint(
-                "GET",
-                "/type/:typeId",
-                (ctx) => {
-                    return Response.json({ typeId: ctx.params.typeId })
-                },
-                inferConfig
-            )
-
-            const { GET } = createRouter([endpoint, inferEndpoint])
-
-            test("With valid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/google"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ oauth: "google" })
-            })
-
-            test("With invalid params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/signIn/facebook"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
-            })
-
-            test("With inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/token"))
-                expect(get.ok).toBe(true)
-                expect(await get.json()).toEqual({ typeId: "token" })
-            })
-
-            test("With invalid inferred params", async ({ expect }) => {
-                const get = await GET(new Request("https://example.com/type/invalid"))
-                expect(get.status).toBe(422)
-                expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                test("With invalid inferred params", async ({ expect }) => {
+                    const get = await GET(new Request("https://example.com/type/invalid"))
+                    expect(get.status).toBe(422)
+                    expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
+                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                })
             })
         })
     })
