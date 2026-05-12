@@ -229,7 +229,7 @@ describe("createEndpoint", () => {
                             body: typebox.Object({
                                 username: typebox.String(),
                                 password: typebox.String(),
-                            })
+                            }),
                         },
                     }
                 )

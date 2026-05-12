@@ -1,7 +1,7 @@
 import { safeParse } from "valibot"
 import { isValibotSchema, isZodSchema, isArkType } from "@/assert.ts"
-import { IsObject } from "typebox";
-import { Check } from "typebox/value";
+import { IsObject } from "typebox"
+import { Check } from "typebox/value"
 
 export type ValidationResult<T> = { success: true; data: T; error: null } | { success: false; data: null; error: any }
 
@@ -43,7 +43,7 @@ export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
                         ? { success: false, data: null, error: parsed }
                         : { success: true, data: parsed as T, error: null }
                 }
-                if(IsObject(schema)) {
+                if (IsObject(schema)) {
                     const isValid = Check(schema, data)
                     return isValid
                         ? { success: true, data: data as T, error: null }

@@ -342,22 +342,18 @@ describe("ContextSearchParams", () => {
     describe("Typebox instance", () => {
         expectTypeOf<
             ContextSearchParams<{
-                searchParams: TObject<
-                    {
-                        code: TString
-                    }
-                >
+                searchParams: TObject<{
+                    code: TString
+                }>
             }>
         >().toEqualTypeOf<{ code: string }>()
 
         expectTypeOf<
             ContextSearchParams<{
-                searchParams: TObject<
-                    {
-                        code: TString
-                        state: TString
-                    }
-                >
+                searchParams: TObject<{
+                    code: TString
+                    state: TString
+                }>
             }>
         >().toEqualTypeOf<{ code: string; state: string }>()
     })
@@ -415,22 +411,18 @@ describe("ContextBody", () => {
     describe("Typebox instance", () => {
         expectTypeOf<
             ContextBody<{
-                body: TObject<
-                    {
-                        username: TString
-                        password: TString
-                    }
-                >
+                body: TObject<{
+                    username: TString
+                    password: TString
+                }>
             }>
         >().toEqualTypeOf<{ username: string; password: string }>()
 
         expectTypeOf<
             ContextBody<{
-                body: TObject<
-                    {
-                        oauth: TString
-                    }
-                >
+                body: TObject<{
+                    oauth: TString
+                }>
             }>
         >().toEqualTypeOf<{ oauth: string }>()
     })
@@ -463,9 +455,12 @@ describe("ContextParams", () => {
         expectTypeOf<
             ContextParams<
                 {
-                    params: ObjectSchema<{
-                        oauth: StringSchema<undefined>
-                    }, undefined>
+                    params: ObjectSchema<
+                        {
+                            oauth: StringSchema<undefined>
+                        },
+                        undefined
+                    >
                 },
                 GetRouteParams<RoutePath>
             >
@@ -520,15 +515,18 @@ describe("ContextParams", () => {
         expectTypeOf<
             ContextParams<
                 {
-                    params: ObjectSchema<{
-                        userId: StringSchema<undefined>
-                        itemId: StringSchema<undefined>
-                    }, undefined>
+                    params: ObjectSchema<
+                        {
+                            userId: StringSchema<undefined>
+                            itemId: StringSchema<undefined>
+                        },
+                        undefined
+                    >
                 },
                 GetRouteParams<RoutePath>
             >
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
-         expectTypeOf<
+        expectTypeOf<
             ContextParams<
                 {
                     params: TObject<{
@@ -541,35 +539,32 @@ describe("ContextParams", () => {
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
 
         expectTypeOf<
-            ContextParams<
-                {
-                    params: ZodObject<{
-                        userId: ZodString
-                        itemId: ZodString
-                    }>
-                }
-            >
+            ContextParams<{
+                params: ZodObject<{
+                    userId: ZodString
+                    itemId: ZodString
+                }>
+            }>
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
         expectTypeOf<
-            ContextParams<
-                {
-                    params: ObjectSchema<{
+            ContextParams<{
+                params: ObjectSchema<
+                    {
                         userId: StringSchema<undefined>
                         itemId: StringSchema<undefined>
-                    }, undefined>
-                }
-            >
+                    },
+                    undefined
+                >
+            }>
         >().toEqualTypeOf<{ userId: string; itemId: string }>()
-         expectTypeOf<
-            ContextParams<
-                {
-                    params: TObject<{
-                        userId: TString
-                        itemId: TString
-                    }>
-                }
-            >
-        >().toEqualTypeOf<{ userId: string; itemId: string }>()    
+        expectTypeOf<
+            ContextParams<{
+                params: TObject<{
+                    userId: TString
+                    itemId: TString
+                }>
+            }>
+        >().toEqualTypeOf<{ userId: string; itemId: string }>()
     })
 })
 
