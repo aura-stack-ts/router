@@ -1,17 +1,22 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
+import type { Static, TObject } from "typebox"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { ZodObject, ZodTypeAny, infer as Infer } from "zod"
 import type { InferValibotSchema, RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
 
-export type InferSchema<T> = T extends ZodTypeAny ? Infer<T> : T extends ObjectSchema<any, undefined> ? InferValibotSchema<T> : T
+export type InferSchema<T> = T extends ZodTypeAny
+    ? Infer<T>
+    : T extends ObjectSchema<any, undefined>
+      ? InferValibotSchema<T>
+      : T extends TObject
+        ? Static<T>
+        : T extends Type<infer U>
+          ? U
+          : T
 
 export type ToInferSchema<T> = {
     [K in keyof T]: InferSchema<T[K]>
-}
-
-export type ToInferArktype<T> = {
-    [K in keyof T]: T[K] extends Type<infer U> ? U : T[K]
 }
 
 export type RemoveUndefined<T> = {
@@ -20,18 +25,16 @@ export type RemoveUndefined<T> = {
 
 type HasSchemas<C> =
     C extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
             ? true
             : false
         : false
 
 type InferContent<Config extends EndpointConfig<any, any>> =
     Config extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined>
+        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
             ? RemoveUndefined<ToInferSchema<Schemas>>
-            : Schemas[keyof Schemas] extends Type<any>
-              ? RemoveUndefined<ToInferArktype<Schemas>>
-              : unknown
+            : unknown
         : unknown
 
 /**

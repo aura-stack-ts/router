@@ -1,4 +1,5 @@
 import type { Type } from "arktype"
+import type { Static, TObject } from "typebox"
 import type { ZodObject, z } from "zod"
 import type { ObjectSchema } from "valibot"
 import type { RouterError } from "@/error.ts"
@@ -43,9 +44,9 @@ export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
  */
 export interface EndpointSchemas {
-    body?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
-    searchParams?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
-    params?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}>
+    body?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
+    searchParams?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
+    params?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
 }
 
 /**
@@ -80,7 +81,9 @@ type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
       ? InferValibotSchema<S>
       : [S] extends [Type<infer T>]
         ? T
-        : Fallback
+        : [S] extends [TObject]
+          ? Static<S>
+          : Fallback
 
 /**
  * Infer the type of search parameters from the provided value in the `EndpointConfig`.

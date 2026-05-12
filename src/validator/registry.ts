@@ -1,5 +1,7 @@
 import { safeParse } from "valibot"
 import { isValibotSchema, isZodSchema, isArkType } from "@/assert.ts"
+import { IsObject } from "typebox"
+import { Check } from "typebox/value"
 
 export type ValidationResult<T> = { success: true; data: T; error: null } | { success: false; data: null; error: any }
 
@@ -11,7 +13,7 @@ export interface SchemaAdapter<T> {
  * Universal wrapper for Zod, Valibot, ArkType, etc.
  */
 export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
-    if (!isZodSchema(schema) && !isValibotSchema(schema) && !isArkType(schema)) {
+    if (!isZodSchema(schema) && !isValibotSchema(schema) && !isArkType(schema) && !IsObject(schema)) {
         throw new Error("Unsupported schema type")
     }
     return {
@@ -40,6 +42,12 @@ export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
                     return isError
                         ? { success: false, data: null, error: parsed }
                         : { success: true, data: parsed as T, error: null }
+                }
+                if (IsObject(schema)) {
+                    const isValid = Check(schema, data)
+                    return isValid
+                        ? { success: true, data: data as T, error: null }
+                        : { success: false, data: null, error: new Error("Validation failed") }
                 }
                 return { success: false, data: null, error: new Error("Unsupported schema type") }
             } catch (e) {
