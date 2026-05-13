@@ -60,7 +60,7 @@ createEndpoint(
     return ctx.json({ name, email })
   },
   {
-    schema: {
+    schemas: {
       body: z.object({
         name: z.string(),
         email: z.string().email(),
@@ -78,12 +78,12 @@ createEndpoint(
 createEndpoint(
   "GET",
   "/search",
-  () => {
+  (ctx) => {
     const { query, page } = ctx.searchParams
     return ctx.json({ query, page })
   },
   {
-    schema: {
+    schemas: {
       searchParams: z.object({
         query: z.string(),
         page: z.string().optional(),

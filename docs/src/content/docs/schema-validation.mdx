@@ -5,7 +5,7 @@ description: Learn how to add type-safe validations to an endpoint using Zod, Va
 
 # Schema Validation
 
-Schema validations are an optional configuration in `createEndpoint` and `createEndpointConfig`. They enable runtime validation for `params`, `searchParams`, and `body`, ensuring full type safety for the endpoint"s request context.
+Schema validations are an optional configuration in `createEndpoint` and `createEndpointConfig`. They enable runtime validation for `params`, `searchParams`, and `body`, ensuring full type safety for the endpoint's request context.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -195,7 +195,7 @@ export const deleteUser = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, Number } from "typebox"
+import { Type } from "typebox"
 import { createEndpoint } from "@aura-stack/router"
 
 export const deleteUser = createEndpoint(
@@ -207,8 +207,8 @@ export const deleteUser = createEndpoint(
   },
   {
     schemas: {
-      params: Object({
-        userId: Number(),
+      params: Type.Object({
+        userId: Type.Number(),
       }),
     },
   }
@@ -313,13 +313,13 @@ export const deleteUser = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, Number } from "typebox"
+import { Type } from "typebox"
 import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
 
 export const config = createEndpointConfig("/users/:userId", {
   schemas: {
-    params: Object({
-      userId: Number(),
+    params: Type.Object({
+      userId: Type.Number(),
     }),
   },
 })
@@ -432,14 +432,14 @@ export const getBookById = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, String } from "typebox"
+import { Type } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig("/users/:userId/books/:bookId", {
   schemas: {
-    params: Object({
-      userId: String({ format: "regex", pattern: "^[0-9]+$" }),
-      bookId: String({ format: "uuid" }),
+    params: Type.Object({
+      userId: Type.String({ format: "regex", pattern: "^[0-9]+$" }),
+      bookId: Type.String({ format: "uuid" }),
     }),
   },
 })
@@ -512,7 +512,7 @@ export const config = createEndpointConfig({
         ),
         1
       ),
-    });
+    }),
   },
 })
 
@@ -560,15 +560,15 @@ export const searchUsers = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, String, Integer, Transform } from "typebox"
+import { Type } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
   schemas: {
-    searchParams: Object({
-      q: String({ minLength: 1 }),
-      page: Transform(
-        Integer({
+    searchParams: Type.Object({
+      q: Type.String({ minLength: 1 }),
+      page: Type.Transform(
+        Type.Integer({
           minimum: 1,
           default: 1
         })
@@ -601,7 +601,7 @@ export const searchUsers = createEndpoint(
 <Tab value="zod">
   
 ```ts lineNumbers
-import * as valibot from "valibot";
+import { z } from "zod";
 import { createEndpointConfig } from "@aura-stack/router";
 
 export const config = createEndpointConfig({
@@ -673,7 +673,7 @@ export const config = createEndpointConfig({
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "@sinclair/typebox"
+import { Type } from "typebox"
 import { createEndpointConfig } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -787,14 +787,14 @@ export const createUser = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, String } from "typebox"
+import { Type } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
   schemas: {
-    body: Object({
-      name: String({ minLength: 1 }),
-      email: String({ format: "email" }),
+    body: Type.Object({
+      name: Type.String({ minLength: 1 }),
+      email: Type.String({ format: "email" }),
     }),
   },
 })
@@ -932,23 +932,23 @@ export const updateProfile = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Object, String, Boolean, Array, Literal, Union } from "typebox"
+import { Type } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
   schemas: {
-    body: Object({
-      profile: Object({
-        firstName: String({ minLength: 1 }),
-        lastName: String({ minLength: 1 }),
-        bio: Optional(String({ maxLength: 500 })),
+    body: Type.Object({
+      profile: Type.Object({
+        firstName: Type.String({ minLength: 1 }),
+        lastName: Type.String({ minLength: 1 }),
+        bio: Type.Optional(Type.String({ maxLength: 500 })),
       }),
-      settings: Object({
-        theme: Union([Literal("light"), Literal("dark")], { default: "light" }),
-        notifications: Boolean({ default: true }),
-        language: String({ minLength: 2, maxLength: 2, default: "en" }),
+      settings: Type.Object({
+        theme: Type.Union([Type.Literal("light"), Type.Literal("dark")], { default: "light" }),
+        notifications: Type.Boolean({ default: true }),
+        language: Type.String({ minLength: 2, maxLength: 2, default: "en" }),
       }),
-      tags: Array(String(), { minItems: 1, maxItems: 10 }),
+      tags: Type.Array(Type.String(), { minItems: 1, maxItems: 10 }),
     }),
   },
 })
