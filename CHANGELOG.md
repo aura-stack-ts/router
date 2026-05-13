@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.7.0] - 2026-05-13
+
 ### Added
 
 - Added support for Typebox schema validation alongside the existing Zod integration for validating route parameters, search parameters, and request bodies. [#48](https://github.com/aura-stack-ts/router/pull/48)

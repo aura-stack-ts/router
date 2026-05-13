@@ -7,6 +7,7 @@
 Build fully-typed APIs with declarative endpoints, automatic parameter inference, and first-class middleware support — all returning native `Response` objects.
 
 [![npm version](https://img.shields.io/npm/v/@aura-stack/router.svg)](https://www.npmjs.com/package/@aura-stack/router)
+[![JSR version](https://jsr.io/badges/@aura-stack/router)](https://jsr.io/@aura-stack/router)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
