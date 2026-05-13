@@ -5,6 +5,7 @@
   "pages": [
     "---Getting Started---",
     "index",
+    "request-context",
     "---Configuration---",
     "zod-schemas",
     "middlewares",
