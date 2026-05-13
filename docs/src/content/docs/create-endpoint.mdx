@@ -215,12 +215,9 @@ export const route: RoutePattern = "/auth/signIn/:oauth"
 The `handler` is a required property in every endpoint definition. It defines the logic that executes when an incoming request matches the endpoint’s route.
 
 ```ts lineNumbers
-import type { Prettify, RoutePattern, EndpointConfig, GetRouteParams } from "@aura-stack/router/types"
+import type { RoutePattern, EndpointConfig, RouteHandler } from "@aura-stack/router/types"
 
-type RouteHandler<Route extends RoutePattern, Config extends EndpointConfig> = (
-  request: Request,
-  ctx: Prettify<RequestContext<GetRouteParams<Route>, Config>>
-) => Response | Promise<Response>
+type Handler<Route extends RoutePattern, Config extends EndpointConfig> = RouteHandler<Route, Config>
 ```
 
 `createEndpoint` automatically infers all generic types based on the provided route pattern and configuration. Generics do not need to be manually specified unless explicitly required.
@@ -233,8 +230,8 @@ export const endpoint = createEndpoint(
   "POST",
   "/auth/credentials",
   async (ctx) => {
-    const { body } = ctx.body
-    return Response.json({ body })
+    const { username } = ctx.body
+    return Response.json({ username })
   },
   {
     schemas: {

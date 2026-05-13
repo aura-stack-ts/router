@@ -9,6 +9,16 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added support for Typebox schema validation alongside the existing Zod integration for validating route parameters, search parameters, and request bodies. [#48](https://github.com/aura-stack-ts/router/pull/48)
+
+- Added support for Arktype schema validation alongside the existing Zod integration for validating route parameters, search parameters, and request bodies. [#44](https://github.com/aura-stack-ts/router/pull/44)
+
+- Added support for Valibot schema validation alongside the existing Zod integration for validating route parameters, search parameters, and request bodies. [#43](https://github.com/aura-stack-ts/router/pull/43)
+
+- Added `ctx.json()` helper for returning typed JSON responses from endpoints. It preserves type information inferred by `createClient`. [#42](https://github.com/aura-stack-ts/router/pull/42)
+
 ---
 
 ## [0.6.0] - 2026-02-25

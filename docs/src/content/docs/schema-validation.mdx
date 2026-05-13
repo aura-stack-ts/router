@@ -1,0 +1,969 @@
+---
+title: Schema Validation
+description: Learn how to add type-safe validations to an endpoint using Zod, Valibot, ArkType, or TypeBox.
+---
+
+# Schema Validation
+
+Schema validations are an optional configuration in `createEndpoint` and `createEndpointConfig`. They enable runtime validation for `params`, `searchParams`, and `body`, ensuring full type safety for the endpoint's request context.
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    const { username, password } = ctx.body
+    return Response.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: z.object({
+        username: z.string(),
+        password: z.string(),
+      }),
+    },
+  }
+)
+```
+
+---
+
+## Overview
+
+- [Key Concepts](#key-concepts)
+- [Installation](#installation)
+- [Type Inference](#type-inference)
+- [Schemas Validations](#schemas-validation)
+  - [Params](#params)
+  - [Search Params](#search-params)
+  - [Body](#body)
+
+---
+
+## Key Concepts
+
+- Detailed information about schema validations within `createEndpoint` can be found in the [API Reference](/docs/create-endpoint#request-context).
+- Schema validation is optional but highly recommended for adding runtime validation to:
+  - `params` via `schemas.params`
+  - `searchParams` via `schemas.searchParams`
+  - `body` via `schemas.body`
+- Supported schema engines are Zod, Valibot, ArkType, and TypeBox.
+
+---
+
+## Type Inference
+
+When supported schemas are added, the endpoint automatically extracts and infers types from them. These inferred types apply to:
+
+- The `Route Handler Request Context`.
+- The `Middleware Context`.
+
+This ensures fully typed access to `ctx.params`, `ctx.searchParams`, and `ctx.body`.
+
+---
+
+## Installation
+
+To enable schema validation, install the schema package(s) you plan to use.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```npm
+npm install @aura-stack/router zod
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```npm
+npm install @aura-stack/router valibot
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```npm
+npm install @aura-stack/router arktype
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```npm
+npm install @aura-stack/router typebox
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+## Schemas Validation
+
+Schema validations can be passed directly to an endpoint or defined using the `createEndpointConfig` function.
+
+### Directly
+
+The schema can be passed as the fourth argument of `createEndpoint`.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  {
+    schemas: {
+      params: z.object({
+        userId: z.coerce.number(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpoint } from "@aura-stack/router"
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  {
+    schemas: {
+      params: valibot.object({
+        userId: valibot.number(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpoint } from "@aura-stack/router"
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  {
+    schemas: {
+      params: type({
+        userId: "number",
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpoint } from "@aura-stack/router"
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  {
+    schemas: {
+      params: Type.Object({
+        userId: Type.Number(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+</Tabs>
+
+### Using `createEndpointConfig`
+
+The `createEndpointConfig` function can also be used, passing the configuration object as the fourth argument to `createEndpoint`.
+
+<Callout type="warning">
+  When the endpoint requires a dynamic parameter, the route path should be provided as the first argument.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId", {
+  schemas: {
+    params: z.object({
+      userId: z.number(),
+    }),
+  },
+})
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId", {
+  schemas: {
+    params: valibot.object({
+      userId: valibot.number(),
+    }),
+  },
+})
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```tsx lineNumbers
+import { type } from "arktype"
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId", {
+  schemas: {
+    params: type({
+      userId: "number",
+    }),
+  },
+})
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId", {
+  schemas: {
+    params: Type.Object({
+      userId: Type.Number(),
+    }),
+  },
+})
+
+export const deleteUser = createEndpoint(
+  "DELETE",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    return Response.json({ message: "User deleted successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+### Params
+
+#### Basic Validation [#basic-params-validation]
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: z.object({
+      userId: z.regex(/^[0-9]+$/),
+      bookId: z.uuid(),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return Response.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: valibot.object({
+      userId: valibot.regex(/^[0-9]+$/, "Invalid userId format"),
+      bookId: valibot.uuid("Invalid bookId format"),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return Response.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: type({
+      userId: "string",
+      bookId: "string.uuid",
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return Response.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: Type.Object({
+      userId: Type.String({ format: "regex", pattern: "^[0-9]+$" }),
+      bookId: Type.String({ format: "uuid" }),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return Response.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+### Search Params Validation
+
+#### Basic Validation [#basic-search-params-validation]
+
+<Tabs items={['zod', 'valibot', 'arktype', 'typebox']} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: z.object({
+      q: z.string().min(1),
+      page: z.coerce.number().int().positive().default(1),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return Response.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: valibot.object({
+      q: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      page: valibot.fallback(
+        valibot.pipe(
+          valibot.unknown(),
+          valibot.transform((input) => Number(input)),
+          valibot.number(),
+          valibot.integer(),
+          valibot.positive()
+        ),
+        1
+      ),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return Response.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: type({
+      q: "string > 0",
+      page: "(number.integer > 0) = 1",
+    });
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return Response.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: Type.Object({
+      q: Type.String({ minLength: 1 }),
+      page: Type.Transform(
+        Type.Integer({
+          minimum: 1,
+          default: 1
+        })
+      )
+      .Decode(value => Number(value))
+      .Encode(value => value)
+    });
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return Response.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+#### Advanced Validation [#advanced-search-params-validation]
+
+<Tabs items={['zod', 'valibot', 'arktype', 'typebox']} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod";
+import { createEndpointConfig } from "@aura-stack/router";
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: z.object({
+      q: z.string().min(3).max(100),
+      category: z.enum(["tech", "science", "arts"]).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+      sortBy: z.enum(["date", "relevance", "popularity"]).default("relevance"),
+    sortOrder: z.enum(["asc", "desc"]).default("desc"),
+    }),
+  },
+})
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: valibot.object({
+      q: valibot.pipe(valibot.string(), valibot.minLength(3), valibot.maxLength(100)),
+      category: valibot.optional(valibot.enum_(["tech", "science", "arts"])),
+      page: valibot.fallback(
+        valibot.pipe(valibot.unknown(), valibot.transform(Number), valibot.integer(), valibot.minValue(1)),
+        1
+      ),
+      limit: valibot.fallback(
+        valibot.pipe(valibot.unknown(), valibot.transform(Number), valibot.integer(), valibot.minValue(1), valibot.maxValue(100)),
+        20
+      ),
+      sortBy: valibot.fallback(valibot.enum_(["date", "relevance", "popularity"]), "relevance"),
+      sortOrder: valibot.fallback(valibot.enum_(["asc", "desc"]), "desc"),
+    }),
+  },
+})
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype";
+import { createEndpointConfig } from "@aura-stack/router";
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: type({
+      q: "3<=string<=100",
+      "category?": "'tech'|'science'|'arts'",
+      page: "(number.integer >= 1) = 1",
+      limit: "(1 <= number.integer <= 100) = 20",
+      sortBy: "('date'|'relevance'|'popularity') = 'relevance'",
+      sortOrder: "('asc'|'desc') = 'desc'",
+    }),
+  },
+});
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: Type.Object({
+      q: Type.String({ minLength: 3, maxLength: 100 }),
+      category: Type.Optional(Type.Union([Type.Literal("tech"), Type.Literal("science"), Type.Literal("arts")])),
+      page: Type.Integer({ minimum: 1, default: 1 }),
+      limit: Type.Integer({ minimum: 1, maximum: 100, default: 20 }),
+      sortBy: Type.Union([Type.Literal("date"), Type.Literal("relevance"), Type.Literal("popularity")], { default: "relevance" }),
+      sortOrder: Type.Union([Type.Literal("asc"), Type.Literal("desc")], { default: "desc" }),
+    }),
+  },
+})
+```
+
+</Tab>
+
+</Tabs>
+
+### Request Body Validation
+
+#### Basic Validation [#basic-body-validation]
+
+<Tabs items={['zod', 'valibot', 'arktype', 'typebox']} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return Response.json({ id: "new-id", name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: valibot.object({
+      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      email: valibot.pipe(valibot.string(), valibot.email()),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return Response.json({ id: "new-id", name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: type({
+      name: "string > 0",
+      email: "string.email",
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return Response.json({ id: "new-id", name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: Type.Object({
+      name: Type.String({ minLength: 1 }),
+      email: Type.String({ format: "email" }),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return Response.json({ id: "new-id", name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+#### Advanced Validation [#advanced-body-validation]
+
+<Tabs items={['zod', 'valibot', 'arktype', 'typebox']} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      profile: z.object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        bio: z.string().max(500).optional(),
+      }),
+      settings: z.object({
+        theme: z.enum(["light", "dark"]).default("light"),
+        notifications: z.boolean().default(true),
+        language: z.string().length(2).default("en"),
+      }),
+      tags: z.array(z.string()).min(1).max(10),
+    }),
+  },
+})
+
+export const updateProfile = createEndpoint(
+  "PATCH",
+  "/profile",
+  async (ctx) => {
+    const { profile, settings, tags } = ctx.body
+    return Response.json({ updated: true })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: valibot.object({
+      profile: valibot.object({
+        firstName: valibot.pipe(valibot.string(), valibot.minLength(1)),
+        lastName: valibot.pipe(valibot.string(), valibot.minLength(1)),
+        bio: valibot.optional(valibot.pipe(valibot.string(), valibot.maxLength(500))),
+      }),
+      settings: valibot.object({
+        theme: valibot.fallback(valibot.enum_(["light", "dark"]), "light"),
+        notifications: valibot.fallback(valibot.boolean(), true),
+        language: valibot.fallback(valibot.pipe(valibot.string(), valibot.length(2)), "en"),
+      }),
+      tags: valibot.pipe(valibot.array(valibot.string()), valibot.minLength(1), valibot.maxLength(10)),
+    }),
+  },
+})
+
+export const updateProfile = createEndpoint(
+  "PATCH",
+  "/profile",
+  async (ctx) => {
+    const { profile, settings, tags } = ctx.body
+    return Response.json({ updated: true })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: type({
+      profile: {
+        firstName: "string > 0",
+        lastName: "string > 0",
+        "bio?": "string <= 500",
+      },
+      settings: {
+        theme: "('light'|'dark') = 'light'",
+        notifications: "boolean = true",
+        language: "string == 2 = 'en'",
+      },
+      tags: "1 <= string[] <= 10",
+    }),
+  },
+})
+
+export const updateProfile = createEndpoint(
+  "PATCH",
+  "/profile",
+  async (ctx) => {
+    const { profile, settings, tags } = ctx.body
+    return Response.json({ updated: true })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: Type.Object({
+      profile: Type.Object({
+        firstName: Type.String({ minLength: 1 }),
+        lastName: Type.String({ minLength: 1 }),
+        bio: Type.Optional(Type.String({ maxLength: 500 })),
+      }),
+      settings: Type.Object({
+        theme: Type.Union([Type.Literal("light"), Type.Literal("dark")], { default: "light" }),
+        notifications: Type.Boolean({ default: true }),
+        language: Type.String({ minLength: 2, maxLength: 2, default: "en" }),
+      }),
+      tags: Type.Array(Type.String(), { minItems: 1, maxItems: 10 }),
+    }),
+  },
+})
+
+export const updateProfile = createEndpoint(
+  "PATCH",
+  "/profile",
+  async (ctx) => {
+    const { profile, settings, tags } = ctx.body
+    return Response.json({ updated: true })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>

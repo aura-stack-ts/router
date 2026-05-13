@@ -1,0 +1,159 @@
+---
+title: Request Context
+description: Understand the typed ctx object passed to handlers and endpoint middlewares.
+---
+
+# Request Context
+
+The `Request Context (ctx)` is the central object passed to endpoint handlers and endpoint middlewares. It provides access to parsed route data, schema-validated inputs, shared context, and helpers for building responses.
+
+<Callout>
+  Global middlewares do not receive this object. They run before route matching and only receive the original `Request` plus the
+  router context.
+</Callout>
+
+---
+
+## `request`
+
+`ctx.request` is the original `Request` object received by the router. It contains all the standard properties and methods of the Fetch API's `Request`, such as `headers`, `method`, `url`, and body parsing methods.
+
+```ts lineNumbers
+createEndpoint("GET", "/example", (ctx) => {
+  const userAgent = ctx.request.headers.get("user-agent")
+  return Response.json({ userAgent })
+})
+```
+
+## `json`
+
+`ctx.json` is a helper method for creating JSON responses. It preserves the typed response payload and automatically sets the `Content-Type` header to `application/json`.
+
+```ts lineNumbers
+createEndpoint("GET", "/example", (ctx) => {
+  return ctx.json({ message: "Hello, world!" })
+})
+```
+
+## `params`
+
+`ctx.params` contains the dynamic segments of the route path. These are automatically parsed and optionally validated against the `schema.params` schema defined in the endpoint.
+
+```ts lineNumbers
+createEndpoint("GET", "/users/:userId/books/:bookId", (ctx) => {
+  const { userId, bookId } = ctx.params
+  return ctx.json({ userId, bookId })
+})
+```
+
+## `body`
+
+`ctx.body` contains the parsed request payload. This is automatically parsed based on the `Content-Type` header and optionally validated against the `schema.body` schema defined in the endpoint.
+
+```ts lineNumbers
+createEndpoint(
+  "POST",
+  "/users",
+  (ctx) => {
+    const { name, email } = ctx.body
+
+    return ctx.json({ name, email })
+  },
+  {
+    schemas: {
+      body: z.object({
+        name: z.string(),
+        email: z.string().email(),
+      }),
+    },
+  }
+)
+```
+
+## `searchParams`
+
+`ctx.searchParams` contains the parsed query string values. These are automatically parsed and optionally validated against the `schema.searchParams` schema defined in the endpoint.
+
+```ts lineNumbers
+createEndpoint(
+  "GET",
+  "/search",
+  (ctx) => {
+    const { query, page } = ctx.searchParams
+    return ctx.json({ query, page })
+  },
+  {
+    schemas: {
+      searchParams: z.object({
+        query: z.string(),
+        page: z.string().optional(),
+      }),
+    },
+  }
+)
+```
+
+## `headers`
+
+`ctx.headers` is an instance of `HeadersBuilder`, a helper for reading and mutating headers and cookies. It provides methods like `setHeader`, `setCookie`, `getHeader`, and `getCookie` for working with request and response headers.
+
+```ts lineNumbers
+createEndpoint("GET", "/profile", (ctx) => {
+  const sessionId = ctx.headers.getCookie("session_id")
+  return ctx.json({ message: sessionId ? "Authenticated" : "Unauthorized" })
+})
+```
+
+## `url`
+
+`ctx.url` is a parsed `URL` object for the incoming request. It provides access to properties like `pathname`, `searchParams`, and `origin`.
+
+```ts lineNumbers
+createEndpoint("GET", "/example", (ctx) => {
+  const pathname = ctx.url.pathname
+  return ctx.json({ pathname })
+})
+```
+
+## `method`
+
+`ctx.method` is the resolved HTTP method for the request, normalized to uppercase.
+
+```ts lineNumbers
+createEndpoint(["GET", "POST"], "/example", (ctx) => {
+  if (ctx.method === "GET") {
+    return ctx.json({ message: "This is a GET request" })
+  } else if (ctx.method === "POST") {
+    return ctx.json({ message: "This is a POST request" })
+  }
+})
+```
+
+## `route`
+
+`ctx.route` is the matched route pattern from the endpoint definition.
+
+```ts lineNumbers
+createEndpoint("GET", "/users/:userId", (ctx) => {
+  return ctx.json({ route: ctx.route })
+})
+```
+
+## `context`
+
+`ctx.context` is the shared application context provided to `createRouter`. It can contain any values or services that you want to be accessible across all handlers and middlewares.
+
+```ts lineNumbers
+const db = createDatabaseConnection()
+
+const router = createRouter([], {
+  context: {
+    db,
+  },
+})
+
+createEndpoint("GET", "/users", (ctx) => {
+  const users = ctx.context.db.query("SELECT * FROM users")
+  return ctx.json({ users })
+})
+```

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-export const middleware = (request: NextRequest) => {
+export const proxy = (request: NextRequest) => {
     const url = request.nextUrl.pathname
     if (!url.includes("/docs")) {
         return NextResponse.redirect(new URL("/docs", request.url))

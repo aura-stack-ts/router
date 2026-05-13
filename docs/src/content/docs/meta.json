@@ -5,8 +5,9 @@
   "pages": [
     "---Getting Started---",
     "index",
+    "request-context",
     "---Configuration---",
-    "zod-schemas",
+    "schema-validation",
     "middlewares",
     "on-error",
     "---API Reference---",
