@@ -1,4 +1,4 @@
-import { RouterError } from "./error.ts"
+import { RouterError } from "@/error.ts"
 import type {
     EndpointSchemas,
     GlobalMiddlewareContext,

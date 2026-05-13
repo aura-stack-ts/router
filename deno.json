@@ -1,6 +1,6 @@
 {
   "name": "@aura-stack/router",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "tasks": {
     "dev": "deno run --watch src/index.ts"
   },
@@ -16,10 +16,14 @@
   },
   "imports": {
     "@/": "./src/",
-    "cookie": "npm:cookie@^1.1.1"
+    "cookie": "npm:cookie@^1.1.1",
+    "zod": "npm:zod@^4.1.11",
+    "arktype": "npm:arktype@^2.0.0",
+    "valibot": "npm:valibot@^1.4.0",
+    "typebox": "npm:typebox@^1.1.38"
   },
   "publish": {
-    "include": ["./src/**/*.ts", "./README.md", "./LICENSE", "./CHANGELOG.md"]
+    "include": ["./src/**/*.ts","./README.md", "./LICENSE", "./CHANGELOG.md"]
   },
   "exclude": ["dist", "node_modules", "docs", "coverage"]
 }
