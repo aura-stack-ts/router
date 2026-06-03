@@ -36,7 +36,7 @@ export const createEndpoint = <
     method: Method,
     route: Route,
     handler: Handler,
-    config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<Route, Schemas>
+    config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<any, any>
 ): RouteEndpoint<Method, Route, EndpointConfig<Route, Schemas>, Handler> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)

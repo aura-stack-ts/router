@@ -1,6 +1,6 @@
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import type { Type } from "arktype"
-import type { ZodObject } from "zod"
+import type { ZodObject } from "zod/v4"
 import type { BaseSchema } from "valibot"
 import type { RouteHandler, HTTPMethod, RoutePattern } from "@/@types/index.ts"
 

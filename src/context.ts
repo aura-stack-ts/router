@@ -1,7 +1,7 @@
 import { isSupportedBodyMethod } from "@/assert.ts"
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import { createValidator } from "@/validator/registry.ts"
-import type { ZodError } from "zod"
+import type { $ZodError as ZodError } from "zod/v4/core"
 import type { BaseIssue } from "valibot"
 import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
 

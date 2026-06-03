@@ -2,16 +2,17 @@ import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
 import type { Static, TObject } from "typebox"
 import type { RequestHeaders } from "@/@types/http.ts"
-import type { ZodObject, ZodTypeAny, infer as Infer } from "zod"
-import type { InferValibotSchema, RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
+import type { infer as Infer } from "zod/v4/core"
+import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
+import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
 
-export type InferSchema<T> = T extends ZodTypeAny
+export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>
-    : T extends ObjectSchema<any, undefined>
-      ? InferValibotSchema<T>
-      : T extends TObject
-        ? Static<T>
-        : T extends Type<infer U>
+    : Kind extends "valibot"
+      ? InferValibotSchema<T & ObjectSchema<any, undefined>>
+      : Kind extends "typebox"
+        ? any
+        : [T] extends [Type<infer U>]
           ? U
           : T
 
@@ -23,16 +24,14 @@ export type RemoveUndefined<T> = {
     [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 }
 
+type SchemaValues<T> = T[keyof T]
+
 type HasSchemas<C> =
-    C extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
-            ? true
-            : false
-        : false
+    C extends EndpointConfig<any, infer Schemas> ? ([SchemaValues<Schemas>] extends [SupportedSchema] ? true : false) : false
 
 type InferContent<Config extends EndpointConfig<any, any>> =
     Config extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
+        ? [SchemaValues<Schemas>] extends [SupportedSchema]
             ? RemoveUndefined<ToInferSchema<Schemas>>
             : unknown
         : unknown

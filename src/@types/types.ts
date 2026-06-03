@@ -1,10 +1,11 @@
 import type { Type } from "arktype"
 import type { Static, TObject } from "typebox"
-import type { ZodObject, z } from "zod"
+import type { $ZodObject as ZodObject, infer as $Infer } from "zod/v4/core"
 import type { ObjectSchema } from "valibot"
 import type { RouterError } from "@/error.ts"
 import type { HeadersBuilder } from "@/headers.ts"
 import type { HTTPMethod } from "@/@types/http.ts"
+import type { InferValibotSchema, SupportedSchema } from "@/@types/schemas.ts"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -44,9 +45,9 @@ export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
  */
 export interface EndpointSchemas {
-    body?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
-    searchParams?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
-    params?: ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
+    body?: SupportedSchema
+    searchParams?: SupportedSchema
+    params?: SupportedSchema
 }
 
 /**
@@ -59,24 +60,13 @@ export interface GlobalContext {}
 /**
  * Configuration for an endpoint, including optional schemas for request validation and middlewares.
  */
-export type EndpointConfig<
-    Route extends RoutePattern = RoutePattern,
-    Schemas extends EndpointSchemas = EndpointSchemas,
-> = Prettify<{
+export type EndpointConfig<Route extends RoutePattern = RoutePattern, Schemas extends EndpointSchemas = EndpointSchemas> = {
     schemas?: Schemas
     use?: MiddlewareFunction<Route, Schemas>[]
-}>
+}
 
-/**
- * Utility type to infer the output type of a Valibot ObjectSchema. This utility is used instead
- * of `InferOutput` directly to avoid performance issues caused by deeply nested conditional types.
- *
- * Note: relies on Valibot's internal `~types` field. Verify compatibility on every Valibot major/minor bump.
- */
-export type InferValibotSchema<S extends ObjectSchema<any, undefined>> = NonNullable<S["~types"]>["output"]
-
-type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
-    ? z.infer<S>
+export type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
+    ? $Infer<S>
     : [S] extends [ObjectSchema<any, undefined>]
       ? InferValibotSchema<S>
       : [S] extends [Type<infer T>]
@@ -130,6 +120,27 @@ export type RequestContext<
     json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
 }
 
+export interface EndpointMeta<Schemas extends EndpointSchemas, Route extends RoutePattern, Method extends HTTPMethod | HTTPMethod[]> {
+    route: Route
+    method: Method
+    body: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
+    searchParams: ContextSearchParams<NonNullable<Schemas>>
+    params: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
+}
+
+export type unstable__RequestContext<Meta extends EndpointMeta<any, any, any>> = {
+    route: Meta["route"]
+    method: Meta["method"]
+    body: Meta["body"]
+    params: Meta["params"]
+    searchParams: Meta["searchParams"]
+    headers: HeadersBuilder
+    request: Request
+    url: URL
+    context: GlobalContext
+    json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
+}
+
 export interface GlobalMiddlewareContext {
     request: Request
     context: GlobalContext
@@ -147,11 +158,8 @@ export type GlobalMiddleware = (
  * defined in the `createEndpoint/createEndpointConfig` function or globally in the `createRouter` function.
  */
 export type MiddlewareFunction<Route extends RoutePattern = RoutePattern, Schemas extends EndpointSchemas = {}> = (
-    ctx: Prettify<RequestContext<Route, { schemas: Schemas }>>
-) =>
-    | Response
-    | RequestContext<Route, { schemas: Schemas }>
-    | Promise<Response | Prettify<RequestContext<Route, { schemas: Schemas }>>>
+    ctx: RequestContext<Route, { schemas: Schemas }>
+) => Response | RequestContext<Route, { schemas: Schemas }> | Promise<Response | RequestContext<Route, { schemas: Schemas }>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.
@@ -163,7 +171,7 @@ export type RouteHandler<
     Config extends EndpointConfig<Route, any>,
     Return extends RouteHandlerReturn = RouteHandlerReturn,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
-> = (ctx: Prettify<RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>>) => Return | Promise<Return>
+> = (ctx: RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>) => Return | Promise<Return>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,
@@ -188,8 +196,6 @@ export interface RouteEndpoint<
 
 /**
  * Infer the HTTP methods defined in the provided array of route endpoints.
- * @unstable
- * @todo improve the performance of this type, currently it has exponential complexity due to the recursive conditional types and inference.
  */
 export type InferMethod<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends (infer Endpoint)[]
     ? Endpoint extends RouteEndpoint<infer Method, infer _, infer __>
