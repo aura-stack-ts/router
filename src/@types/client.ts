@@ -1,17 +1,24 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
-import type { Static, TObject } from "typebox"
+import type { Static, TSchema } from "typebox"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
 import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
-import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
+import type {
+    RoutePattern,
+    EndpointConfig,
+    Prettify,
+    RouteEndpoint,
+    unstable__RouteEndpoint,
+    unstable__EndpointConfig,
+} from "@/@types/types.ts"
 
 export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>
     : Kind extends "valibot"
       ? InferValibotSchema<T & ObjectSchema<any, undefined>>
       : Kind extends "typebox"
-        ? any
+        ? Static<T & TSchema>
         : [T] extends [Type<infer U>]
           ? U
           : T
@@ -30,7 +37,7 @@ type HasSchemas<C> =
     C extends EndpointConfig<any, infer Schemas> ? ([SchemaValues<Schemas>] extends [SupportedSchema] ? true : false) : false
 
 type InferContent<Config extends EndpointConfig<any, any>> =
-    Config extends EndpointConfig<any, infer Schemas>
+    Config extends unstable__EndpointConfig<any, any, infer Schemas>
         ? [SchemaValues<Schemas>] extends [SupportedSchema]
             ? RemoveUndefined<ToInferSchema<Schemas>>
             : unknown
@@ -47,7 +54,7 @@ type InferContent<Config extends EndpointConfig<any, any>> =
  */
 export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
     ? Endpoints extends [infer First, ...infer Rest]
-        ? First extends RouteEndpoint<infer Method, infer Route, infer Config, infer Handler>
+        ? First extends unstable__RouteEndpoint<infer Route, infer Method, infer Config, infer Handler>
             ? Prettify<
                   {
                       [K in Lowercase<Method & string>]: HasSchemas<Config> extends false

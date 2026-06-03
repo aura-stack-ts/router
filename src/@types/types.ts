@@ -65,6 +65,18 @@ export type EndpointConfig<Route extends RoutePattern = RoutePattern, Schemas ex
     use?: MiddlewareFunction<Route, Schemas>[]
 }
 
+/**
+ * @unstable
+ */
+export type unstable__EndpointConfig<
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Schemas extends EndpointSchemas,
+> = {
+    schemas?: Schemas
+    use?: unstable__MiddlewareFunction<Route, Method, Schemas>[]
+}
+
 export type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
     ? $Infer<S>
     : [S] extends [ObjectSchema<any, undefined>]
@@ -120,18 +132,25 @@ export type RequestContext<
     json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
 }
 
-export interface EndpointMeta<Schemas extends EndpointSchemas, Route extends RoutePattern, Method extends HTTPMethod | HTTPMethod[]> {
+export interface EndpointMeta<
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Schemas extends EndpointSchemas,
+> {
     route: Route
     method: Method
-    body: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
+    body: ContextBody<NonNullable<Schemas>>
     searchParams: ContextSearchParams<NonNullable<Schemas>>
     params: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
 }
 
+/**
+ *
+ */
 export type unstable__RequestContext<Meta extends EndpointMeta<any, any, any>> = {
     route: Meta["route"]
     method: Meta["method"]
-    body: Meta["body"]
+    body: NonNullable<Meta["body"]>
     params: Meta["params"]
     searchParams: Meta["searchParams"]
     headers: HeadersBuilder
@@ -162,6 +181,20 @@ export type MiddlewareFunction<Route extends RoutePattern = RoutePattern, Schema
 ) => Response | RequestContext<Route, { schemas: Schemas }> | Promise<Response | RequestContext<Route, { schemas: Schemas }>>
 
 /**
+ * @unstable
+ */
+export type unstable__MiddlewareFunction<
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Schemas extends EndpointSchemas,
+> = (
+    ctx: unstable__RequestContext<EndpointMeta<Route, Method, Schemas>>
+) =>
+    | Response
+    | unstable__RequestContext<EndpointMeta<Route, Method, Schemas>>
+    | Promise<Response | unstable__RequestContext<EndpointMeta<Route, Method, Schemas>>>
+
+/**
  * Defines a route handler function that processes an incoming request and returns a response.
  * The handler receives the request object and a context containing route parameters, headers,
  * and optionally validated body and search parameters based on the endpoint configuration.
@@ -172,6 +205,16 @@ export type RouteHandler<
     Return extends RouteHandlerReturn = RouteHandlerReturn,
     Method extends HTTPMethod | HTTPMethod[] = HTTPMethod | HTTPMethod[],
 > = (ctx: RequestContext<Route, { schemas: NonNullable<Config["schemas"]> }, Method>) => Return | Promise<Return>
+
+/**
+ * @unstable
+ */
+export type unstable__RouteHandler<
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Config extends EndpointConfig<Route, any>,
+    Return extends RouteHandlerReturn = RouteHandlerReturn,
+> = (ctx: unstable__RequestContext<EndpointMeta<Route, Method, NonNullable<Config["schemas"]>>>) => Return | Promise<Return>
 
 /**
  * Represents a route endpoint definition, specifying the HTTP method, route pattern,
@@ -195,21 +238,42 @@ export interface RouteEndpoint<
 }
 
 /**
+ * @unstable
+ */
+export interface unstable__RouteEndpoint<
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Config extends EndpointConfig<Route, any>,
+    Handler extends unstable__RouteHandler<Route, Method, Config, RouteHandlerReturn> = unstable__RouteHandler<
+        Route,
+        Method,
+        Config,
+        RouteHandlerReturn
+    >,
+> {
+    method: Method
+    route: Route
+    handler: Handler
+    config: Config
+}
+
+/**
  * Infer the HTTP methods defined in the provided array of route endpoints.
  */
-export type InferMethod<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends (infer Endpoint)[]
-    ? Endpoint extends RouteEndpoint<infer Method, infer _, infer __>
-        ? Method extends HTTPMethod[]
-            ? Method[number]
-            : Method
+export type InferMethod<Endpoints extends readonly unstable__RouteEndpoint<any, any, any, any>[]> =
+    Endpoints extends (infer Endpoint)[]
+        ? Endpoint extends unstable__RouteEndpoint<infer _, infer Method, infer __>
+            ? Method extends HTTPMethod[]
+                ? Method[number]
+                : Method
+            : never
         : never
-    : never
 
 /**
  * Generates an object with HTTP methods available by the router from `createRouter` function.
  * Each method is a function that takes a request and context, returning a promise of a response.
  */
-export type GetHttpHandlers<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = {
+export type GetHttpHandlers<Endpoints extends readonly unstable__RouteEndpoint<any, any, any, any>[]> = {
     [Method in InferMethod<Endpoints>]: (req: Request) => Response | Promise<Response>
 }
 

@@ -2,12 +2,16 @@ import { RouterError } from "@/error.ts"
 import { isSupportedMethod, isValidHandler, isValidRoute } from "@/assert.ts"
 import type {
     EndpointConfig,
+    EndpointMeta,
     EndpointSchemas,
     HTTPMethod,
     RouteEndpoint,
     RouteHandler,
     RouteHandlerReturn,
     RoutePattern,
+    unstable__EndpointConfig,
+    unstable__RouteEndpoint,
+    unstable__RouteHandler,
 } from "@/@types/index.ts"
 
 /**
@@ -31,13 +35,13 @@ export const createEndpoint = <
     const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
     Schemas extends EndpointSchemas,
-    Handler extends RouteHandler<Route, EndpointConfig<Route, Schemas>, RouteHandlerReturn, Method>,
+    Handler extends unstable__RouteHandler<Route, Method, { schemas: Schemas }, RouteHandlerReturn>,
 >(
     method: Method,
     route: Route,
     handler: Handler,
-    config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<any, any>
-): RouteEndpoint<Method, Route, EndpointConfig<Route, Schemas>, Handler> => {
+    config: unstable__EndpointConfig<Route, Method, Schemas> = {} as unstable__EndpointConfig<Route, Method, Schemas>
+): unstable__RouteEndpoint<Route, Method, { schemas?: Schemas }, Handler> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
     }
@@ -84,13 +88,13 @@ export const createEndpoint = <
  * }, config);
  */
 export function createEndpointConfig<Schemas extends EndpointSchemas>(
-    config: EndpointConfig<RoutePattern, Schemas>
-): EndpointConfig<RoutePattern, Schemas>
+    config: unstable__EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
+): unstable__EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
 
 export function createEndpointConfig<Route extends RoutePattern, Schemas extends EndpointSchemas>(
     route: Route,
-    config: EndpointConfig<Route, Schemas>
-): EndpointConfig<Route, Schemas>
+    config: unstable__EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
+): unstable__EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
 
 export function createEndpointConfig(...args: unknown[]) {
     if (typeof args[0] === "string") return args[1]
