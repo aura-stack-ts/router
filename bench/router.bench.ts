@@ -5,7 +5,7 @@ import { createEndpoint } from "@/endpoint.ts"
 import type { EndpointConfig, EndpointMeta, RequestContext, RouteEndpoint, RoutePattern } from "@/@types/index.ts"
 
 describe("router benchmark", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
@@ -19,7 +19,7 @@ describe("router benchmark", () => {
 })
 
 describe("router benchmark making 100 requests", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
@@ -38,7 +38,7 @@ describe("router benchmark making 100 requests", () => {
 })
 
 describe("router benchmark making 1000 requests", () => {
-    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {

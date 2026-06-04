@@ -167,7 +167,7 @@ export type MiddlewareFunction<
 export type RouteHandler<
     Route extends RoutePattern,
     Method extends HTTPMethod | HTTPMethod[],
-    Config extends EndpointConfig<Route, any, any>,
+    Config extends EndpointConfig<Route, Method, any>,
     Return extends RouteHandlerReturn = RouteHandlerReturn,
 > = (ctx: RequestContext<EndpointMeta<Route, Method, NonNullable<Config["schemas"]>>>) => Return | Promise<Return>
 
@@ -178,7 +178,7 @@ export type RouteHandler<
 export interface RouteEndpoint<
     Route extends RoutePattern,
     Method extends HTTPMethod | HTTPMethod[],
-    Config extends EndpointConfig<Route, any, any>,
+    Config extends EndpointConfig<Route, Method, any>,
     Handler extends RouteHandler<Route, Method, Config, RouteHandlerReturn> = RouteHandler<
         Route,
         Method,
