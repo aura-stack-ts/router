@@ -31,13 +31,13 @@ export const createEndpoint = <
     const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
     Schemas extends EndpointSchemas,
-    Handler extends RouteHandler<Route, EndpointConfig<Route, Schemas>, RouteHandlerReturn, Method>,
+    Handler extends RouteHandler<Route, Method, { schemas: Schemas }, RouteHandlerReturn>,
 >(
     method: Method,
     route: Route,
     handler: Handler,
-    config: EndpointConfig<Route, Schemas> = {} as EndpointConfig<Route, Schemas>
-): RouteEndpoint<Method, Route, EndpointConfig<Route, Schemas>, Handler> => {
+    config: EndpointConfig<Route, Method, Schemas> = {} as EndpointConfig<Route, Method, Schemas>
+): RouteEndpoint<Route, Method, { schemas?: Schemas }, Handler> => {
     if (!isSupportedMethod(method)) {
         throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
     }
@@ -84,13 +84,13 @@ export const createEndpoint = <
  * }, config);
  */
 export function createEndpointConfig<Schemas extends EndpointSchemas>(
-    config: EndpointConfig<RoutePattern, Schemas>
-): EndpointConfig<RoutePattern, Schemas>
+    config: EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
+): EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
 
 export function createEndpointConfig<Route extends RoutePattern, Schemas extends EndpointSchemas>(
     route: Route,
-    config: EndpointConfig<Route, Schemas>
-): EndpointConfig<Route, Schemas>
+    config: EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
+): EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
 
 export function createEndpointConfig(...args: unknown[]) {
     if (typeof args[0] === "string") return args[1]

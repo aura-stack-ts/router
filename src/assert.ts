@@ -1,6 +1,6 @@
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import type { Type } from "arktype"
-import type { ZodObject } from "zod"
+import type { ZodObject } from "zod/v4"
 import type { BaseSchema } from "valibot"
 import type { RouteHandler, HTTPMethod, RoutePattern } from "@/@types/index.ts"
 
@@ -49,7 +49,7 @@ export const isValidRoute = (route: string): route is RoutePattern => {
  * @param handler - The handler to check.
  * @returns True if the handler is valid, false otherwise.
  */
-export const isValidHandler = (handler: unknown): handler is RouteHandler<any, any> => {
+export const isValidHandler = (handler: unknown): handler is RouteHandler<any, any, any> => {
     return typeof handler === "function"
 }
 

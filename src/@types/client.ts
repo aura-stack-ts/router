@@ -1,17 +1,18 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
-import type { Static, TObject } from "typebox"
+import type { Static, TSchema } from "typebox"
 import type { RequestHeaders } from "@/@types/http.ts"
-import type { ZodObject, ZodTypeAny, infer as Infer } from "zod"
-import type { InferValibotSchema, RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
+import type { infer as Infer } from "zod/v4/core"
+import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
+import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
 
-export type InferSchema<T> = T extends ZodTypeAny
+export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>
-    : T extends ObjectSchema<any, undefined>
-      ? InferValibotSchema<T>
-      : T extends TObject
-        ? Static<T>
-        : T extends Type<infer U>
+    : Kind extends "valibot"
+      ? InferValibotSchema<T & ObjectSchema<any, undefined>>
+      : Kind extends "typebox"
+        ? Static<T & TSchema>
+        : [T] extends [Type<infer U>]
           ? U
           : T
 
@@ -23,20 +24,25 @@ export type RemoveUndefined<T> = {
     [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 }
 
+type SchemaValues<T> = T[keyof T]
+
 type HasSchemas<C> =
-    C extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
-            ? true
-            : false
+    C extends EndpointConfig<any, any, infer Schemas>
+        ? [SchemaValues<Schemas>] extends [never]
+            ? false
+            : [SchemaValues<Schemas>] extends [SupportedSchema]
+              ? true
+              : false
         : false
 
-type InferContent<Config extends EndpointConfig<any, any>> =
-    Config extends EndpointConfig<any, infer Schemas>
-        ? Schemas[keyof Schemas] extends ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
-            ? RemoveUndefined<ToInferSchema<Schemas>>
-            : unknown
+type InferContent<Config extends EndpointConfig<any, any, any>> =
+    Config extends EndpointConfig<any, any, infer Schemas>
+        ? [SchemaValues<Schemas>] extends [never]
+            ? unknown
+            : [SchemaValues<Schemas>] extends [SupportedSchema]
+              ? RemoveUndefined<ToInferSchema<Schemas>>
+              : unknown
         : unknown
-
 /**
  * Generates a client type based on the provided route endpoints. Each endpoint's method and route are
  * used to create a corresponding function to access the endpoint.
@@ -48,7 +54,7 @@ type InferContent<Config extends EndpointConfig<any, any>> =
  */
 export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
     ? Endpoints extends [infer First, ...infer Rest]
-        ? First extends RouteEndpoint<infer Method, infer Route, infer Config, infer Handler>
+        ? First extends RouteEndpoint<infer Route, infer Method, infer Config, infer Handler>
             ? Prettify<
                   {
                       [K in Lowercase<Method & string>]: HasSchemas<Config> extends false

@@ -1,7 +1,7 @@
 import { isSupportedBodyMethod } from "@/assert.ts"
 import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import { createValidator } from "@/validator/registry.ts"
-import type { ZodError } from "zod"
+import type { $ZodError as ZodError } from "zod/v4/core"
 import type { BaseIssue } from "valibot"
 import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
 
@@ -51,7 +51,7 @@ export const formatValibotError = (issues: BaseIssue<unknown>[]) => {
  * // Expected: { userId: "123", postId: "456" }
  * const params = getRouteParams(route, path);
  */
-export const getRouteParams = (params: Record<string, string>, config: EndpointConfig) => {
+export const getRouteParams = (params: Record<string, string>, config: EndpointConfig<any, any, any>) => {
     if (config.schemas?.params) {
         const validator = createValidator(config.schemas.params)
         const parsed = validator.validate(params)
@@ -97,7 +97,7 @@ export const getRouteParams = (params: Record<string, string>, config: EndpointC
  * // Expected: URLSearchParams { 'query' => 'example' }
  * const searchParams2 = getSearchParams(url2, {} as EndpointConfig);
  */
-export const getSearchParams = <Config extends EndpointConfig>(
+export const getSearchParams = <Config extends EndpointConfig<any, any, any>>(
     url: string,
     config: Config
 ): ContextSearchParams<NonNullable<Config["schemas"]>> => {
@@ -128,7 +128,7 @@ export const getSearchParams = <Config extends EndpointConfig>(
  * @param config - Configuration object that may include a schema for validation.
  * @returns The parsed body of the request or an error if validation fails.
  */
-export const getBody = async <Config extends EndpointConfig>(request: Request, config: Config) => {
+export const getBody = async <Config extends EndpointConfig<any, any, any>>(request: Request, config: Config) => {
     if (!isSupportedBodyMethod(request.method)) {
         return null
     }

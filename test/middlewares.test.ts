@@ -2,7 +2,7 @@ import z from "zod"
 import { describe, expect, test } from "vitest"
 import { HeadersBuilder } from "@/headers.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
-import type { GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "@/@types/index.ts"
+import type { EndpointMeta, GlobalMiddlewareContext, MiddlewareFunction, RequestContext } from "@/@types/index.ts"
 
 describe("executeGlobalMiddlewares", () => {
     test("No middlewares", async () => {
@@ -82,7 +82,7 @@ describe("executeGlobalMiddlewares", () => {
 
 describe("executeMiddlewares", () => {
     test.concurrent("Middleware with searchParams and headers context", async ({ expect }) => {
-        const middlewares: MiddlewareFunction[] = [
+        const middlewares: MiddlewareFunction<any, any, any>[] = [
             (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.headers.setHeader("Content-Type", "application/json")
@@ -94,7 +94,7 @@ describe("executeMiddlewares", () => {
                 searchParams: new URL("https://example.com").searchParams,
                 headers: new HeadersBuilder(),
                 request: new Request("https://example.com"),
-            } as RequestContext,
+            } as RequestContext<EndpointMeta<any, any, any>>,
             middlewares
         )
         expect(ctx.searchParams.get("code")).toBe("123abc")
@@ -102,7 +102,7 @@ describe("executeMiddlewares", () => {
     })
 
     test.concurrent("Two middlewares with searchParams and headers context", async ({ expect }) => {
-        const middlewares: MiddlewareFunction[] = [
+        const middlewares: MiddlewareFunction<any, any, any>[] = [
             (ctx) => {
                 ctx.searchParams.set("code", "123abc")
                 ctx.searchParams.set("state", "xyz")
@@ -119,7 +119,7 @@ describe("executeMiddlewares", () => {
                 searchParams: new URL("https://example.com").searchParams,
                 headers: new HeadersBuilder(),
                 request: new Request("https://example.com"),
-            } as RequestContext,
+            } as RequestContext<EndpointMeta<any, any, any>>,
             middlewares
         )
         expect(ctx.searchParams.get("code")).toBe("123abc")
@@ -128,25 +128,28 @@ describe("executeMiddlewares", () => {
     })
 
     test.concurrent("Invalid middleware", async ({ expect }) => {
-        const middlewares: MiddlewareFunction[] = [undefined as any]
+        const middlewares: MiddlewareFunction<any, any, any>[] = [undefined as any]
         await expect(
             executeMiddlewares(
                 {
                     searchParams: new URL("https://example.com").searchParams,
                     headers: new HeadersBuilder(),
                     request: new Request("https://example.com"),
-                } as RequestContext,
+                } as RequestContext<EndpointMeta<any, any, any>>,
                 middlewares
             )
         ).rejects.toThrowError(/Handler threw an error/)
     })
 
     test.concurrent("No middleware", async ({ expect }) => {
-        const ctx = await executeMiddlewares({
-            searchParams: new URL("https://example.com").searchParams,
-            headers: new HeadersBuilder(),
-            request: new Request("https://example.com"),
-        } as RequestContext)
+        const ctx = await executeMiddlewares(
+            {
+                searchParams: new URL("https://example.com").searchParams,
+                headers: new HeadersBuilder(),
+                request: new Request("https://example.com"),
+            } as RequestContext<EndpointMeta<any, any, any>>,
+            undefined
+        )
         expect(ctx.searchParams.get("code")).toBe(null)
         expect(ctx.searchParams.get("state")).toBe(null)
         expect(ctx.headers.getHeader("Content-Type")).toBe(null)
@@ -157,7 +160,8 @@ describe("executeMiddlewares", () => {
             code: z.string().optional(),
             state: z.string().optional(),
         })
-        const middlewares: MiddlewareFunction<"/", { searchParams: typeof searchParamsShema }>[] = [
+
+        const middlewares: MiddlewareFunction<"/", "GET", { searchParams: typeof searchParamsShema }>[] = [
             (ctx) => {
                 ctx.searchParams.code = "123abc"
                 ctx.searchParams.state = "xyz"
@@ -165,19 +169,19 @@ describe("executeMiddlewares", () => {
             },
         ]
 
-        const ctx = (await executeMiddlewares(
+        const ctx = await executeMiddlewares(
             {
                 headers: new HeadersBuilder(),
                 searchParams: {
                     code: "123abc",
                     state: "xyz",
-                },
+                } as any,
                 params: {},
                 body: undefined,
                 request: new Request("https://example.com"),
-            } as RequestContext<"/", { schemas: { searchParams: typeof searchParamsShema } }>,
+            } as unknown as RequestContext<EndpointMeta<"/", "GET", { searchParams: typeof searchParamsShema }>>,
             middlewares
-        )) as RequestContext<"/", { schemas: { searchParams: typeof searchParamsShema } }>
+        )
 
         expect(ctx.searchParams.code).toBe("123abc")
         expect(ctx.searchParams.state).toBe("xyz")

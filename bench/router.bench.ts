@@ -2,16 +2,16 @@ import z from "zod"
 import { describe, bench } from "vitest"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
-import type { EndpointConfig, RequestContext, RouteEndpoint, RoutePattern } from "@/@types/index.ts"
+import type { EndpointConfig, EndpointMeta, RequestContext, RouteEndpoint, RoutePattern } from "@/@types/index.ts"
 
 describe("router benchmark", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, "GET", Record<string, unknown>>,
     }))
     bench("build: createRouter (100 endpoints)", () => {
         createRouter(endpoints)
@@ -19,13 +19,13 @@ describe("router benchmark", () => {
 })
 
 describe("router benchmark making 100 requests", () => {
-    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 100 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, "GET", Record<string, unknown>>,
     }))
     bench("match: createRouter (100 endpoints) - small representative lookup set", async () => {
         const { GET } = createRouter(endpoints)
@@ -38,13 +38,13 @@ describe("router benchmark making 100 requests", () => {
 })
 
 describe("router benchmark making 1000 requests", () => {
-    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint<any, any, any, any>>((idx) => ({
+    const endpoints = Array.from({ length: 1000 }).map<RouteEndpoint<any, any, any, any>>((_, idx) => ({
         method: "GET",
         route: `/endpoint-${idx}` as RoutePattern,
         handler: () => {
             return Response.json({ message: `Endpoint ${idx}` })
         },
-        config: {} as EndpointConfig<`/endpoint-${number}`, Record<string, unknown>>,
+        config: {} as EndpointConfig<`/endpoint-${number}`, "GET", Record<string, unknown>>,
     }))
 
     bench("match: createRouter (1000 endpoints) - small representative lookup set", async () => {
@@ -62,18 +62,18 @@ describe("router with dynamic routes without parsing benchmark", () => {
         {
             method: "GET",
             route: "/users/:userId" as RoutePattern,
-            handler: (ctx: RequestContext) => {
+            handler: (ctx: RequestContext<EndpointMeta<any, any, any>>) => {
                 return Response.json({ message: `User endpoint`, params: ctx.params })
             },
-            config: {},
+            config: {} as EndpointConfig<"/users/:userId", "GET", Record<string, unknown>>,
         },
         {
             method: "GET",
             route: "/posts/:postId/comments/:commentId" as RoutePattern,
-            handler: (ctx: RequestContext) => {
+            handler: (ctx: RequestContext<EndpointMeta<any, any, any>>) => {
                 return Response.json({ message: `Post comment endpoint`, params: ctx.params })
             },
-            config: {},
+            config: {} as EndpointConfig<"/posts/:postId/comments/:commentId", "GET", Record<string, unknown>>,
         },
     ]
 
