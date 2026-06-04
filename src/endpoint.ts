@@ -31,7 +31,7 @@ export const createEndpoint = <
     const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
     const Route extends RoutePattern,
     Schemas extends EndpointSchemas,
-    Handler extends RouteHandler<Route, Method, { schemas: Schemas }, RouteHandlerReturn>,
+    Handler extends RouteHandler<Route, Method, { schemas?: Schemas }, RouteHandlerReturn>,
 >(
     method: Method,
     route: Route,

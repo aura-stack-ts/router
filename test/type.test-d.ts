@@ -333,7 +333,7 @@ describe("ContextSearchParams", () => {
                     code: TString
                 }>
             }>
-        >().toEqualTypeOf<{ code: string }>()
+        >().toEqualTypeOf<TObject<{ code: TString }>>()
 
         expectTypeOf<
             ContextSearchParams<{
@@ -342,7 +342,7 @@ describe("ContextSearchParams", () => {
                     state: TString
                 }>
             }>
-        >().toEqualTypeOf<{ code: string; state: string }>()
+        >().toEqualTypeOf<TObject<{ code: TString; state: TString }>>()
     })
 })
 
@@ -403,7 +403,7 @@ describe("ContextBody", () => {
                     password: TString
                 }>
             }>
-        >().toEqualTypeOf<{ username: string; password: string }>()
+        >().toEqualTypeOf<TObject<{ username: TString; password: TString }>>()
 
         expectTypeOf<
             ContextBody<{
@@ -411,7 +411,7 @@ describe("ContextBody", () => {
                     oauth: TString
                 }>
             }>
-        >().toEqualTypeOf<{ oauth: string }>()
+        >().toEqualTypeOf<TObject<{ oauth: TString }>>()
     })
 })
 
@@ -461,7 +461,7 @@ describe("ContextParams", () => {
                 },
                 GetRouteParams<RoutePath>
             >
-        >().toEqualTypeOf<{ oauth: string }>()
+        >().toEqualTypeOf<TObject<{ oauth: TString }>>()
 
         expectTypeOf<
             ContextParams<{
@@ -486,7 +486,7 @@ describe("ContextParams", () => {
                     role: TEnum<["admin", "user", "guest"]>
                 }>
             }>
-        >().toEqualTypeOf<{ role: "admin" | "user" | "guest" }>()
+        >().toEqualTypeOf<TObject<{ role: TEnum<["admin", "user", "guest"]> }>>()
 
         expectTypeOf<
             ContextParams<
@@ -523,7 +523,7 @@ describe("ContextParams", () => {
                 },
                 GetRouteParams<RoutePath>
             >
-        >().toEqualTypeOf<{ userId: string; itemId: string }>()
+        >().toEqualTypeOf<TObject<{ userId: TString; itemId: TString }>>()
 
         expectTypeOf<
             ContextParams<{
@@ -551,7 +551,7 @@ describe("ContextParams", () => {
                     itemId: TString
                 }>
             }>
-        >().toEqualTypeOf<{ userId: string; itemId: string }>()
+        >().toEqualTypeOf<TObject<{ userId: TString; itemId: TString }>>()
     })
 })
 
