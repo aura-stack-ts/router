@@ -1,7 +1,9 @@
 import { RouterError } from "@/error.ts"
 import type {
+    EndpointMeta,
     EndpointSchemas,
     GlobalMiddlewareContext,
+    HTTPMethod,
     MiddlewareFunction,
     RequestContext,
     RoutePattern,
@@ -41,9 +43,13 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
  * @param middlewares - Array of middleware functions to be executed
  * @returns The modified context after all middlewares have been executed
  */
-export const executeMiddlewares = async <Route extends RoutePattern, Config extends EndpointSchemas = EndpointSchemas>(
-    context: RequestContext<Route, { schemas: Config }>,
-    use: MiddlewareFunction<Route, Config>[] = []
+export const executeMiddlewares = async <
+    Route extends RoutePattern,
+    Method extends HTTPMethod | HTTPMethod[],
+    Config extends EndpointSchemas = EndpointSchemas,
+>(
+    context: RequestContext<EndpointMeta<Route, Method, Config>>,
+    use: MiddlewareFunction<Route, Method, Config>[] = []
 ) => {
     try {
         let ctx = context
@@ -52,7 +58,7 @@ export const executeMiddlewares = async <Route extends RoutePattern, Config exte
                 throw new RouterError("BAD_REQUEST", "Middleware must be a function")
             }
             try {
-                ctx = (await middleware(ctx)) as RequestContext<Route, { schemas: Config }>
+                ctx = (await middleware(ctx)) as RequestContext<EndpointMeta<Route, Method, Config>>
             } catch (error) {
                 if (error instanceof RouterError) throw error
                 throw new RouterError("BAD_REQUEST", "Handler threw an error", "MiddlewareError")

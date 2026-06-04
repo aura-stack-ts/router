@@ -20,6 +20,7 @@ beforeEach(() => {
 
 describe("Client", () => {
     const router = createRouter([
+        // @ts-ignore
         createEndpoint("GET", "/users", (ctx) => {
             return ctx.json({ users: [] })
         }),
