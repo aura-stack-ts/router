@@ -1,5 +1,5 @@
 import type { Type } from "arktype"
-import type { Static, TObject } from "typebox"
+import type { TObject } from "typebox"
 import type { $ZodObject as ZodObject, infer as $Infer } from "zod/v4/core"
 import type { ObjectSchema } from "valibot"
 import type { RouterError } from "@/error.ts"
@@ -76,7 +76,7 @@ export type UnwrapSchema<S, Fallback> = [S] extends [ZodObject<any>]
       : [S] extends [Type<infer T>]
         ? T
         : [S] extends [TObject]
-          ? Static<S>
+          ? S
           : Fallback
 
 /**

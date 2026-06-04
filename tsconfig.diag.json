@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json", // Inherit your base paths and options
-  "compilerOptions": {
-    "noEmit": true,
-    "skipLibCheck": true // CRITICAL: Tells TS not to type-check node_modules/*.d.ts files
-  },
-  "include": ["src/**/*"] // Strictly limit the entry points to your source code
-}

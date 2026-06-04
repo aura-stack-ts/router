@@ -623,8 +623,9 @@ describe("createEndpoint", () => {
                     "GET",
                     "/signIn/:oauth",
                     (ctx) => {
-                        const oauth = ctx.params.oauth
-                        return Response.json({ oauth })
+                        type Params = typebox.Static<typeof ctx.params>
+                        const params = ctx.params as unknown as Params
+                        return Response.json({ oauth: params.oauth })
                     },
                     config
                 )
@@ -633,7 +634,9 @@ describe("createEndpoint", () => {
                     "GET",
                     "/type/:typeId",
                     (ctx) => {
-                        return Response.json({ typeId: ctx.params.typeId })
+                        type Params = typebox.Static<typeof ctx.params>
+                        const params = ctx.params as unknown as Params
+                        return Response.json({ typeId: params.typeId })
                     },
                     inferConfig
                 )
