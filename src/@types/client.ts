@@ -10,7 +10,7 @@ export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     : Kind extends "valibot"
       ? InferValibotSchema<T & ObjectSchema<any, undefined>>
       : Kind extends "typebox"
-        ? T
+        ? {}
         : [T] extends [Type<infer U>]
           ? U
           : T
