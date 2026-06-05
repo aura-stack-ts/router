@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.7.2] - 2026-06-05
+
 ### Changed
 
 - Removed TypeBox compile-time type inference for `searchParams`, `params`, and `body` in client functions produced by `createClient`. Runtime validation with TypeBox remains supported, but `Static`-based inference is no longer used for client call signatures. [#54](https://github.com/aura-stack-ts/router/pull/54)
