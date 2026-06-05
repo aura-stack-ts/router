@@ -528,22 +528,29 @@ test("Client type inference with TypeBox schemas", async () => {
         }
     )
 
-    const router = createRouter([getItem, createItem, deleteItem])
+    const getItems = createEndpoint("GET", "/items", (ctx) => {
+        return ctx.json({ method: ctx.method })
+    })
+
+    const router = createRouter([getItem, createItem, deleteItem, getItems])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
     })
 
+    // @ts-expect-error invalid typebox support.
     client.get("/items/:itemId", {
         params: {
             itemId: "123",
         },
     })
 
+    // @ts-expect-error invalid typebox support.
     client.get("/items/:itemId", {
         params: { itemId: "123" },
     })
 
+    // @ts-expect-error invalid typebox support.
     const item = await client.get("/items/:itemId", {
         params: { itemId: "123" },
     })
@@ -556,7 +563,9 @@ test("Client type inference with TypeBox schemas", async () => {
     expectTypeOf<typeof newItem>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
 
     const deletedItem = await client.delete("/items/:itemId", {
+        // @ts-expect-error invalid typebox support.
         params: { itemId: "123" },
+        // @ts-expect-error invalid typebox support.
         searchParams: { force: "true" },
     })
     expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()

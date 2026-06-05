@@ -1,6 +1,5 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
-import type { Static, TSchema } from "typebox"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
 import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
@@ -11,7 +10,7 @@ export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     : Kind extends "valibot"
       ? InferValibotSchema<T & ObjectSchema<any, undefined>>
       : Kind extends "typebox"
-        ? Static<T & TSchema>
+        ? T
         : [T] extends [Type<infer U>]
           ? U
           : T
@@ -43,6 +42,7 @@ type InferContent<Config extends EndpointConfig<any, any, any>> =
               ? RemoveUndefined<ToInferSchema<Schemas>>
               : unknown
         : unknown
+
 /**
  * Generates a client type based on the provided route endpoints. Each endpoint's method and route are
  * used to create a corresponding function to access the endpoint.
