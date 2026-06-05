@@ -528,7 +528,11 @@ test("Client type inference with TypeBox schemas", async () => {
         }
     )
 
-    const router = createRouter([getItem, createItem, deleteItem])
+    const getItems = createEndpoint("GET", "/items", (ctx) => {
+        return ctx.json({ method: ctx.method })
+    })
+
+    const router = createRouter([getItem, createItem, deleteItem, getItems])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
