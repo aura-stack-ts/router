@@ -46,7 +46,10 @@ export const runOnRequest = async (
  *
  * @returns The (possibly modified) `MatchHookContext`, or a `Response` to short-circuit.
  */
-export const runOnMatch = async (hook: OnMatchHook | undefined, ctx: MatchHookContext): Promise<MatchHookContext | Response> => {
+export const runOnMatch = async (
+    hook: OnMatchHook<any> | undefined,
+    ctx: MatchHookContext<any>
+): Promise<MatchHookContext<any> | Response> => {
     return runHook(hook, [ctx], ctx)
 }
 
@@ -58,9 +61,9 @@ export const runOnMatch = async (hook: OnMatchHook | undefined, ctx: MatchHookCo
  *          If the hook returns `void`, the raw params are used as-is.
  */
 export const runOnParams = async (
-    hook: OnParamsHook | undefined,
+    hook: OnParamsHook<any, any> | undefined,
     params: Record<string, string>,
-    ctx: MatchHookContext
+    ctx: MatchHookContext<any>
 ): Promise<Record<string, unknown> | Response> => {
     return runHook(hook, [{ ...ctx, params }], params)
 }
@@ -74,9 +77,9 @@ export const runOnParams = async (
  *          If the hook returns `void`, the raw URLSearchParams are used as-is.
  */
 export const runOnSearchParams = async (
-    hook: OnSearchParamsHook | undefined,
+    hook: OnSearchParamsHook<any> | undefined,
     searchParams: URLSearchParams,
-    ctx: MatchHookContext
+    ctx: MatchHookContext<any>
 ): Promise<Record<string, unknown> | URLSearchParams | Response> => {
     return runHook(hook, [{ ...ctx, searchParams }], searchParams)
 }
@@ -89,9 +92,9 @@ export const runOnSearchParams = async (
  *          If the hook returns `void`, the raw parsed body is used as-is.
  */
 export const runOnBody = async (
-    hook: OnBodyHook | undefined,
+    hook: OnBodyHook<any> | undefined,
     body: unknown,
-    ctx: MatchHookContext
+    ctx: MatchHookContext<any>
 ): Promise<unknown | Response> => {
     return runHook(hook, [{ ...ctx, body }], body)
 }
@@ -131,9 +134,9 @@ export const runOnResponse = async <Meta extends EndpointMeta<any, any, any>>(
  * @returns A `Response` if the hook handled the error, or `null` if no hook was defined.
  */
 export const runOnError = async (
-    hook: OnErrorHook | undefined,
+    hook: OnErrorHook<any> | undefined,
     error: Error | RouterError,
-    ctx: RequestHookContext | MatchHookContext | RequestContext<EndpointMeta<any, any, any>>
+    ctx: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>>
 ): Promise<Response | null> => {
     if (!hook) return null
     return hook({ ...ctx, error })

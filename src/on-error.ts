@@ -1,5 +1,6 @@
 import { isInvalidZodSchemaError, isRouterError } from "./assert.ts"
 import { runOnError } from "@/hooks.ts"
+import { json } from "@/context.ts"
 import type {
     RouterConfig,
     RequestHookContext,
@@ -21,10 +22,10 @@ export const onError = async (
     error: unknown,
     request: Request,
     config: RouterConfig,
-    endpointOnError?: OnErrorHook,
-    ctx?: RequestHookContext | MatchHookContext | RequestContext<EndpointMeta<any, any, any>>
+    endpointOnError?: OnErrorHook<any>,
+    ctx?: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>>
 ): Promise<Response> => {
-    const errorCtx = ctx ?? ({ request, context: config.context ?? {} } satisfies RequestHookContext)
+    const errorCtx = ctx ?? ({ request, context: config.context ?? {}, json } satisfies RequestHookContext)
     const normalizedError = error instanceof Error ? error : new Error(String(error))
 
     if (endpointOnError) {

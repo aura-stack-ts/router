@@ -28,7 +28,7 @@ describe("Hook composition", () => {
                         order.push("onParams")
                         return ctx.params
                     },
-                    onSearchParams: (ctx) => {
+                    onSearchParams: () => {
                         order.push("onSearchParams")
                         return {}
                     },
@@ -40,8 +40,6 @@ describe("Hook composition", () => {
                         order.push("onHandler")
                         return ctx
                     },
-                    // onResponse fires after the response body is serialized;
-                    // capture via side-effect rather than from the response body
                     onResponse: (ctx) => {
                         order.push("onResponse")
                         return ctx.response
