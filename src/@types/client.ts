@@ -3,7 +3,7 @@ import type { ObjectSchema } from "valibot"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
 import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
-import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint } from "@/@types/types.ts"
+import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint, Awaitable } from "@/@types/types.ts"
 
 export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>
@@ -58,11 +58,8 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
             ? Prettify<
                   {
                       [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
-                          ? (path: Route, ctx?: RequestInit) => ReturnType<Handler> | Promise<ReturnType<Handler>>
-                          : (
-                                path: Route,
-                                ctx: Omit<RequestInit, "body"> & InferContent<Config>
-                            ) => ReturnType<Handler> | Promise<ReturnType<Handler>>
+                          ? (path: Route, ctx?: RequestInit) => Awaitable<ReturnType<Handler>>
+                          : (path: Route, ctx: Omit<RequestInit, "body"> & InferContent<Config>) => Awaitable<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
               >
             : {}
@@ -87,7 +84,7 @@ export interface ClientOptions extends Pick<RequestInit, "cache" | "credentials"
     /**
      * Default headers to include in every request made by the client.
      */
-    headers?: RequestHeaders | (() => RequestHeaders | Promise<RequestHeaders>)
+    headers?: RequestHeaders | (() => Awaitable<RequestHeaders>)
     /**
      * @experimental
      * Custom fetch function to be used by the client instead of the global fetch.

@@ -117,6 +117,42 @@ export const getSearchParams = <Config extends EndpointConfig<any, any, any>>(
 }
 
 /**
+ * Parses the body of a Request object based on its Content-Type header,
+ * WITHOUT applying any schema validation. This is the raw parsed value
+ * passed to the `onBody` hook.
+ *
+ * @param request - The Request object from which to extract the body.
+ * @returns The raw parsed body based on the content type, or null.
+ */
+export const parseBodyRaw = async (request: Request): Promise<unknown> => {
+    if (!isSupportedBodyMethod(request.method)) {
+        return null
+    }
+    const clone = request.clone()
+    const contentType = clone.headers.get("Content-Type") ?? ("" as ContentType)
+    try {
+        if (contentType.includes("application/json")) {
+            return await clone.json()
+        }
+        if (createContentTypeRegex(["application/x-www-form-urlencoded", "multipart/form-data"], contentType)) {
+            return await clone.formData()
+        }
+        if (createContentTypeRegex(["text/", "application/xml"], contentType)) {
+            return await clone.text()
+        }
+        if (createContentTypeRegex(["application/octet-stream"], contentType)) {
+            return await clone.arrayBuffer()
+        }
+        if (createContentTypeRegex(["image/", "video/", "audio/", "application/pdf"], contentType)) {
+            return await clone.blob()
+        }
+        return null
+    } catch {
+        throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid request body, the content-type does not match the body format")
+    }
+}
+
+/**
  * Extracts and parses the body of a Request object based on its Content-Type header.
  *
  * If a schema is provided in the endpoint configuration, the body is validated against
