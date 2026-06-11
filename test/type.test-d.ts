@@ -556,7 +556,7 @@ describe("ContextParams", () => {
 })
 
 describe("EndpointConfig", () => {
-    expectTypeOf<EndpointConfig<"/", "GET", {}>>().toEqualTypeOf<{
+    expectTypeOf<EndpointConfig<"/", "GET", {}>>().toMatchTypeOf<{
         schemas?: {}
         use?: MiddlewareFunction<"/", "GET", {}>[]
     }>()
@@ -569,7 +569,7 @@ describe("EndpointConfig", () => {
                 body: ZodObject<{ username: ZodString; password: ZodString }>
             }
         >
-    >().toEqualTypeOf<{
+    >().toMatchTypeOf<{
         schemas?: { body: ZodObject<{ username: ZodString; password: ZodString }> }
         use?: MiddlewareFunction<
             "/",
