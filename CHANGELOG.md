@@ -11,7 +11,7 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
-- Added a hooks system for managing the request lifecycle, enabling custom logic to run at different stages of request processing. Supported hooks include `onRequest`, `onMatch`, `onBody`, `onParams`, `onSearchParams`, `onHandler`, `onResponse`, and `onError`. [#56](https://github.com/aura-stack-ts/router/pull/56)
+- Added a hooks system for managing the request lifecycle, enabling custom logic to run at different stages of request processing. Supported hooks include `onRequest`, `onMatch`, `onParams`, `onSearchParams`, `onBody`, `onHandler`, `onResponse`, and `onError`. [`#56`](https://github.com/aura-stack-ts/router/pull/56)
 
 ---
 

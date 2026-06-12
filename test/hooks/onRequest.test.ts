@@ -52,7 +52,14 @@ describe("onRequest hook", () => {
     describe("Global-level (RouterConfig.hooks)", () => {
         test("applies to all endpoints in the router", async ({ expect }) => {
             const first = createEndpoint("GET", "/first", (ctx) => ctx.json({ route: "first" }))
-            const second = createEndpoint("POST", "/second", (ctx) => ctx.json({ route: "second" }))
+            const second = createEndpoint("POST", "/second", (ctx) =>
+                ctx.json(
+                    { route: "second", headers: ctx.headers.getHeader("x-global")! },
+                    {
+                        headers: ctx.headers.toHeaders(),
+                    }
+                )
+            )
             const router = createRouter([first, second], {
                 hooks: {
                     onRequest: (ctx) => {
@@ -63,7 +70,11 @@ describe("onRequest hook", () => {
             })
             const responseA = await router.GET(GETRequest("/first"))
             const responseB = await router.POST(new Request("https://example.com/second", { method: "POST" }))
+            expect(await responseA.json()).toEqual({ route: "first" })
+            expect(await responseB.json()).toEqual({ route: "second", headers: "yes" })
+            expect(responseA.headers.get("x-global")).toBeNull()
             expect(responseA.ok).toBe(true)
+            expect(responseB.headers.get("x-global")).toBe("yes")
             expect(responseB.ok).toBe(true)
         })
 

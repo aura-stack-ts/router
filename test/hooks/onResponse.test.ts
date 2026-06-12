@@ -14,8 +14,8 @@ describe("onResponse hook", () => {
                     },
                 },
             })
-            const res = await createRouter([endpoint]).GET(GETRequest("/data"))
-            expect(await res.json()).toEqual({ value: 1, extra: "added" })
+            const response = await createRouter([endpoint]).GET(GETRequest("/data"))
+            expect(await response.json()).toEqual({ value: 1, extra: "added" })
         })
 
         test("can add response headers using ctx", async ({ expect }) => {
@@ -28,8 +28,8 @@ describe("onResponse hook", () => {
                     },
                 },
             })
-            const res = await createRouter([endpoint]).GET(GETRequest("/data"))
-            expect(res.headers.get("x-hook")).toBe("response-hook")
+            const response = await createRouter([endpoint]).GET(GETRequest("/data"))
+            expect(response.headers.get("x-hook")).toBe("response-hook")
         })
 
         test("always must return a Response (no void support)", async ({ expect }) => {
@@ -38,8 +38,9 @@ describe("onResponse hook", () => {
                     onResponse: (ctx) => ctx.response,
                 },
             })
-            const res = await createRouter([endpoint]).GET(GETRequest("/data"))
-            expect(res.status).toBe(200)
+            const response = await createRouter([endpoint]).GET(GETRequest("/data"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({ ok: true })
         })
     })
 
@@ -56,10 +57,10 @@ describe("onResponse hook", () => {
                     },
                 },
             })
-            const resA = await router.GET(GETRequest("/a"))
-            const resB = await router.GET(GETRequest("/b"))
-            expect(resA.headers.get("x-global-response")).toBe("true")
-            expect(resB.headers.get("x-global-response")).toBe("true")
+            const responseA = await router.GET(GETRequest("/a"))
+            const responseB = await router.GET(GETRequest("/b"))
+            expect(responseA.headers.get("x-global-response")).toBe("true")
+            expect(responseB.headers.get("x-global-response")).toBe("true")
         })
 
         test("endpoint onResponse runs before global onResponse", async ({ expect }) => {

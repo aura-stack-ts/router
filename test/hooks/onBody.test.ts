@@ -8,7 +8,7 @@ describe("onBody hook (replaces getBody schema validation)", () => {
         const endpoint = createEndpoint("POST", "/login", (ctx) => ctx.json({ body: ctx.body }), {
             hooks: {
                 onBody: async (ctx) => {
-                    const body = await ctx.request.json()
+                    const body = ctx.body as Record<string, any>
                     return { ...body, role: "admin" }
                 },
             },

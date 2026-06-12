@@ -125,7 +125,8 @@ export const runOnResponse = async <Meta extends EndpointMeta<any, any, any>>(
     ctx: RequestContext<Meta>
 ): Promise<Response> => {
     if (!hook) return response
-    return hook({ ...ctx, response })
+    const result = await hook({ ...ctx, response })
+    return result ?? response
 }
 
 /**

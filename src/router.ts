@@ -16,6 +16,8 @@ import type {
     RoutePattern,
     RouterConfig,
     Router,
+    EndpointMeta,
+    RequestContext,
 } from "@/@types/index.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
@@ -158,14 +160,17 @@ const handleRequest = async (
             context: requestCtx.context ?? ({} as GlobalContext),
             json,
         }
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
 
         /** Endpoint middlewares (use[]) */
         context = await executeMiddlewares(context, endpoint.config.use)
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
 
         /** onHandler hook */
         const onHandlerResult = await runOnHandler(endpoint.config.hooks?.onHandler, context)
         if (onHandlerResult instanceof Response) return onHandlerResult
         context = onHandlerResult
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
 
         /** Route handler */
         const handlerResult = await endpoint.handler(context)
