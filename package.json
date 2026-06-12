@@ -18,7 +18,7 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "clean:cts": "rm -rf dist/*.cts",
-    "prepublish": "pnpm clean:cts"
+    "prepublishOnly": "pnpm clean:cts"
   },
   "repository": {
     "type": "git",
@@ -81,6 +81,11 @@
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js",
       "require": "./dist/client.cjs"
+    },
+    "./validator": {
+      "types": "./dist/validator/registry.d.ts",
+      "import": "./dist/validator/registry.js",
+      "require": "./dist/validator/registry.cjs"
     },
     "./types": {
       "types": "./dist/@types/index.d.ts"
