@@ -1,7 +1,7 @@
 import { safeParse } from "valibot"
 import { isValibotSchema, isZodSchema, isArkType } from "@/assert.ts"
 import { IsObject } from "typebox"
-import Value, { Check } from "typebox/value"
+import { Value } from "typebox/value"
 
 export type ValidationResult<T> = { success: true; data: T; error: null } | { success: false; data: null; error: any }
 
