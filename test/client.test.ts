@@ -4,7 +4,7 @@ import { z } from "zod"
 import * as valibot from "valibot"
 import * as typebox from "typebox"
 import { createRouter } from "@/router.ts"
-import { createEndpoint } from "@/endpoint.ts"
+import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
 import { createClient } from "@/client.ts"
 import type { JsonResponse } from "@/@types/index.ts"
 
@@ -287,21 +287,30 @@ describe("Client", () => {
 })
 
 test("Client type inference with Zod schemas", async () => {
+    const getItemConfig = createEndpointConfig({
+        schemas: {
+            params: z.object({ itemId: z.string() }),
+        },
+    })
+
     const getItem = createEndpoint(
         "GET",
         "/items/:itemId",
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: z.object({ itemId: z.string() }),
-            },
-        }
+        getItemConfig
     )
 
     const createItem = createEndpoint("POST", "/items", (ctx) => {
         return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItemConfig = createEndpointConfig({
+        schemas: {
+            params: z.object({ itemId: z.string() }),
+            searchParams: z.object({ force: z.string().optional() }),
+        },
     })
 
     const deleteItem = createEndpoint(
@@ -310,12 +319,7 @@ test("Client type inference with Zod schemas", async () => {
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: z.object({ itemId: z.string() }),
-                searchParams: z.object({ force: z.string().optional() }),
-            },
-        }
+        deleteItemConfig
     )
 
     const router = createRouter([getItem, createItem, deleteItem])
@@ -347,21 +351,30 @@ test("Client type inference with Zod schemas", async () => {
 })
 
 test("Client type inference with Valibot schemas", async () => {
+    const getItemConfig = createEndpointConfig({
+        schemas: {
+            params: valibot.object({ itemId: valibot.string() }),
+        },
+    })
+
     const getItem = createEndpoint(
         "GET",
         "/items/:itemId",
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: valibot.object({ itemId: valibot.string() }),
-            },
-        }
+        getItemConfig
     )
 
     const createItem = createEndpoint("POST", "/items", (ctx) => {
         return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItemConfig = createEndpointConfig({
+        schemas: {
+            params: valibot.object({ itemId: valibot.string() }),
+            searchParams: valibot.object({ force: valibot.string() }),
+        },
     })
 
     const deleteItem = createEndpoint(
@@ -370,12 +383,7 @@ test("Client type inference with Valibot schemas", async () => {
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: valibot.object({ itemId: valibot.string() }),
-                searchParams: valibot.object({ force: valibot.string() }),
-            },
-        }
+        deleteItemConfig
     )
 
     const router = createRouter([getItem, createItem, deleteItem])
@@ -413,23 +421,36 @@ test("Client type inference with Valibot schemas", async () => {
 })
 
 test("Client type inference with Arktype schemas", async () => {
+    const getItemConfig = createEndpointConfig({
+        schemas: {
+            params: type({
+                itemId: "string",
+            }),
+        },
+    })
+
     const getItem = createEndpoint(
         "GET",
         "/items/:itemId",
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: type({
-                    itemId: "string",
-                }),
-            },
-        }
+        getItemConfig
     )
 
     const createItem = createEndpoint("POST", "/items", (ctx) => {
         return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItemConfig = createEndpointConfig({
+        schemas: {
+            params: type({
+                itemId: "string",
+            }),
+            searchParams: type({
+                force: "string",
+            }),
+        },
     })
 
     const deleteItem = createEndpoint(
@@ -438,16 +459,7 @@ test("Client type inference with Arktype schemas", async () => {
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: type({
-                    itemId: "string",
-                }),
-                searchParams: type({
-                    force: "string",
-                }),
-            },
-        }
+        deleteItemConfig
     )
 
     const router = createRouter([getItem, createItem, deleteItem])
@@ -491,23 +503,36 @@ test("Client type inference with Arktype schemas", async () => {
 })
 
 test("Client type inference with TypeBox schemas", async () => {
+    const getItemConfig = createEndpointConfig({
+        schemas: {
+            params: typebox.Object({
+                itemId: typebox.String(),
+            }),
+        },
+    })
+
     const getItem = createEndpoint(
         "GET",
         "/items/:itemId",
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: typebox.Object({
-                    itemId: typebox.String(),
-                }),
-            },
-        }
+        getItemConfig
     )
 
     const createItem = createEndpoint("POST", "/items", (ctx) => {
         return ctx.json({ method: ctx.method })
+    })
+
+    const deleteItemConfig = createEndpointConfig({
+        schemas: {
+            params: typebox.Object({
+                itemId: typebox.String(),
+            }),
+            searchParams: typebox.Object({
+                force: typebox.String(),
+            }),
+        },
     })
 
     const deleteItem = createEndpoint(
@@ -516,16 +541,7 @@ test("Client type inference with TypeBox schemas", async () => {
         (ctx) => {
             return ctx.json({ method: ctx.method })
         },
-        {
-            schemas: {
-                params: typebox.Object({
-                    itemId: typebox.String(),
-                }),
-                searchParams: typebox.Object({
-                    force: typebox.String(),
-                }),
-            },
-        }
+        deleteItemConfig
     )
 
     const getItems = createEndpoint("GET", "/items", (ctx) => {

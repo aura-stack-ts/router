@@ -83,14 +83,14 @@ export const createEndpoint = <
  *   return new Response("User details");
  * }, config);
  */
-export function createEndpointConfig<Schemas extends EndpointSchemas>(
-    config: EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
-): EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], Schemas>
+export function createEndpointConfig<
+    Route extends RoutePattern,
+    Config extends EndpointConfig<Route, HTTPMethod | HTTPMethod[], EndpointSchemas>,
+>(route: Route, config: Config): Config
 
-export function createEndpointConfig<Route extends RoutePattern, Schemas extends EndpointSchemas>(
-    route: Route,
-    config: EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
-): EndpointConfig<Route, HTTPMethod | HTTPMethod[], Schemas>
+export function createEndpointConfig<Config extends EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], EndpointSchemas>>(
+    config: Config
+): Config
 
 export function createEndpointConfig(...args: unknown[]) {
     if (typeof args[0] === "string") return args[1]
