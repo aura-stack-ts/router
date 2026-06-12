@@ -2,7 +2,7 @@ import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
 import type { RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
-import type { InferValibotSchema, SchemaKind, SupportedSchema } from "@/@types/schemas.ts"
+import type { InferValibotSchema, SchemaKind, SupportedSchemas } from "@/@types/schemas.ts"
 import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint, Awaitable } from "@/@types/types.ts"
 
 export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
@@ -29,7 +29,7 @@ type HasSchemas<C> =
     C extends EndpointConfig<any, any, infer Schemas>
         ? [SchemaValues<Schemas>] extends [never]
             ? false
-            : [SchemaValues<Schemas>] extends [SupportedSchema]
+            : [SchemaValues<Schemas>] extends [SupportedSchemas]
               ? true
               : false
         : false
@@ -38,7 +38,7 @@ type InferContent<Config extends EndpointConfig<any, any, any>> =
     Config extends EndpointConfig<any, any, infer Schemas>
         ? [SchemaValues<Schemas>] extends [never]
             ? unknown
-            : [SchemaValues<Schemas>] extends [SupportedSchema]
+            : [SchemaValues<Schemas>] extends [SupportedSchemas]
               ? RemoveUndefined<ToInferSchema<Schemas>>
               : unknown
         : unknown

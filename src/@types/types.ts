@@ -5,7 +5,7 @@ import type { ObjectSchema } from "valibot"
 import type { RouterError } from "@/error.ts"
 import type { HeadersBuilder } from "@/headers.ts"
 import type { HTTPMethod } from "@/@types/http.ts"
-import type { InferValibotSchema, SupportedSchema } from "@/@types/schemas.ts"
+import type { InferValibotSchema, SupportedSchemas } from "@/@types/schemas.ts"
 
 /**
  * Utility type that represents a value that can be either synchronous or a Promise.
@@ -50,9 +50,9 @@ export type GetRouteParams<Route extends RoutePattern> = Route extends `/${infer
  * Available schemas validation for an endpoint. It can include body and searchParams schemas.
  */
 export interface EndpointSchemas {
-    body?: SupportedSchema
-    searchParams?: SupportedSchema
-    params?: SupportedSchema
+    body?: SupportedSchemas
+    searchParams?: SupportedSchemas
+    params?: SupportedSchemas
 }
 
 /**

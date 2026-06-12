@@ -10,6 +10,7 @@ export default defineConfig({
         "src/cookie.ts",
         "src/client.ts",
         "src/@types/index.ts",
+        "src/validator/registry.ts",
     ],
     format: ["esm", "cjs"],
     dts: true,

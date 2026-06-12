@@ -11,7 +11,7 @@ import type { $ZodType, $ZodObject } from "zod/v4/core"
  */
 export type InferValibotSchema<S extends ObjectSchema<any, undefined>> = NonNullable<S["~types"]>["output"]
 
-export type SupportedSchema = $ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
+export type SupportedSchemas = $ZodObject<any> | ObjectSchema<any, undefined> | Type<{}> | TObject<{}>
 
 /**
  * Infer the schema kind (Zod, Valibot, TypeBox, Arktype) based on the provided schema type.

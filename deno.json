@@ -12,6 +12,7 @@
     "./headers": "./src/headers.ts",
     "./cookie": "./src/cookie.ts",
     "./client": "./src/client.ts",
+    "./validator": "./src/validator/registry.ts",
     "./types": "./src/@types/index.ts"
   },
   "imports": {
