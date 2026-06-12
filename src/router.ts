@@ -3,16 +3,21 @@ import { onError } from "@/on-error.ts"
 import { RouterError } from "@/error.ts"
 import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedMethod } from "@/assert.ts"
-import { getBody, getRouteParams, getSearchParams, json } from "@/context.ts"
+import { getBody, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
+import { runOnRequest, runOnMatch, runOnParams, runOnSearchParams, runOnBody, runOnHandler, runOnResponse } from "@/hooks.ts"
 import type {
     GetHttpHandlers,
     GlobalContext,
     HTTPMethod,
+    MatchHookContext,
+    RequestHookContext,
     RouteEndpoint,
     RoutePattern,
     RouterConfig,
     Router,
+    EndpointMeta,
+    RequestContext,
 } from "@/@types/index.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
@@ -42,47 +47,142 @@ const handleRequest = async (
     config: RouterConfig,
     router: TrieRouter
 ): Promise<Response> => {
+    let errorCtx: RequestHookContext | MatchHookContext<any> = {
+        request,
+        context: config.context ?? ({} as GlobalContext),
+        json,
+    }
+    let endpoint: RouteEndpoint<any, any, any, any> | undefined
     try {
         if (!isSupportedMethod(request.method)) {
             throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
         }
-        const globalContext = { request, context: config.context ?? ({} as GlobalContext) }
-        const globalRequestContext = await executeGlobalMiddlewares(globalContext, config.use)
 
+        /** onRequest hook */
+        let requestCtx: RequestHookContext = { request, context: config.context ?? ({} as GlobalContext), json }
+
+        const globalOnRequestResult = await runOnRequest(config.hooks?.onRequest, requestCtx)
+        if (globalOnRequestResult instanceof Response) return globalOnRequestResult
+        requestCtx = globalOnRequestResult
+        errorCtx = requestCtx
+
+        /** Global middlewares (use[]) */
+        const globalRequestContext = await executeGlobalMiddlewares(
+            { request: requestCtx.request, context: requestCtx.context },
+            config.use
+        )
         if (globalRequestContext instanceof Response) return globalRequestContext
 
-        const url = new URL(globalRequestContext.request.url)
+        requestCtx = { request: globalRequestContext.request, context: globalRequestContext.context, json }
+        errorCtx = requestCtx
+
+        const url = new URL(requestCtx.request.url)
         const pathnameWithBase = url.pathname
-        if (globalRequestContext.request.method !== method) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${globalRequestContext.request.method}' is not allowed`)
+
+        if (requestCtx.request.method !== method) {
+            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${requestCtx.request.method}' is not allowed`)
         }
+
         const node = router.match(method, pathnameWithBase)
         if (!node) {
             throw new RouterError("NOT_FOUND", `No route found for path: ${pathnameWithBase}`)
         }
-        const { endpoint, params } = node
-        const dynamicParams = getRouteParams(params, endpoint.config)
-        const body = await getBody(globalRequestContext.request, endpoint.config)
-        // @ts-ignore Skip type checking here because there's overlapping types
-        const searchParams = getSearchParams(globalRequestContext.request.url, endpoint.config)
-        const headers = new HeadersBuilder(globalRequestContext.request.headers)
+        const { params } = node
+        endpoint = node.endpoint
+
+        let matchCtx: MatchHookContext<any> = {
+            request: requestCtx.request,
+            context: requestCtx.context,
+            route: endpoint.route,
+            method: requestCtx.request.method as HTTPMethod,
+            json,
+        }
+        errorCtx = matchCtx
+
+        const endpointOnRequestResult = await runOnRequest(endpoint.config.hooks?.onRequest, matchCtx)
+        if (endpointOnRequestResult instanceof Response) return endpointOnRequestResult
+        if (endpointOnRequestResult !== matchCtx) {
+            matchCtx = { ...matchCtx, ...endpointOnRequestResult }
+            errorCtx = matchCtx
+        }
+
+        /** onMatch hook */
+        const onMatchResult = await runOnMatch(endpoint.config.hooks?.onMatch, matchCtx)
+        if (onMatchResult instanceof Response) return onMatchResult
+        if (onMatchResult !== matchCtx) {
+            matchCtx = onMatchResult
+            errorCtx = matchCtx
+        }
+
+        /** onParams hook */
+        let dynamicParams: Record<string, unknown> | unknown
+        if (endpoint.config.hooks?.onParams) {
+            const onParamsResult = await runOnParams(endpoint.config.hooks.onParams, params, matchCtx)
+            if (onParamsResult instanceof Response) return onParamsResult
+            dynamicParams = onParamsResult
+        } else {
+            dynamicParams = getRouteParams(params, endpoint.config)
+        }
+
+        /** onSearchParams hook */
+        let searchParams: Record<string, unknown> | URLSearchParams
+        if (endpoint.config.hooks?.onSearchParams) {
+            const rawSearchParams = new URLSearchParams(url.searchParams.toString())
+            const onSearchParamsResult = await runOnSearchParams(endpoint.config.hooks.onSearchParams, rawSearchParams, matchCtx)
+            if (onSearchParamsResult instanceof Response) return onSearchParamsResult
+            searchParams = onSearchParamsResult
+        } else {
+            // @ts-ignore Skip type checking here because there's overlapping types
+            searchParams = getSearchParams(requestCtx.request.url, endpoint.config)
+        }
+
+        /** onBody hook */
+        let body: unknown
+        if (endpoint.config.hooks?.onBody) {
+            const rawBody = await parseBodyRaw(requestCtx.request)
+            const onBodyResult = await runOnBody(endpoint.config.hooks.onBody, rawBody, matchCtx)
+            if (onBodyResult instanceof Response) return onBodyResult
+            body = onBodyResult
+        } else {
+            body = await getBody(requestCtx.request, endpoint.config)
+        }
+
+        const headers = new HeadersBuilder(requestCtx.request.headers)
         let context: any = {
             params: dynamicParams,
             searchParams,
             headers,
             body,
-            request: globalRequestContext.request,
+            request: requestCtx.request,
             url,
-            method: globalRequestContext.request.method,
+            method: requestCtx.request.method,
             route: endpoint.route,
-            context: globalRequestContext.context ?? ({} as GlobalContext),
+            context: requestCtx.context ?? ({} as GlobalContext),
             json,
         }
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
+
+        /** Endpoint middlewares (use[]) */
         context = await executeMiddlewares(context, endpoint.config.use)
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
+
+        /** onHandler hook */
+        const onHandlerResult = await runOnHandler(endpoint.config.hooks?.onHandler, context)
+        if (onHandlerResult instanceof Response) return onHandlerResult
+        context = onHandlerResult
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
+
+        /** Route handler */
         const handlerResult = await endpoint.handler(context)
-        return inferHandlerResponse(handlerResult)
+        let response = inferHandlerResponse(handlerResult)
+
+        /** onResponse hook */
+        response = await runOnResponse(endpoint.config.hooks?.onResponse, response, context)
+        response = await runOnResponse(config.hooks?.onResponse as any, response, context)
+
+        return response
     } catch (error) {
-        return onError(error, request, config)
+        return onError(error, request, config, endpoint?.config?.hooks?.onError, errorCtx)
     }
 }
 
