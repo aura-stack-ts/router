@@ -9,6 +9,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.8.0] - 2026-06-12
+
 ### Added
 
 - Added a public `createValidator()` utility for validating values against Zod, Valibot, TypeBox, and ArkType schemas. The utility is exposed through the `/validator` entry point. [#58](https://github.com/aura-stack-ts/router/pull/58)
