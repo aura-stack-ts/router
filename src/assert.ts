@@ -1,4 +1,4 @@
-import { InvalidZodSchemaError, RouterError } from "@/error.ts"
+import { AuraRouterError, AuraRouterValidationError, InvalidZodSchemaError, RouterError } from "@/error.ts"
 import type { Type } from "arktype"
 import type { ZodObject } from "zod/v4"
 import type { BaseSchema } from "valibot"
@@ -83,6 +83,7 @@ export const isObject = (value: unknown): value is Record<string, unknown> => {
  *
  * @param error the error to check
  * @returns true if the error is an instance of InvalidZodSchemaError, false otherwise.
+ * @deprecated uses `isAuraRouterValidationError` instead.
  */
 export const isInvalidZodSchemaError = (error: unknown): error is InvalidZodSchemaError => {
     return error instanceof InvalidZodSchemaError
@@ -98,4 +99,31 @@ export const isValibotSchema = (value: unknown): value is BaseSchema<any, any, a
 
 export const isArkType = (value: unknown): value is Type<{}, {}> => {
     return typeof value === "function" && "allows" in value && "assert" in value
+}
+
+const hasAuraErrorShape = (err: unknown): err is { isAuraRouterError: true; toResponse: () => Response } =>
+    isObject(err) && (err as any).isAuraRouterError === true && typeof (err as any).toResponse === "function"
+
+/**
+ * Asserts that the error is an instance of AuraRouterError. It is useful if you want
+ * to check if the error thrown by the router is an AuraRouterError or by other sources.
+ *
+ * @param error - The error to check
+ * @returns True if the error is an instance of AuraRouterError, false otherwise.
+ */
+export const isAuraRouterError = (err: unknown): err is AuraRouterError => {
+    return err instanceof AuraRouterError || hasAuraErrorShape(err)
+}
+
+/**
+ * Asserts that the error is an instance of AuraRouterValidationError. It is useful if you want
+ * to check if the error thrown by the router is an AuraRouterValidationError or by other sources.
+ *
+ * @param error - The error to check
+ * @returns True if the error is an instance of AuraRouterValidationError, false otherwise.
+ */
+export const isAuraRouterValidationError = (err: unknown): err is AuraRouterValidationError => {
+    return (
+        err instanceof AuraRouterValidationError || (hasAuraErrorShape(err) && (err as any).isAuraRouterValidationError === true)
+    )
 }

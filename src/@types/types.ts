@@ -2,7 +2,7 @@ import type { Type } from "arktype"
 import type { TObject } from "typebox"
 import type { $ZodObject as ZodObject, infer as $Infer } from "zod/v4/core"
 import type { ObjectSchema } from "valibot"
-import type { RouterError } from "@/error.ts"
+import type { AURA_ERROR_CODES, AuraRouterError, AuraRouterValidationError, RouterError } from "@/error.ts"
 import type { HeadersBuilder } from "@/headers.ts"
 import type { HTTPMethod } from "@/@types/http.ts"
 import type { InferValibotSchema, SupportedSchemas } from "@/@types/schemas.ts"
@@ -149,7 +149,7 @@ export type OnResponseHook<Meta extends EndpointMeta<any, any, any>> = (ctx: Res
  * The `ctx` union reflects which stage the error occurred at.
  * Must return a `Response`.
  */
-export type ErrorHookContext<Route extends RoutePattern> = { error: Error | RouterError } & (
+export type ErrorHookContext<Route extends RoutePattern> = { error: Error | AuraRouterError | AuraRouterValidationError } & (
     | RequestHookContext
     | MatchHookContext<Route>
     | RequestContext<EndpointMeta<any, any, any>>
@@ -426,3 +426,39 @@ export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
 } & GetHttpHandlers<Endpoints>
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
+
+// #region Schema Validation
+export type ValidationResult<T> = { success: true; data: T; error: null } | { success: false; data: null; error: any }
+
+export interface SchemaAdapter<T> {
+    validate: (data: unknown) => ValidationResult<T>
+}
+
+// #region Errors
+export type AuraRouterErrorCode = (typeof AURA_ERROR_CODES)[keyof typeof AURA_ERROR_CODES]
+
+export type AuraRouterErrorType = "ROUTER_INIT" | "VALIDATION" | "ROUTER_FLOW"
+
+export interface RouterCatalogEntry {
+    type: AuraRouterErrorType
+    statusCode: number
+    name: string
+    message: string
+    userMessage: string
+}
+
+export interface AuraRouterErrorOptions extends ErrorOptions {
+    code: AuraRouterErrorCode
+    message?: string
+    statusCode?: number
+    userMessage?: string
+}
+
+export interface ValidationIssueDetail {
+    code: string
+    message: string
+}
+
+export interface AuraRouterValidationErrorOptions extends Omit<AuraRouterErrorOptions, "code" | "type"> {
+    details: Record<string, ValidationIssueDetail>
+}

@@ -1,4 +1,4 @@
-import { isInvalidZodSchemaError, isRouterError } from "./assert.ts"
+import { isAuraRouterError, isAuraRouterValidationError } from "./assert.ts"
 import { runOnError } from "@/hooks.ts"
 import { json } from "@/context.ts"
 import type {
@@ -9,7 +9,7 @@ import type {
     EndpointMeta,
     OnErrorHook,
 } from "@/@types/index.ts"
-import { type RouterError, statusText } from "@/error.ts"
+import { AuraRouterError, AuraRouterValidationError, statusText } from "@/error.ts"
 
 /**
  * Handles errors thrown during request processing by routing through:
@@ -19,21 +19,17 @@ import { type RouterError, statusText } from "@/error.ts"
  * 4. Default built-in error responses
  */
 export const onError = async (
-    error: unknown,
+    error: Error | AuraRouterError | AuraRouterValidationError,
     request: Request,
     config: RouterConfig,
     endpointOnError?: OnErrorHook<any>,
     ctx?: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>>
 ): Promise<Response> => {
     const errorCtx = ctx ?? ({ request, context: config.context ?? {}, json } satisfies RequestHookContext)
-    const normalizedError = error instanceof Error ? error : new Error(String(error))
 
     if (endpointOnError) {
         try {
-            return (
-                (await runOnError(endpointOnError, normalizedError as Error | RouterError, errorCtx)) ??
-                handleDefaultError(error, request, config)
-            )
+            return (await runOnError(endpointOnError, error, errorCtx)) ?? handleDefaultError(error, request, config)
         } catch {
             return criticalFailure()
         }
@@ -41,10 +37,7 @@ export const onError = async (
 
     if (config.hooks?.onError) {
         try {
-            return (
-                (await runOnError(config.hooks.onError, normalizedError as Error | RouterError, errorCtx)) ??
-                handleDefaultError(error, request, config)
-            )
+            return (await runOnError(config.hooks.onError, error, errorCtx)) ?? handleDefaultError(error, request, config)
         } catch {
             return criticalFailure()
         }
@@ -53,7 +46,7 @@ export const onError = async (
     // Legacy config.onError (backward-compatible)
     if (config.onError) {
         try {
-            return await config.onError(normalizedError as Error | RouterError, request)
+            return await config.onError(error, request)
         } catch {
             return criticalFailure()
         }
@@ -63,22 +56,21 @@ export const onError = async (
 }
 
 const handleDefaultError = (error: unknown, _request: Request, _config: RouterConfig): Response => {
-    if (isInvalidZodSchemaError(error)) {
-        const { errors, status, statusText: st } = error
-        return Response.json(
-            { message: "Invalid request data", error: "validation_error", details: errors },
-            { status, statusText: st }
-        )
+    if (isAuraRouterValidationError(error)) {
+        return error.toResponse()
     }
-    if (isRouterError(error)) {
-        const { message, status, statusText: st } = error
-        return Response.json({ message }, { status, statusText: st })
+    if (isAuraRouterError(error)) {
+        return error.toResponse()
     }
-    return Response.json({ message: "Internal Server Error" }, { status: 500, statusText: statusText.INTERNAL_SERVER_ERROR })
+    return criticalFailure()
 }
 
 const criticalFailure = (): Response =>
     Response.json(
-        { message: "A critical failure occurred during error handling" },
+        {
+            type: "INTERNAL_SERVER_ERROR",
+            code: "INTERNAL_SERVER_ERROR",
+            message: "A critical failure occurred during error handling",
+        },
         { status: 500, statusText: statusText.INTERNAL_SERVER_ERROR }
     )

@@ -57,13 +57,15 @@ describe("createEndpoint", () => {
                 description: "Throws error for unsupported HTTP method",
                 method: "FETCH",
                 route: "/users",
-                expected: /Unsupported HTTP method: FETCH/,
+                expected:
+                    /An endpoint registration was attempted with an invalid or poorly formatted HTTP verb string. Ensure uppercase standard types are used./,
             },
             {
                 description: "Throws error for invalid route format",
                 method: "GET",
                 route: "invalid-route",
-                expected: /Invalid route format: invalid-route/,
+                expected:
+                    /The designated URL pattern string parsing layout failed regex format checks. Verify base formatting patterns/,
             },
         ]
 
@@ -120,7 +122,17 @@ describe("createEndpoint", () => {
                         })
                     )
                     expect(post.status).toBe(422)
-                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await post.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            password: {
+                                code: "invalid_type",
+                                message: "Invalid input: expected string, received undefined",
+                            },
+                        },
+                    })
                     expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
@@ -166,7 +178,17 @@ describe("createEndpoint", () => {
                         })
                     )
                     expect(post.status).toBe(422)
-                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await post.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            password: {
+                                code: "schema",
+                                message: 'Invalid key: Expected "password" but received undefined',
+                            },
+                        },
+                    })
                     expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
@@ -212,7 +234,17 @@ describe("createEndpoint", () => {
                         })
                     )
                     expect(post.status).toBe(422)
-                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await post.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            password: {
+                                code: "required",
+                                message: "password must be a string (was missing)",
+                            },
+                        },
+                    })
                     expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
@@ -258,7 +290,17 @@ describe("createEndpoint", () => {
                         })
                     )
                     expect(post.status).toBe(422)
-                    expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await post.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "": {
+                                code: "required",
+                                message: "must have required properties password",
+                            },
+                        },
+                    })
                     expect(post.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
             })
@@ -294,7 +336,17 @@ describe("createEndpoint", () => {
 
                 test("With invalid searchParams", async ({ expect }) => {
                     const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            code: {
+                                code: "invalid_type",
+                                message: "Invalid input: expected string, received undefined",
+                            },
+                        },
+                    })
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
@@ -329,7 +381,17 @@ describe("createEndpoint", () => {
 
                 test("With invalid searchParams", async ({ expect }) => {
                     const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            code: {
+                                code: "schema",
+                                message: 'Invalid key: Expected "code" but received undefined',
+                            },
+                        },
+                    })
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
@@ -364,7 +426,17 @@ describe("createEndpoint", () => {
 
                 test("With invalid searchParams", async ({ expect }) => {
                     const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            code: {
+                                code: "required",
+                                message: "code must be a string (was missing)",
+                            },
+                        },
+                    })
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
@@ -399,7 +471,17 @@ describe("createEndpoint", () => {
 
                 test("With invalid searchParams", async ({ expect }) => {
                     const get = await GET(new Request("https://example.com/auth/google?state=123abc", { method: "GET" }))
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "": {
+                                code: "required",
+                                message: "must have required properties code",
+                            },
+                        },
+                    })
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
                 })
@@ -455,7 +537,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/signIn/facebook"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            oauth: {
+                                code: "invalid_value",
+                                message: 'Invalid option: expected one of "google"|"github"',
+                            },
+                        },
+                    })
                 })
 
                 test("With inferred params", async ({ expect }) => {
@@ -468,7 +560,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/type/invalid"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            typeId: {
+                                code: "invalid_value",
+                                message: 'Invalid option: expected one of "token"|"code"',
+                            },
+                        },
+                    })
                 })
             })
 
@@ -520,7 +622,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/signIn/facebook"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            oauth: {
+                                code: "schema",
+                                message: 'Invalid type: Expected ("google" | "github") but received "facebook"',
+                            },
+                        },
+                    })
                 })
 
                 test("With inferred params", async ({ expect }) => {
@@ -533,7 +645,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/type/invalid"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            typeId: {
+                                code: "schema",
+                                message: 'Invalid type: Expected ("token" | "code") but received "invalid"',
+                            },
+                        },
+                    })
                 })
             })
 
@@ -585,7 +707,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/signIn/facebook"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            oauth: {
+                                code: "union",
+                                message: 'oauth must be "github" or "google" (was "facebook")',
+                            },
+                        },
+                    })
                 })
 
                 test("With inferred params", async ({ expect }) => {
@@ -598,7 +730,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/type/invalid"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            typeId: {
+                                code: "union",
+                                message: 'typeId must be "code" or "token" (was "invalid")',
+                            },
+                        },
+                    })
                 })
             })
 
@@ -653,7 +795,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/signIn/facebook"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            oauth: {
+                                code: "enum",
+                                message: "must be equal to one of the allowed values",
+                            },
+                        },
+                    })
                 })
 
                 test("With inferred params", async ({ expect }) => {
@@ -666,7 +818,17 @@ describe("createEndpoint", () => {
                     const get = await GET(new Request("https://example.com/type/invalid"))
                     expect(get.status).toBe(422)
                     expect(get.statusText).toBe("UNPROCESSABLE_ENTITY")
-                    expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            typeId: {
+                                code: "enum",
+                                message: "must be equal to one of the allowed values",
+                            },
+                        },
+                    })
                 })
             })
         })

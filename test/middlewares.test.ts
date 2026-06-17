@@ -138,7 +138,9 @@ describe("executeMiddlewares", () => {
                 } as RequestContext<EndpointMeta<any, any, any>>,
                 middlewares
             )
-        ).rejects.toThrowError(/Handler threw an error/)
+        ).rejects.toThrowError(
+            /The array mapping setup for route-specific interceptors contains data nodes that are not standard framework handler methods./
+        )
     })
 
     test.concurrent("No middleware", async ({ expect }) => {

@@ -95,7 +95,17 @@ describe("createRouter", () => {
                 })
             )
             expect(get.status).toBe(422)
-            expect(await get.json()).toMatchObject({ error: "validation_error", details: {} })
+            expect(await get.json()).toEqual({
+                type: "VALIDATION",
+                code: "UNPROCESSABLE_ENTITY",
+                message: "The request body or parameter schema layout contains input format errors.",
+                details: {
+                    redirect_uri: {
+                        code: "invalid_type",
+                        message: "Invalid input: expected string, received undefined",
+                    },
+                },
+            })
         })
 
         test("Sign-in handler with missing route param", async () => {
@@ -103,7 +113,12 @@ describe("createRouter", () => {
             const get = await GET(new Request("https://example.com/auth/signin?redirect_uri=url_to_redirect", { method: "GET" }))
             expect(get.status).toBe(404)
             expect(get.ok).toBeFalsy()
-            expect(await get.json()).toEqual({ message: "No route found for path: /auth/signin" })
+            expect(await get.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
         })
 
         test("Session handler with middleware", async () => {
@@ -170,7 +185,17 @@ describe("createRouter", () => {
                     }),
                 })
             )
-            expect(await post.json()).toMatchObject({ error: "validation_error", details: {} })
+            expect(await post.json()).toEqual({
+                type: "VALIDATION",
+                code: "UNPROCESSABLE_ENTITY",
+                message: "The request body or parameter schema layout contains input format errors.",
+                details: {
+                    password: {
+                        code: "invalid_type",
+                        message: "Invalid input: expected string, received undefined",
+                    },
+                },
+            })
             expect(post.status).toBe(422)
         })
     })
@@ -205,7 +230,11 @@ describe("createRouter", () => {
             const { GET } = createRouter([get])
             const response = await GET(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
-            expect(await response.json()).toEqual({ message: "The HTTP method 'DELETE' is not allowed" })
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
         })
     })
 
@@ -233,7 +262,12 @@ describe("createRouter", () => {
             const get = await GET(new Request("https://example.com/session", { method: "GET" }))
             expect(get.status).toBe(404)
             expect(get.ok).toBeFalsy()
-            expect(await get.json()).toEqual({ message: "No route found for path: /session" })
+            expect(await get.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
         })
     })
 
@@ -327,7 +361,11 @@ describe("createRouter", () => {
             })
             const get = await GET(new Request("https://example.com/session", { method: "GET" }))
             expect(get.status).toBe(500)
-            expect(await get.json()).toEqual({ message: "A critical failure occurred during error handling" })
+            expect(await get.json()).toEqual({
+                type: "INTERNAL_SERVER_ERROR",
+                code: "INTERNAL_SERVER_ERROR",
+                message: "A critical failure occurred during error handling",
+            })
         })
 
         test("Handle unexpected error with isRouterError", async () => {

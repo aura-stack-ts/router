@@ -1,4 +1,4 @@
-import { RouterError } from "@/error.ts"
+import { AuraRouterError } from "@/error.ts"
 import type {
     EndpointMeta,
     EndpointSchemas,
@@ -9,6 +9,7 @@ import type {
     RoutePattern,
     RouterConfig,
 } from "@/@types/index.ts"
+import { isAuraRouterError } from "./assert.ts"
 
 /**
  * Executes the middlewares in sequence, passing the request to each middleware.
@@ -21,7 +22,7 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
     if (!use) return context
     for (const middleware of use) {
         if (typeof middleware !== "function") {
-            throw new RouterError("BAD_REQUEST", "Global middlewares must be functions")
+            throw new AuraRouterError({ code: "INVALID_GLOBAL_MIDDLEWARE_DEFINITION" })
         }
         const executed = await middleware(context)
         if (executed instanceof Response) {
@@ -30,7 +31,7 @@ export const executeGlobalMiddlewares = async (context: GlobalMiddlewareContext,
         context = executed
     }
     if (!context || !(context.request instanceof Request)) {
-        throw new RouterError("BAD_REQUEST", "Global middleware must return a Request or Response object")
+        throw new AuraRouterError({ code: "INVALID_GLOBAL_MIDDLEWARE_DEFINITION" })
     }
     return context
 }
@@ -55,17 +56,18 @@ export const executeMiddlewares = async <
         let ctx = context
         for (const middleware of use) {
             if (typeof middleware !== "function") {
-                throw new RouterError("BAD_REQUEST", "Middleware must be a function")
+                throw new AuraRouterError({ code: "INVALID_ENDPOINT_MIDDLEWARE_DEFINITION" })
             }
             try {
                 ctx = (await middleware(ctx)) as RequestContext<EndpointMeta<Route, Method, Config>>
             } catch (error) {
-                if (error instanceof RouterError) throw error
-                throw new RouterError("BAD_REQUEST", "Handler threw an error", "MiddlewareError")
+                if (isAuraRouterError(error)) throw error
+                throw new AuraRouterError({ code: "INVALID_ENDPOINT_MIDDLEWARE_DEFINITION", cause: error })
             }
         }
         return ctx
-    } catch {
-        throw new RouterError("BAD_REQUEST", "Handler threw an error")
+    } catch (error) {
+        if (isAuraRouterError(error)) throw error
+        throw new AuraRouterError({ code: "INVALID_HANDLER_DEFINITION", cause: error })
     }
 }

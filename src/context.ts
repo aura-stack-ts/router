@@ -1,37 +1,8 @@
 import { isSupportedBodyMethod } from "@/assert.ts"
-import { InvalidZodSchemaError, RouterError } from "@/error.ts"
 import { createValidator } from "@/validator/registry.ts"
-import type { $ZodError as ZodError } from "zod/v4/core"
-import type { BaseIssue } from "valibot"
+import { AuraRouterError, AuraRouterValidationError } from "@/error.ts"
+
 import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
-
-/**
- * @experimental
- * @param error ZodError instance
- */
-export const formatZodError = (error: ZodError<Record<string, unknown>>) => {
-    if (!error.issues || error.issues.length === 0) {
-        return {}
-    }
-    return error.issues.reduce((previous, issue) => {
-        const key = issue.path.join(".")
-        return {
-            ...previous,
-            [key]: {
-                code: issue.code,
-                message: issue.message,
-            },
-        }
-    }, {})
-}
-
-export const formatValibotError = (issues: BaseIssue<unknown>[]) => {
-    if (!issues || issues.length === 0) return {}
-    return issues.reduce((prev, issue) => {
-        const key = issue.path?.map((p) => p.key).join(".") ?? ""
-        return { ...prev, [key]: { kind: issue.kind, message: issue.message } }
-    }, {})
-}
 
 /**
  * Extracts route parameters from a given path using the specified route pattern.
@@ -56,10 +27,7 @@ export const getRouteParams = (params: Record<string, string>, config: EndpointC
         const validator = createValidator(config.schemas.params)
         const parsed = validator.validate(params)
         if (!parsed.success) {
-            throw new InvalidZodSchemaError(
-                "UNPROCESSABLE_ENTITY",
-                Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
-            )
+            throw new AuraRouterValidationError({ details: parsed.error })
         }
         return parsed.data
     }
@@ -106,10 +74,7 @@ export const getSearchParams = <Config extends EndpointConfig<any, any, any>>(
         const validator = createValidator(config.schemas.searchParams)
         const parsed = validator.validate(Object.fromEntries(route.searchParams.entries()))
         if (!parsed.success) {
-            throw new InvalidZodSchemaError(
-                "UNPROCESSABLE_ENTITY",
-                Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
-            )
+            throw new AuraRouterValidationError({ details: parsed.error })
         }
         return parsed.data as ContextSearchParams<NonNullable<Config["schemas"]>>
     }
@@ -148,7 +113,7 @@ export const parseBodyRaw = async (request: Request): Promise<unknown> => {
         }
         return null
     } catch {
-        throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid request body, the content-type does not match the body format")
+        throw new AuraRouterError({ code: "UNPROCESSABLE_BODY_ENTITY" })
     }
 }
 
@@ -176,10 +141,7 @@ export const getBody = async <Config extends EndpointConfig<any, any, any>>(requ
             const validator = createValidator(config.schemas.body)
             const parsed = validator.validate(json)
             if (!parsed.success) {
-                throw new InvalidZodSchemaError(
-                    "UNPROCESSABLE_ENTITY",
-                    Array.isArray(parsed.error) ? formatValibotError(parsed.error) : formatZodError(parsed.error)
-                )
+                throw new AuraRouterValidationError({ details: parsed.error })
             }
             return parsed.data
         }
@@ -200,7 +162,7 @@ export const getBody = async <Config extends EndpointConfig<any, any, any>>(requ
         }
         return null
     } catch {
-        throw new RouterError("UNPROCESSABLE_ENTITY", "Invalid request body, the content-type does not match the body format")
+        throw new AuraRouterError({ code: "UNPROCESSABLE_BODY_ENTITY" })
     }
 }
 

@@ -9,6 +9,14 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Changed
+
+- Refactored the error system around the new `AuraRouterError` and `AuraRouterValidationError` base classes. Default error responses now include `type`, `code`, and `message` fields, while validation errors additionally expose `details`. New type guards, `isAuraRouterError()` and `isAuraRouterValidationError()`, are available for error handling. [#60](https://github.com/aura-stack-ts/router/pull/60)
+
+### Deprecated
+
+- Deprecated `RouterError` and `InvalidZodSchemaError`. Use `AuraRouterError` and `AuraRouterValidationError` instead. [#60](https://github.com/aura-stack-ts/router/pull/60)
+
 ---
 
 ## [0.8.0] - 2026-06-12
