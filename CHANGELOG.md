@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 This changelog follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and reflects changes across the entire monorepo.  
 Per-package version history is maintained inside each package’s own `CHANGELOG.md`.
 
+## [Unreleased]
+
 ---
 
-## [Unreleased]
+## [0.9.0] - 2026-06-17
 
 ### Changed
 
