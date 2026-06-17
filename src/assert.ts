@@ -101,16 +101,29 @@ export const isArkType = (value: unknown): value is Type<{}, {}> => {
     return typeof value === "function" && "allows" in value && "assert" in value
 }
 
+const hasAuraErrorShape = (err: unknown): err is { isAuraRouterError: true; toResponse: () => Response } =>
+    isObject(err) && (err as any).isAuraRouterError === true && typeof (err as any).toResponse === "function"
+
+/**
+ * Asserts that the error is an instance of AuraRouterError. It is useful if you want
+ * to check if the error thrown by the router is an AuraRouterError or by other sources.
+ *
+ * @param error - The error to check
+ * @returns True if the error is an instance of AuraRouterError, false otherwise.
+ */
 export const isAuraRouterError = (err: unknown): err is AuraRouterError => {
-    return (
-        err instanceof AuraRouterError ||
-        (typeof err === "object" && err !== null && (err as AuraRouterError).isAuraRouterError === true)
-    )
+    return err instanceof AuraRouterError || hasAuraErrorShape(err)
 }
 
+/**
+ * Asserts that the error is an instance of AuraRouterValidationError. It is useful if you want
+ * to check if the error thrown by the router is an AuraRouterValidationError or by other sources.
+ *
+ * @param error - The error to check
+ * @returns True if the error is an instance of AuraRouterValidationError, false otherwise.
+ */
 export const isAuraRouterValidationError = (err: unknown): err is AuraRouterValidationError => {
     return (
-        err instanceof AuraRouterValidationError ||
-        (typeof err === "object" && err !== null && (err as any).isAuraRouterValidationError === true)
+        err instanceof AuraRouterValidationError || (hasAuraErrorShape(err) && (err as any).isAuraRouterValidationError === true)
     )
 }

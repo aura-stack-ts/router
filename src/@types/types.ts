@@ -454,6 +454,11 @@ export interface AuraRouterErrorOptions extends ErrorOptions {
     userMessage?: string
 }
 
+export interface ValidationIssueDetail {
+    code: string
+    message: string
+}
+
 export interface AuraRouterValidationErrorOptions extends Omit<AuraRouterErrorOptions, "code" | "type"> {
-    details: Record<string, string>
+    details: Record<string, ValidationIssueDetail>
 }

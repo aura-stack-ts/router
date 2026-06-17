@@ -61,6 +61,7 @@ export const executeMiddlewares = async <
             try {
                 ctx = (await middleware(ctx)) as RequestContext<EndpointMeta<Route, Method, Config>>
             } catch (error) {
+                if (isAuraRouterError(error)) throw error
                 throw new AuraRouterError({ code: "INVALID_ENDPOINT_MIDDLEWARE_DEFINITION", cause: error })
             }
         }

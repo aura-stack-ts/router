@@ -7,6 +7,7 @@ import type { SchemaAdapter, ValidationResult } from "@/@types/types.ts"
 import { formatArkTypeError, formatTypeBoxError, formatValibotError, formatZodError } from "./formatter.ts"
 import type { ArkErrors } from "arktype"
 
+export { isAuraRouterError, isAuraRouterValidationError, isArkType, isZodSchema, isValibotSchema } from "@/assert.ts"
 export type { SchemaAdapter, ValidationResult }
 
 /**
@@ -49,8 +50,11 @@ export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
                         : { success: false, data: null, error: formatTypeBoxError([...Value.Errors(schema, dataToValidate)]) }
                 }
                 throw new AuraRouterError({ code: "UNSUPPORTED_SCHEMA_VALIDATOR" })
-            } catch (e) {
-                return { success: false, data: null, error: e }
+            } catch (error) {
+                throw new AuraRouterError({
+                    code: "UNKNOWN_SCHEMA_ERROR",
+                    cause: error,
+                })
             }
         },
     }

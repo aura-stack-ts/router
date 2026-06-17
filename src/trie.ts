@@ -45,7 +45,7 @@ export class TrieRouter {
                         } else if (param.name !== name) {
                             throw new AuraRouterError({
                                 code: "CONFLICTING_DYNAMIC_SEGMENT",
-                                message: `Conflicting dynamic segments discovered in the route pattern layout. The param identifier "${param?.name}" was registered multiple times within path "${name}".`,
+                                message: `Conflicting dynamic segments discovered in route "${endpoint.route}". Existing param "${param.name}" conflicts with incoming param "${name}".`,
                             })
                         }
                         node = param.node

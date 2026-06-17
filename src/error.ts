@@ -4,6 +4,7 @@ import type {
     AuraRouterErrorType,
     AuraRouterValidationErrorOptions,
     RouterCatalogEntry,
+    ValidationIssueDetail,
 } from "@/@types/types.ts"
 
 /**
@@ -64,6 +65,7 @@ export const AURA_ERROR_CODES = {
     NOT_FOUND: "NOT_FOUND",
 
     CONFLICTING_DYNAMIC_SEGMENT: "CONFLICTING_DYNAMIC_SEGMENT",
+    UNKNOWN_SCHEMA_ERROR: "UNKNOWN_SCHEMA_ERROR",
 } as const
 
 export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntry> = {
@@ -171,6 +173,14 @@ export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntr
             "The application routing configuration failed compile steps. A designated path declaration attempts to define multiple dynamic parameter segments using duplicate names, which prevents safe runtime context parsing.",
         userMessage: "Internal configuration failure. The route structure contains conflicting dynamic param segment keys.",
     },
+    UNKNOWN_SCHEMA_ERROR: {
+        type: "VALIDATION",
+        statusCode: 500,
+        name: "ValidationError",
+        message:
+            "An unhandled exception or critical system failure occurred inside the structural validation compilation pipeline while executing schema evaluation matching checks.",
+        userMessage: "An unexpected internal processing error occurred during incoming request schema validation verification.",
+    },
 }
 
 interface V8ErrorConstructor extends ErrorConstructor {
@@ -223,7 +233,7 @@ export class AuraRouterError extends Error {
 }
 
 export class AuraRouterValidationError extends AuraRouterError {
-    readonly details: Record<string, string>
+    readonly details: Record<string, ValidationIssueDetail>
     readonly isAuraRouterValidationError = true as const
 
     constructor(options: AuraRouterValidationErrorOptions) {

@@ -1,7 +1,7 @@
 export { createEndpoint, createEndpointConfig } from "./endpoint.ts"
 export { createRouter } from "./router.ts"
 export { createClient } from "./client.ts"
-export { isRouterError, isInvalidZodSchemaError } from "./assert.ts"
+export { isRouterError, isInvalidZodSchemaError, isAuraRouterError, isAuraRouterValidationError } from "./assert.ts"
 export { RouterError, statusCode, statusText } from "./error.ts"
 export { HeadersBuilder } from "./headers.ts"
 export type * from "@/@types/index.ts"
