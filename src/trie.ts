@@ -1,4 +1,4 @@
-import { RouterError } from "@/error.ts"
+import { AuraRouterError } from "@/error.ts"
 import type { RouteEndpoint, HTTPMethod } from "@/@types/index.ts"
 
 export class TrieNode {
@@ -43,10 +43,10 @@ export class TrieRouter {
                             param = { name: name, node: new TrieNode() }
                             node.param = param
                         } else if (param.name !== name) {
-                            throw new RouterError(
-                                "BAD_REQUEST",
-                                `Conflicting in the route by the dynamic segment "${param.name}" and "${name}"`
-                            )
+                            throw new AuraRouterError({
+                                code: "CONFLICTING_DYNAMIC_SEGMENT",
+                                message: `Conflicting dynamic segments discovered in the route pattern layout. The param identifier "${param?.name}" was registered multiple times within path "${name}".`,
+                            })
                         }
                         node = param.node
                     } else {

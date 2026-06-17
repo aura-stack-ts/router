@@ -1,4 +1,4 @@
-import { InvalidZodSchemaError, RouterError } from "@/error.ts"
+import { AuraRouterError, AuraRouterValidationError, InvalidZodSchemaError, RouterError } from "@/error.ts"
 import type { Type } from "arktype"
 import type { ZodObject } from "zod/v4"
 import type { BaseSchema } from "valibot"
@@ -83,6 +83,7 @@ export const isObject = (value: unknown): value is Record<string, unknown> => {
  *
  * @param error the error to check
  * @returns true if the error is an instance of InvalidZodSchemaError, false otherwise.
+ * @deprecated uses `isAuraRouterValidationError` instead.
  */
 export const isInvalidZodSchemaError = (error: unknown): error is InvalidZodSchemaError => {
     return error instanceof InvalidZodSchemaError
@@ -98,4 +99,18 @@ export const isValibotSchema = (value: unknown): value is BaseSchema<any, any, a
 
 export const isArkType = (value: unknown): value is Type<{}, {}> => {
     return typeof value === "function" && "allows" in value && "assert" in value
+}
+
+export const isAuraRouterError = (err: unknown): err is AuraRouterError => {
+    return (
+        err instanceof AuraRouterError ||
+        (typeof err === "object" && err !== null && (err as AuraRouterError).isAuraRouterError === true)
+    )
+}
+
+export const isAuraRouterValidationError = (err: unknown): err is AuraRouterValidationError => {
+    return (
+        err instanceof AuraRouterValidationError ||
+        (typeof err === "object" && err !== null && (err as any).isAuraRouterValidationError === true)
+    )
 }

@@ -1,6 +1,6 @@
 import { TrieRouter } from "@/trie.ts"
 import { onError } from "@/on-error.ts"
-import { RouterError } from "@/error.ts"
+import { AuraRouterError } from "@/error.ts"
 import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedMethod } from "@/assert.ts"
 import { getBody, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
@@ -55,7 +55,7 @@ const handleRequest = async (
     let endpoint: RouteEndpoint<any, any, any, any> | undefined
     try {
         if (!isSupportedMethod(request.method)) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${request.method}' is not supported`)
+            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
         }
 
         /** onRequest hook */
@@ -80,12 +80,12 @@ const handleRequest = async (
         const pathnameWithBase = url.pathname
 
         if (requestCtx.request.method !== method) {
-            throw new RouterError("METHOD_NOT_ALLOWED", `The HTTP method '${requestCtx.request.method}' is not allowed`)
+            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
         }
 
         const node = router.match(method, pathnameWithBase)
         if (!node) {
-            throw new RouterError("NOT_FOUND", `No route found for path: ${pathnameWithBase}`)
+            throw new AuraRouterError({ code: "NOT_FOUND" })
         }
         const { params } = node
         endpoint = node.endpoint
@@ -182,7 +182,7 @@ const handleRequest = async (
 
         return response
     } catch (error) {
-        return onError(error, request, config, endpoint?.config?.hooks?.onError, errorCtx)
+        return onError(error as Error, request, config, endpoint?.config?.hooks?.onError, errorCtx)
     }
 }
 

@@ -1,4 +1,4 @@
-import { RouterError } from "@/error.ts"
+import { AuraRouterError } from "@/error.ts"
 import { isSupportedMethod, isValidHandler, isValidRoute } from "@/assert.ts"
 import type {
     EndpointConfig,
@@ -39,13 +39,13 @@ export const createEndpoint = <
     config: EndpointConfig<Route, Method, Schemas> = {} as EndpointConfig<Route, Method, Schemas>
 ): RouteEndpoint<Route, Method, { schemas?: Schemas }, Handler> => {
     if (!isSupportedMethod(method)) {
-        throw new RouterError("METHOD_NOT_ALLOWED", `Unsupported HTTP method: ${method}`)
+        throw new AuraRouterError({ code: "INVALID_METHOD_DEFINITION" })
     }
     if (!isValidRoute(route)) {
-        throw new RouterError("BAD_REQUEST", `Invalid route format: ${route}`)
+        throw new AuraRouterError({ code: "INVALID_ROUTE_DEFINITION" })
     }
     if (!isValidHandler(handler)) {
-        throw new RouterError("BAD_REQUEST", "Handler must be a function")
+        throw new AuraRouterError({ code: "INVALID_HANDLER_DEFINITION" })
     }
     return { method, route, handler, config }
 }

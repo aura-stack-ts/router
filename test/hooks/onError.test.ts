@@ -1,7 +1,9 @@
-import { createEndpoint } from "@/endpoint.ts"
-import { createRouter } from "@/router.ts"
 import { describe, test } from "vitest"
-import { GETRequest } from "./presets.ts"
+import { z } from "zod/v4"
+import { createRouter } from "@/router.ts"
+import { createEndpoint } from "@/endpoint.ts"
+import { isAuraRouterValidationError } from "@/assert.ts"
+import { GETRequest, POSTRequest } from "@test/hooks/presets.ts"
 
 describe("onError hook", () => {
     describe("Endpoint-level", () => {
@@ -64,6 +66,74 @@ describe("onError hook", () => {
             })
             const res = await get(GETRequest("/fail"))
             expect(await res.json()).toEqual({ source: "endpoint" })
+        })
+    })
+
+    describe("Endpoint-level with schemas", () => {
+        describe("with zod schemas", () => {
+            test("onError with invalid body", async ({ expect }) => {
+                const endpoint = createEndpoint(
+                    "POST",
+                    "/fail",
+                    () => {
+                        return Response.json({ message: "ok" }, { status: 200 })
+                    },
+                    {
+                        schemas: {
+                            body: z.object({
+                                name: z.string(),
+                                age: z.number(),
+                            }),
+                        },
+                        hooks: {
+                            onError: (ctx) => {
+                                if (isAuraRouterValidationError(ctx.error)) {
+                                    return ctx.json({ error: "Invalid schema" }, { status: 400 })
+                                }
+                                return ctx.json({ error: "Other error" }, { status: 500 })
+                            },
+                        },
+                    }
+                )
+                const { POST } = createRouter([endpoint])
+                const response = await POST(
+                    POSTRequest("/fail", {
+                        name: "Alice",
+                    })
+                )
+                expect(response.status).toBe(400)
+                expect(await response.json()).toEqual({ error: "Invalid schema" })
+            })
+
+            test("onError with invalid searchParams", async ({ expect }) => {
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/fail",
+                    () => {
+                        return Response.json({ message: "ok" }, { status: 200 })
+                    },
+                    {
+                        schemas: {
+                            searchParams: z.object({
+                                page: z.string(),
+                                filter: z.string(),
+                            }),
+                        },
+                        hooks: {
+                            onError: (ctx) => {
+                                if (isAuraRouterValidationError(ctx.error)) {
+                                    return ctx.json({ error: "Invalid schema" }, { status: 400 })
+                                }
+                                return ctx.json({ error: "Other error" }, { status: 500 })
+                            },
+                        },
+                    }
+                )
+                const { GET } = createRouter([endpoint])
+                const response = await GET(GETRequest("/fail?page=1"))
+                expect(response.status).toBe(400)
+                expect(await response.json()).toEqual({ error: "Invalid schema" })
+            })
         })
     })
 
