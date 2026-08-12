@@ -137,16 +137,13 @@ const handleRequest = async (
         dynamicParams = getRouteParams(dynamicParams, endpoint.config)
 
         /** onSearchParams hook */
-        let searchParams: Record<string, unknown> | URLSearchParams
-        if (endpoint.config.hooks?.onSearchParams) {
-            const rawSearchParams = new URLSearchParams(url.searchParams.toString())
-            const onSearchParamsResult = await runOnSearchParams(endpoint.config.hooks.onSearchParams, rawSearchParams, matchCtx)
-            if (onSearchParamsResult instanceof Response) return onSearchParamsResult
-            searchParams = onSearchParamsResult
-        } else {
-            // @ts-ignore Skip type checking here because there's overlapping types
-            searchParams = getSearchParams(requestCtx.request.url, endpoint.config)
-        }
+        let searchParams: any = await runOnSearchParams(
+            endpoint.config.hooks?.onSearchParams,
+            new URLSearchParams(url.searchParams.toString()),
+            matchCtx
+        )
+        if (searchParams instanceof Response) return searchParams
+        searchParams = getSearchParams(searchParams, endpoint.config)
 
         /** onBody hook */
         let body: unknown

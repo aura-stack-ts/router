@@ -216,7 +216,7 @@ describe("getSearchParams", () => {
         for (const { description, url, config, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
                 // @ts-ignore
-                const searchParams = getSearchParams(url, config)
+                const searchParams = getSearchParams(new URL(url).searchParams, config)
                 expect(searchParams instanceof URLSearchParams).toBe(true)
                 expect(searchParams).toBeDefined()
                 expect(searchParams).toBeInstanceOf(URLSearchParams)
@@ -230,7 +230,9 @@ describe("getSearchParams", () => {
                 url: "http://example.com",
                 config: { schemas: {} },
             }
-            expectTypeOf(getSearchParams(withoutParams.url, withoutParams.config)).toEqualTypeOf<URLSearchParams>()
+            expectTypeOf(
+                getSearchParams(new URLSearchParams(withoutParams.url), withoutParams.config)
+            ).toEqualTypeOf<URLSearchParams>()
         })
     })
 
@@ -296,7 +298,7 @@ describe("getSearchParams", () => {
         for (const { description, url, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
                 // @ts-ignore
-                const searchParams = getSearchParams(url, { schemas: { searchParams: schema } })
+                const searchParams = getSearchParams(new URL(url).searchParams, { schemas: { searchParams: schema } })
                 expect(searchParams instanceof Object).toBe(true)
                 expect(searchParams).toBeDefined()
                 expect(searchParams).toBeInstanceOf(Object)
@@ -362,7 +364,9 @@ describe("getSearchParams", () => {
                         },
                     },
                 }
-                expectTypeOf(getSearchParams(withoutParams.url, withoutParams.config)).toEqualTypeOf<{
+                expectTypeOf(
+                    getSearchParams(new URLSearchParams(new URL(withoutParams.url).searchParams), withoutParams.config)
+                ).toEqualTypeOf<{
                     name: string
                 }>()
             })
@@ -378,7 +382,9 @@ describe("getSearchParams", () => {
                         },
                     },
                 }
-                expectTypeOf(getSearchParams(withParams.url, withParams.config)).toEqualTypeOf<{
+                expectTypeOf(
+                    getSearchParams(new URLSearchParams(new URL(withParams.url).searchParams), withParams.config)
+                ).toEqualTypeOf<{
                     name: string
                 }>()
             })
@@ -392,8 +398,12 @@ describe("getSearchParams", () => {
                         },
                     },
                 }
-                expectTypeOf(getSearchParams(withoutSchema.url, withoutSchema.config)).not.toEqualTypeOf<URLSearchParams>()
-                expectTypeOf(getSearchParams(withoutSchema.url, withoutSchema.config)).toEqualTypeOf<Record<string, never>>()
+                expectTypeOf(
+                    getSearchParams(new URLSearchParams(withoutSchema.url), withoutSchema.config)
+                ).not.toEqualTypeOf<URLSearchParams>()
+                expectTypeOf(getSearchParams(new URLSearchParams(withoutSchema.url), withoutSchema.config)).toEqualTypeOf<
+                    Record<string, never>
+                >()
             })
         })
     })
@@ -407,7 +417,7 @@ describe("getSearchParams", () => {
                     }),
                 },
             }
-            const searchParams = getSearchParams("http://example.com?name=John", config)
+            const searchParams = getSearchParams(new URLSearchParams("name=John"), config)
             expectTypeOf(searchParams).toEqualTypeOf<{ name: string }>()
             expectTypeOf(searchParams.name).toBeString()
         })

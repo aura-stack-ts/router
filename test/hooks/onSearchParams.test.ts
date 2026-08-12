@@ -2,21 +2,22 @@ import { createEndpoint } from "@/endpoint.ts"
 import { createRouter } from "@/router.ts"
 import { describe, test, vi } from "vitest"
 import { GETRequest } from "./presets.ts"
+import z from "zod"
 
 describe("onSearchParams hook (replaces getSearchParams)", () => {
     test("receives raw URLSearchParams and handler gets hook result", async ({ expect }) => {
-        let rawReceived: URLSearchParams | null = null
+        let raw: URLSearchParams | null = null
         const endpoint = createEndpoint("GET", "/search", (ctx) => ctx.json({ q: (ctx.searchParams as any).q }), {
             hooks: {
                 onSearchParams: (ctx) => {
-                    rawReceived = ctx.searchParams
+                    raw = ctx.searchParams
                     return { q: ctx.searchParams.get("q")?.toUpperCase() }
                 },
             },
         })
         const response = await createRouter([endpoint]).GET(GETRequest("/search?q=hello"))
-        expect(rawReceived).toBeInstanceOf(URLSearchParams)
-        expect(rawReceived!.get("q")).toBe("hello")
+        expect(raw).toBeInstanceOf(URLSearchParams)
+        expect(raw!.get("q")).toBe("hello")
         expect(await response.json()).toEqual({ q: "HELLO" })
     })
 
@@ -90,5 +91,50 @@ describe("onSearchParams hook (replaces getSearchParams)", () => {
         const response = await createRouter([endpoint]).GET(GETRequest("/search?q=example"))
         expect(response.status).toBe(200)
         expect(await response.json()).toEqual({ q: "overridden" })
+    })
+
+    test("modifies the search parameters", async ({ expect }) => {
+        let raw: URLSearchParams | null = null
+        const endpoint = createEndpoint(
+            "GET",
+            "/search",
+            (ctx) => ctx.json({ q: ctx.searchParams.get("q"), extra: ctx.searchParams.get("extra") }),
+            {
+                hooks: {
+                    onSearchParams: (ctx) => {
+                        raw = ctx.searchParams
+                        ctx.searchParams.append("extra", "value")
+                        ctx.searchParams.set("q", ctx.searchParams.get("q")?.toUpperCase() ?? "")
+                    },
+                },
+            }
+        )
+        const response = await createRouter([endpoint]).GET(GETRequest("/search?q=hello"))
+        expect(raw).toBeInstanceOf(URLSearchParams)
+        expect(raw!.get("q")).toBe("HELLO")
+        expect(raw!.get("extra")).toBe("value")
+        expect(await response.json()).toEqual({ q: "HELLO", extra: "value" })
+    })
+
+    test("modifies the search parameters and searchParams schema", async ({ expect }) => {
+        let raw: URLSearchParams | null = null
+        const endpoint = createEndpoint("GET", "/search", (ctx) => ctx.json({ ...ctx.searchParams }), {
+            hooks: {
+                onSearchParams: (ctx) => {
+                    raw = ctx.searchParams
+                    ctx.searchParams.append("extra", "value")
+                    ctx.searchParams.set("q", ctx.searchParams.get("q")?.toUpperCase() ?? "")
+                },
+            },
+            schemas: {
+                searchParams: z.object({
+                    q: z.string(),
+                }),
+            },
+        })
+        const response = await createRouter([endpoint]).GET(GETRequest("/search?q=hello"))
+        expect(raw).toBeInstanceOf(URLSearchParams)
+        expect(raw!.get("q")).toBe("HELLO")
+        expect(await response.json()).toEqual({ q: "HELLO" })
     })
 })

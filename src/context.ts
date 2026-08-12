@@ -72,25 +72,24 @@ export const getRouteParams = (params: Record<string, string>, config: EndpointC
  * const searchParams = getSearchParams(url, config);
  *
  * // Without schema
- * const url2 = "https://example.com/api?query=example";
+ * const url2 = "query=example";
  *
  * // Expected: URLSearchParams { 'query' => 'example' }
- * const searchParams2 = getSearchParams(url2, {} as EndpointConfig);
+ * const searchParams2 = getSearchParams(new URLSearchParams(url2), {} as EndpointConfig);
  */
 export const getSearchParams = <Config extends EndpointConfig<any, any, any>>(
-    url: string,
+    searchParams: URLSearchParams,
     config: Config
 ): ContextSearchParams<NonNullable<Config["schemas"]>> => {
-    const route = new URL(url)
     if (config.schemas?.searchParams) {
         const validator = createValidator(config.schemas.searchParams)
-        const parsed = validator.validate(Object.fromEntries(route.searchParams.entries()))
+        const parsed = validator.validate(Object.fromEntries(searchParams.entries()))
         if (!parsed.success) {
             throw new AuraRouterValidationError({ details: parsed.error })
         }
         return parsed.data as ContextSearchParams<NonNullable<Config["schemas"]>>
     }
-    return new URLSearchParams(route.searchParams.toString()) as ContextSearchParams<NonNullable<Config["schemas"]>>
+    return searchParams as ContextSearchParams<NonNullable<Config["schemas"]>>
 }
 
 /**
