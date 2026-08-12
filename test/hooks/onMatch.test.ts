@@ -38,4 +38,19 @@ describe("onMatch hook", () => {
         expect(await response.json()).toEqual({ error: "not allowed" })
         expect(handler).not.toHaveBeenCalled()
     })
+
+    test("throws error — short-circuits and returns 500", async ({ expect }) => {
+        const endpoint = createEndpoint("GET", "/items", (ctx) => ctx.json({ ok: true }), {
+            hooks: {
+                onMatch: async () => {
+                    throw new Error("Unexpected error")
+                },
+                onError: (ctx) => {
+                    return ctx.json({ phase: ctx.phase })
+                },
+            },
+        })
+        const res = await createRouter([endpoint]).GET(GETRequest("/items"))
+        expect(await res.json()).toEqual({ phase: "onMatch" })
+    })
 })

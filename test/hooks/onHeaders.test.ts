@@ -167,4 +167,26 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
             },
         })
     })
+
+    test("throws error", async ({ expect }) => {
+        const endpoint = createEndpoint(
+            "GET",
+            "/users/:userId",
+            (ctx) => {
+                return ctx.json({ userId: ctx.headers.getHeader("x-user-id") })
+            },
+            {
+                hooks: {
+                    onBody: async (ctx) => {
+                        await ctx.request.json()
+                    },
+                    onError: (ctx) => {
+                        return Response.json({ phase: ctx.phase }, { status: 500 })
+                    },
+                },
+            }
+        )
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(await response.json()).toEqual({ phase: "onBody" })
+    })
 })

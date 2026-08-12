@@ -67,6 +67,7 @@ export interface GlobalContext {}
  * Base context available at the earliest hook stage (`onRequest`), before route matching.
  */
 export interface RequestHookContext {
+    phase: HookPhase
     request: Request
     context: GlobalContext
     json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
@@ -153,16 +154,26 @@ export interface ResponseHookContext<Meta extends EndpointMeta<any, any, any>> e
 }
 export type OnResponseHook<Meta extends EndpointMeta<any, any, any>> = (ctx: ResponseHookContext<Meta>) => Awaitable<Response>
 
+export type HookPhase =
+    | "onRequest"
+    | "onMatch"
+    | "onHeaders"
+    | "onParams"
+    | "onSearchParams"
+    | "onBody"
+    | "onHandler"
+    | "onResponse"
+    | "onError"
+
 /**
  * Fires when any error is thrown during the request pipeline.
  * The `ctx` union reflects which stage the error occurred at.
  * Must return a `Response`.
  */
-export type ErrorHookContext<Route extends RoutePattern> = { error: Error | AuraRouterError | AuraRouterValidationError } & (
-    | RequestHookContext
-    | MatchHookContext<Route>
-    | RequestContext<EndpointMeta<any, any, any>>
-)
+export type ErrorHookContext<Route extends RoutePattern> = {
+    error: Error | AuraRouterError | AuraRouterValidationError
+    phase: HookPhase
+} & (RequestHookContext | MatchHookContext<Route> | RequestContext<EndpointMeta<any, any, any>>)
 export type OnErrorHook<Route extends RoutePattern> = (ctx: ErrorHookContext<Route>) => Awaitable<Response>
 
 /**

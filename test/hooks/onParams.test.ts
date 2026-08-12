@@ -104,4 +104,19 @@ describe("onParams hook (replaces getRouteParams)", () => {
         expect(raw).toEqual({ userId: "replacement-123", bookId: "replacement-book-id" })
         expect(await response.json()).toEqual({ userId: "replacement-123", bookId: "replacement-book-id" })
     })
+
+    test("throws errors", async ({ expect }) => {
+        const endpoint = createEndpoint("GET", "/users/:userId", (ctx) => ctx.json({ userId: ctx.params.userId }), {
+            hooks: {
+                onParams: (ctx) => {
+                    throw new Error("onParams error")
+                },
+                onError: (ctx) => {
+                    return ctx.json({ phase: ctx.phase })
+                },
+            },
+        })
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(await response.json()).toEqual({ phase: "onParams" })
+    })
 })

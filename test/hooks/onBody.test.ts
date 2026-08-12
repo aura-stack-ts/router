@@ -96,4 +96,26 @@ describe("onBody hook (replaces getBody schema validation)", () => {
         const response = await createRouter([endpoint]).POST(POSTRequest("/login", { username: "john" }))
         expect(await response.json()).toEqual({ body: { username: "john", role: "admin", extra: "value" } })
     })
+
+    test("throws error", async ({ expect }) => {
+        const endpoint = createEndpoint(
+            "POST",
+            "/login",
+            (ctx) => {
+                return ctx.json({ body: ctx.body })
+            },
+            {
+                hooks: {
+                    onBody: async () => {
+                        throw new Error("Invalid body")
+                    },
+                    onError: (ctx) => {
+                        return Response.json({ phase: ctx.phase }, { status: 500 })
+                    },
+                },
+            }
+        )
+        const response = await createRouter([endpoint]).POST(POSTRequest("/login", { invalid: "data" }))
+        expect(await response.json()).toEqual({ phase: "onBody" })
+    })
 })
