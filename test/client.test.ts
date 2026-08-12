@@ -322,7 +322,25 @@ test("Client type inference with Zod schemas", async () => {
         deleteItemConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem])
+    const signOutConfig = createEndpointConfig({
+        schemas: {
+            headers: z.object({
+                authorization: z.string(),
+                "x-csrf-token": z.string(),
+            }),
+        },
+    })
+
+    const signOut = createEndpoint(
+        "POST",
+        "/signOut",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        signOutConfig
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem, signOut])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -348,6 +366,14 @@ test("Client type inference with Zod schemas", async () => {
         searchParams: { force: "true" },
     })
     expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
+
+    const out = await client.post("/signOut", {
+        headers: {
+            authorization: "Bearer",
+            "x-csrf-token": "token",
+        },
+    })
+    expectTypeOf<typeof out>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
 })
 
 test("Client type inference with Valibot schemas", async () => {
@@ -386,7 +412,25 @@ test("Client type inference with Valibot schemas", async () => {
         deleteItemConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem])
+    const signOutConfig = createEndpointConfig({
+        schemas: {
+            headers: valibot.object({
+                authorization: valibot.string(),
+                "x-csrf-token": valibot.string(),
+            }),
+        },
+    })
+
+    const signOut = createEndpoint(
+        "POST",
+        "/signOut",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        signOutConfig
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem, signOut])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -418,6 +462,14 @@ test("Client type inference with Valibot schemas", async () => {
         searchParams: { force: "true" },
     })
     expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
+
+    const signedOut = await client.post("/signOut", {
+        headers: {
+            authorization: "Bearer",
+            "x-csrf-token": "token",
+        },
+    })
+    expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
 })
 
 test("Client type inference with Arktype schemas", async () => {
@@ -462,7 +514,25 @@ test("Client type inference with Arktype schemas", async () => {
         deleteItemConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem])
+    const signOutConfig = createEndpointConfig({
+        schemas: {
+            headers: type({
+                authorization: "string",
+                "x-csrf-token": "string",
+            }),
+        },
+    })
+
+    const signOut = createEndpoint(
+        "POST",
+        "/signOut",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        signOutConfig
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem, signOut])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -500,6 +570,14 @@ test("Client type inference with Arktype schemas", async () => {
         searchParams: { force: "true" },
     })
     expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
+
+    const signedOut = await client.post("/signOut", {
+        headers: {
+            authorization: "Bearer",
+            "x-csrf-token": "token",
+        },
+    })
+    expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
 })
 
 test("Client type inference with TypeBox schemas", async () => {
@@ -548,7 +626,25 @@ test("Client type inference with TypeBox schemas", async () => {
         return ctx.json({ method: ctx.method })
     })
 
-    const router = createRouter([getItem, createItem, deleteItem, getItems])
+    const signOutConfig = createEndpointConfig({
+        schemas: {
+            headers: typebox.Object({
+                authorization: typebox.String(),
+                "x-csrf-token": typebox.String(),
+            }),
+        },
+    })
+
+    const signOut = createEndpoint(
+        "POST",
+        "/signOut",
+        (ctx) => {
+            return ctx.json({ method: ctx.method })
+        },
+        signOutConfig
+    )
+
+    const router = createRouter([getItem, createItem, deleteItem, getItems, signOut])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -580,4 +676,12 @@ test("Client type inference with TypeBox schemas", async () => {
         searchParams: { force: "true" },
     })
     expectTypeOf<typeof deletedItem>().toEqualTypeOf<JsonResponse<{ method: "DELETE" }>>()
+
+    const signedOut = await client.post("/signOut", {
+        headers: {
+            authorization: "Bearer token",
+            "x-csrf-token": "csrf-token",
+        },
+    })
+    expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
 })

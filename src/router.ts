@@ -1,11 +1,19 @@
 import { TrieRouter } from "@/trie.ts"
 import { onError } from "@/on-error.ts"
 import { AuraRouterError } from "@/error.ts"
-import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedMethod } from "@/assert.ts"
-import { getBody, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
+import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
-import { runOnRequest, runOnMatch, runOnParams, runOnSearchParams, runOnBody, runOnHandler, runOnResponse } from "@/hooks.ts"
+import {
+    runOnRequest,
+    runOnMatch,
+    runOnParams,
+    runOnSearchParams,
+    runOnBody,
+    runOnHandler,
+    runOnResponse,
+    runOnHeaders,
+} from "@/hooks.ts"
 import type {
     GetHttpHandlers,
     GlobalContext,
@@ -19,6 +27,7 @@ import type {
     EndpointMeta,
     RequestContext,
 } from "@/@types/index.ts"
+import { HeadersBuilder } from "./headers.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
@@ -114,6 +123,14 @@ const handleRequest = async (
             errorCtx = matchCtx
         }
 
+        let headers: any = await runOnHeaders(
+            endpoint.config.hooks?.onHeaders,
+            new HeadersBuilder(requestCtx.request.headers),
+            matchCtx
+        )
+        if (headers instanceof Response) return headers
+        headers = getHeaders(headers, endpoint.config)
+
         /** onParams hook */
         let dynamicParams: Record<string, unknown> | unknown
         if (endpoint.config.hooks?.onParams) {
@@ -147,7 +164,6 @@ const handleRequest = async (
             body = await getBody(requestCtx.request, endpoint.config)
         }
 
-        const headers = new HeadersBuilder(requestCtx.request.headers)
         let context: any = {
             params: dynamicParams,
             searchParams,

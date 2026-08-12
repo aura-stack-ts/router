@@ -832,6 +832,260 @@ describe("createEndpoint", () => {
                 })
             })
         })
+
+        describe("With headers", () => {
+            describe("Zod headers schema", () => {
+                const config = createEndpointConfig({
+                    schemas: {
+                        headers: z.object({
+                            authorization: z.string(),
+                            "x-csrf-token": z.string(),
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/headers",
+                    (ctx) => {
+                        return ctx.json({ headers: ctx.headers })
+                    },
+                    config
+                )
+                const { GET } = createRouter([endpoint])
+
+                test("With valid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                                "x-csrf-token": "123abc",
+                            },
+                        })
+                    )
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        headers: {
+                            authorization: "Bearer token",
+                            "x-csrf-token": "123abc",
+                        },
+                    })
+                })
+
+                test("with invalid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                            },
+                        })
+                    )
+                    expect(get.status).toBe(422)
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "x-csrf-token": {
+                                code: "invalid_type",
+                                message: "Invalid input: expected string, received undefined",
+                            },
+                        },
+                    })
+                })
+            })
+
+            describe("Typebox headers schema", () => {
+                const config = createEndpointConfig({
+                    schemas: {
+                        headers: typebox.Object({
+                            authorization: typebox.String(),
+                            "x-csrf-token": typebox.String(),
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/headers",
+                    (ctx) => {
+                        return ctx.json({ headers: ctx.headers })
+                    },
+                    config
+                )
+                const { GET } = createRouter([endpoint])
+
+                test("With valid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                                "x-csrf-token": "123abc",
+                            },
+                        })
+                    )
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        headers: {
+                            authorization: "Bearer token",
+                            "x-csrf-token": "123abc",
+                        },
+                    })
+                })
+
+                test("with invalid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                            },
+                        })
+                    )
+                    expect(get.status).toBe(422)
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "": {
+                                code: "required",
+                                message: "must have required properties x-csrf-token",
+                            },
+                        },
+                    })
+                })
+            })
+
+            describe("Arktype headers schema", () => {
+                const config = createEndpointConfig({
+                    schemas: {
+                        headers: type({
+                            authorization: "string",
+                            "x-csrf-token": "string",
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/headers",
+                    (ctx) => {
+                        return ctx.json({ headers: ctx.headers })
+                    },
+                    config
+                )
+                const { GET } = createRouter([endpoint])
+
+                test("With valid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                                "x-csrf-token": "123abc",
+                            },
+                        })
+                    )
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        headers: {
+                            authorization: "Bearer token",
+                            "x-csrf-token": "123abc",
+                        },
+                    })
+                })
+
+                test("with invalid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                            },
+                        })
+                    )
+                    expect(get.status).toBe(422)
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "x-csrf-token": {
+                                code: "required",
+                                message: 'value at ["x-csrf-token"] must be a string (was missing)',
+                            },
+                        },
+                    })
+                })
+            })
+
+            describe("Valibot headers schema", () => {
+                const config = createEndpointConfig({
+                    schemas: {
+                        headers: valibot.object({
+                            authorization: valibot.string(),
+                            "x-csrf-token": valibot.string(),
+                        }),
+                    },
+                })
+
+                const endpoint = createEndpoint(
+                    "GET",
+                    "/headers",
+                    (ctx) => {
+                        return ctx.json({ headers: ctx.headers })
+                    },
+                    config
+                )
+                const { GET } = createRouter([endpoint])
+
+                test("With valid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                                "x-csrf-token": "123abc",
+                            },
+                        })
+                    )
+                    expect(get.ok).toBe(true)
+                    expect(await get.json()).toEqual({
+                        headers: {
+                            authorization: "Bearer token",
+                            "x-csrf-token": "123abc",
+                        },
+                    })
+                })
+
+                test("with invalid headers", async ({ expect }) => {
+                    const get = await GET(
+                        new Request("https://example.com/headers", {
+                            method: "GET",
+                            headers: {
+                                authorization: "Bearer token",
+                            },
+                        })
+                    )
+                    expect(get.status).toBe(422)
+                    expect(await get.json()).toEqual({
+                        type: "VALIDATION",
+                        code: "UNPROCESSABLE_ENTITY",
+                        message: "The request body or parameter schema layout contains input format errors.",
+                        details: {
+                            "x-csrf-token": {
+                                code: "schema",
+                                message: 'Invalid key: Expected "x-csrf-token" but received undefined',
+                            },
+                        },
+                    })
+                })
+            })
+        })
     })
 
     describe("With middlewares", () => {

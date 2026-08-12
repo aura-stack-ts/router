@@ -1,8 +1,20 @@
+import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedBodyMethod } from "@/assert.ts"
 import { createValidator } from "@/validator/registry.ts"
 import { AuraRouterError, AuraRouterValidationError } from "@/error.ts"
-
 import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
+
+export const getHeaders = (headers: HeadersBuilder, config: EndpointConfig<any, any, any>) => {
+    if (config.schemas?.headers) {
+        const validator = createValidator(config.schemas.headers)
+        const parsed = validator.validate(Object.fromEntries(headers.toHeaders().entries()))
+        if (!parsed.success) {
+            throw new AuraRouterValidationError({ details: parsed.error })
+        }
+        return parsed.data
+    }
+    return new HeadersBuilder(headers.toHeaders())
+}
 
 /**
  * Extracts route parameters from a given path using the specified route pattern.

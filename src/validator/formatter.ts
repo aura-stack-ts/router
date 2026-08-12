@@ -85,7 +85,6 @@ export const formatTypeBoxError = (errors: TLocalizedValidationError[]) => {
         >
     >((previous, error) => {
         const key = error.instancePath.replace(/^\//, "").replace(/\//g, ".")
-
         return {
             ...previous,
             [key]: {

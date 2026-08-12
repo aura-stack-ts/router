@@ -7,6 +7,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added `schemas.headers` for validating incoming request headers against a defined schema. Also added the `onHeaders` hook for modifying incoming headers, including appending or updating header values. The `onHeaders` hook runs before `schemas.headers` validation, allowing headers to be modified before they are validated. [#62](https://github.com/aura-stack-ts/router/pull/62)
+
 ---
 
 ## [0.9.0] - 2026-06-17
