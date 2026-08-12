@@ -2,6 +2,7 @@ import { createEndpoint } from "@/endpoint.ts"
 import { createRouter } from "@/router.ts"
 import { describe, test, vi } from "vitest"
 import { POSTRequest } from "./presets.ts"
+import z from "zod"
 
 describe("onBody hook (replaces getBody schema validation)", () => {
     test("receives raw parsed body and handler gets hook result", async ({ expect }) => {
@@ -61,5 +62,38 @@ describe("onBody hook (replaces getBody schema validation)", () => {
         const response = await createRouter([endpoint]).POST(POSTRequest("/data", { value: 123 }))
         expect(hasRequest).toBe(true)
         expect(await response.json()).toEqual({ body: { value: 123 }, ok: true })
+    })
+
+    test("modifies the body when is defined body schema", async ({ expect }) => {
+        const endpoint = createEndpoint("POST", "/login", (ctx) => ctx.json({ body: ctx.body }), {
+            hooks: {
+                onBody: async (ctx) => {
+                    const body = ctx.body as Record<string, any>
+                    return { ...body, role: "admin" }
+                },
+            },
+            schemas: {
+                body: z.object({
+                    username: z.string(),
+                    password: z.string(),
+                }),
+            },
+        })
+        const response = await createRouter([endpoint]).POST(POSTRequest("/login", { username: "john", password: "1234" }))
+        expect(await response.json()).toEqual({ body: { username: "john", password: "1234" } })
+    })
+
+    test("modifies the body when is not defined body schema", async ({ expect }) => {
+        const endpoint = createEndpoint("POST", "/login", (ctx) => ctx.json({ body: ctx.body }), {
+            hooks: {
+                onBody: async (ctx) => {
+                    const body = ctx.body as Record<string, any>
+                    body.role = "admin"
+                    body.extra = "value"
+                },
+            },
+        })
+        const response = await createRouter([endpoint]).POST(POSTRequest("/login", { username: "john" }))
+        expect(await response.json()).toEqual({ body: { username: "john", role: "admin", extra: "value" } })
     })
 })

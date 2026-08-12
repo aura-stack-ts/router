@@ -486,40 +486,25 @@ describe("getBody", () => {
         const testCases = [
             {
                 description: "Text body",
-                request: new Request("http://example.com/echo", {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain" },
-                    body: "Hello, World!",
-                }),
+                body: "Hello, World!",
                 config: {},
                 expected: "Hello, World!",
             },
             {
                 description: "JSON body with content-type missing",
-                request: new Request("http://example.com/auth/credentials", {
-                    method: "POST",
-                    body: JSON.stringify(jsonBody),
-                }),
+                body: jsonBody,
                 config: {},
-                expected: JSON.stringify(jsonBody),
+                expected: jsonBody,
             },
             {
                 description: "JSON body without schema",
-                request: new Request("http://example.com/auth/credentials", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(jsonBody),
-                }),
+                body: jsonBody,
                 config: {},
                 expected: jsonBody,
             },
             {
                 description: "JSON body with schema",
-                request: new Request("http://example.com/auth/credentials", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(jsonBody),
-                }),
+                body: jsonBody,
                 config: {
                     schemas: {
                         body: z.object({
@@ -532,13 +517,10 @@ describe("getBody", () => {
             },
             {
                 description: "JSON body without content-type and with schema",
-                request: new Request("http://example.com/auth/credentials", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        username: "John",
-                        password: "secret",
-                    }),
-                }),
+                body: {
+                    username: "John",
+                    password: "secret",
+                },
                 config: {
                     schemas: {
                         body: z.object({
@@ -551,23 +533,19 @@ describe("getBody", () => {
             },
             {
                 description: "Valid complex JSON body with nested schema",
-                request: new Request("http://example.com/api/v1/users", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        name: "Alice",
-                        email: "alice@example.com",
-                        address: {
-                            street: "123 Main St",
-                            city: "Wonderland",
-                            zipCode: "12345",
-                            location: {
-                                lat: 12.3456,
-                                lng: 65.4321,
-                            },
+                body: {
+                    name: "Alice",
+                    email: "alice@example.com",
+                    address: {
+                        street: "123 Main St",
+                        city: "Wonderland",
+                        zipCode: "12345",
+                        location: {
+                            lat: 12.3456,
+                            lng: 65.4321,
                         },
-                    }),
-                    headers: { "Content-Type": "application/json" },
-                }),
+                    },
+                },
                 config: {
                     schemas: {
                         body: z.object({
@@ -601,11 +579,11 @@ describe("getBody", () => {
             },
         ]
 
-        for (const { description, request, config, expected } of testCases) {
+        for (const { description, body, config, expected } of testCases) {
             test.concurrent(description, async ({ expect }) => {
-                const body = await getBody(request, config)
-                expect(body).toBeDefined()
-                expect(body).toEqual(expected)
+                const output = await getBody(body, config)
+                expect(output).toBeDefined()
+                expect(output).toEqual(expected)
             })
         }
     })

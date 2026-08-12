@@ -146,15 +146,10 @@ const handleRequest = async (
         searchParams = getSearchParams(searchParams, endpoint.config)
 
         /** onBody hook */
-        let body: unknown
-        if (endpoint.config.hooks?.onBody) {
-            const rawBody = await parseBodyRaw(requestCtx.request)
-            const onBodyResult = await runOnBody(endpoint.config.hooks.onBody, rawBody, matchCtx)
-            if (onBodyResult instanceof Response) return onBodyResult
-            body = onBodyResult
-        } else {
-            body = await getBody(requestCtx.request, endpoint.config)
-        }
+        const rawBody = await parseBodyRaw(requestCtx.request)
+        let body: unknown = await runOnBody(endpoint.config.hooks?.onBody, rawBody, matchCtx)
+        if (body instanceof Response) return body
+        body = await getBody(body, endpoint.config)
 
         let context: any = {
             params: dynamicParams,
