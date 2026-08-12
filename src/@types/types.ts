@@ -53,6 +53,7 @@ export interface EndpointSchemas {
     body?: SupportedSchemas
     searchParams?: SupportedSchemas
     params?: SupportedSchemas
+    headers?: SupportedSchemas
 }
 
 /**
@@ -93,6 +94,14 @@ export type OnRequestHook = (ctx: RequestHookContext) => Awaitable<void | Reques
 export type OnMatchHook<Route extends RoutePattern> = (
     ctx: MatchHookContext<Route>
 ) => Awaitable<void | MatchHookContext<Route> | Response>
+
+export interface HeadersHookContext<Route extends RoutePattern> extends MatchHookContext<Route> {
+    headers: HeadersBuilder
+}
+
+export type OnHeadersHook<Route extends RoutePattern> = (
+    ctx: HeadersHookContext<Route>
+) => Awaitable<void | HeadersHookContext<Route> | Response>
 
 /**
  * Replaces `getRouteParams()`. Receives raw trie-matched params (no schema validation).
@@ -175,6 +184,12 @@ export interface EndpointHooks<
      */
     onMatch?: OnMatchHook<Route>
     /**
+     * Replaces `getHeaders()`. It receives the raw request headers (no schema validation).
+     * Returning `void` uses the raw headers as-is. Returning a `Response` short-circuits the pipeline.
+     * Note: This hook is executed after `onMatch` and before `onParams`, `onSearchParams`, and `onBody`.
+     */
+    onHeaders?: OnHeadersHook<Route>
+    /**
      * Replaces `getRouteParams()`. It receives the raw trie-matched params (no schema validation).
      * Returning `void` uses the raw params as-is. Returning a `Response` short-circuits the pipeline.
      */
@@ -245,6 +260,8 @@ export type ContextParams<
     Default extends Record<string, string> = Record<string, string>,
 > = UnwrapSchema<Schemas["params"], Default>
 
+export type ContextHeaders<Schemas extends EndpointSchemas> = UnwrapSchema<Schemas["headers"], HeadersBuilder>
+
 declare const jsonResponseBrand: unique symbol
 
 export type JsonResponse<T> = Omit<Response, "json"> & {
@@ -261,6 +278,7 @@ export interface EndpointMeta<
 > {
     route: Route
     method: Method
+    headers: ContextHeaders<NonNullable<Schemas>>
     body: ContextBody<NonNullable<Schemas>>
     searchParams: ContextSearchParams<NonNullable<Schemas>>
     params: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
@@ -276,7 +294,7 @@ export type RequestContext<Meta extends EndpointMeta<any, any, any>> = {
     body: Meta["body"]
     params: Meta["params"]
     searchParams: Meta["searchParams"]
-    headers: HeadersBuilder
+    headers: Meta["headers"]
     request: Request
     url: URL
     context: GlobalContext

@@ -4,6 +4,7 @@ import type {
     OnBodyHook,
     OnErrorHook,
     OnHandlerHook,
+    OnHeadersHook,
     OnMatchHook,
     OnParamsHook,
     OnRequestHook,
@@ -13,6 +14,7 @@ import type {
     RequestHookContext,
 } from "@/@types/index.ts"
 import type { RouterError } from "@/error.ts"
+import { HeadersBuilder } from "./headers.ts"
 
 /**
  * Runs a hook if it is defined. The hook can:
@@ -51,6 +53,17 @@ export const runOnMatch = async (
     ctx: MatchHookContext<any>
 ): Promise<MatchHookContext<any> | Response> => {
     return runHook(hook, [ctx], ctx)
+}
+
+export const runOnHeaders = async (
+    hook: OnHeadersHook<any> | undefined,
+    headers: HeadersBuilder,
+    ctx: MatchHookContext<any>
+): Promise<HeadersBuilder | Response> => {
+    const result = await runHook(hook, [{ ...ctx, headers }], headers)
+    if (result instanceof Response) return result
+    // @ts-ignore
+    return result instanceof HeadersBuilder ? result : result?.headers
 }
 
 /**

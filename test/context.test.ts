@@ -2,7 +2,7 @@ import { z } from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
 import { TrieRouter } from "@/trie.ts"
 import { HeadersBuilder } from "@/headers.ts"
-import { getRouteParams, getSearchParams, getBody } from "@/context.ts"
+import { getRouteParams, getSearchParams, getBody, getHeaders } from "@/context.ts"
 import type { RouteEndpoint } from "@/@types/index.ts"
 
 describe("getRouteParams", () => {
@@ -677,6 +677,138 @@ describe("getBody", () => {
         for (const { description, request, schema } of testCases) {
             test.concurrent(description, async ({ expect }) => {
                 await expect(getBody(request, { schemas: { body: schema } })).rejects.toThrowError()
+            })
+        }
+    })
+})
+
+describe("getHeaders", () => {
+    describe("without schema validation", () => {
+        const testCases = [
+            {
+                description: "No headers",
+                headers: new Headers(),
+                expected: new HeadersBuilder(),
+            },
+            {
+                description: "Single header",
+                headers: new Headers({ Authorization: "Bearer token" }),
+                expected: new HeadersBuilder({ Authorization: "Bearer token" }),
+            },
+            {
+                description: "Multiple headers",
+                headers: new Headers({
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                }),
+                expected: new HeadersBuilder({
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                }),
+            },
+        ]
+
+        for (const { description, headers, expected } of testCases) {
+            test.concurrent(description, ({ expect }) => {
+                expect(getHeaders(new HeadersBuilder(headers), {})).toEqual(expected)
+            })
+        }
+    })
+
+    describe("with schema validation", () => {
+        const testCases = [
+            {
+                description: "Valid headers with schema",
+                headers: new Headers({
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                }),
+                schema: z.object({
+                    accept: z.string(),
+                    "content-type": z.string(),
+                }),
+                expected: {
+                    accept: "application/json",
+                    "content-type": "application/json",
+                },
+            },
+            {
+                description: "with custom header",
+                headers: new Headers({
+                    "X-Custom-Header": "CustomValue",
+                }),
+                schema: z.object({
+                    "x-custom-header": z.string(),
+                }),
+                expected: {
+                    "x-custom-header": "CustomValue",
+                },
+            },
+            {
+                description: "excludes unexpected header",
+                headers: new Headers({
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-Extra-Header": "ExtraValue",
+                }),
+                schema: z.object({
+                    accept: z.string(),
+                    "content-type": z.string(),
+                }),
+                expected: {
+                    accept: "application/json",
+                    "content-type": "application/json",
+                },
+            },
+        ]
+
+        for (const { description, headers, schema, expected } of testCases) {
+            test.concurrent(description, ({ expect }) => {
+                expect(getHeaders(new HeadersBuilder(headers), { schemas: { headers: schema } })).toEqual(expected)
+            })
+        }
+    })
+
+    describe("with invalid headers", () => {
+        const testCases = [
+            {
+                description: "Case mismatch in header name with schema",
+                headers: new Headers({
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                }),
+                schema: z.object({
+                    Accept: z.string(),
+                    "Content-Type": z.string(),
+                }),
+            },
+            {
+                description: "Missing required header with schema",
+                headers: new Headers({
+                    Accept: "application/json",
+                }),
+                schema: z.object({
+                    accept: z.string(),
+                    "content-type": z.string(),
+                }),
+            },
+
+            {
+                description: "Invalid header value with schema",
+                headers: new Headers({
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                }),
+                schema: z.object({
+                    accept: z.boolean(),
+                    "content-type": z.string(),
+                }),
+            },
+        ]
+
+        for (const { description, headers, schema } of testCases) {
+            test.concurrent(description, ({ expect }) => {
+                expect(() => getHeaders(new HeadersBuilder(headers), { schemas: { headers: schema } })).toThrowError()
             })
         }
     })
