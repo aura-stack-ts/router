@@ -37,6 +37,25 @@ export class HeadersBuilder {
         return cookie ? parseSetCookie(cookie).value : undefined
     }
 
+    delete(name: string): HeadersBuilder {
+        this.headers.delete(name)
+        return this
+    }
+
+    append(name: string, value: string): HeadersBuilder {
+        this.headers.append(name, value)
+        return this
+    }
+
+    has(name: string): boolean {
+        return this.headers.has(name)
+    }
+
+    hasCookie(name: string): boolean {
+        const cookies = parse(this.headers.get("cookie") ?? "")
+        return name in cookies
+    }
+
     toHeaders(): Headers {
         return new Headers(this.headers)
     }

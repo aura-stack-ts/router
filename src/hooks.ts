@@ -14,7 +14,7 @@ import type {
     RequestHookContext,
 } from "@/@types/index.ts"
 import type { RouterError } from "@/error.ts"
-import type { HeadersBuilder } from "./headers.ts"
+import { HeadersBuilder } from "./headers.ts"
 
 /**
  * Runs a hook if it is defined. The hook can:
@@ -60,7 +60,10 @@ export const runOnHeaders = async (
     headers: HeadersBuilder,
     ctx: MatchHookContext<any>
 ): Promise<HeadersBuilder | Response> => {
-    return runHook(hook, [{ ...ctx, headers }], headers)
+    const result = await runHook(hook, [{ ...ctx, headers }], headers)
+    if (result instanceof Response) return result
+    // @ts-ignore
+    return result instanceof HeadersBuilder ? result : result?.headers
 }
 
 /**

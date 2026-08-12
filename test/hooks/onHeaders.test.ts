@@ -2,6 +2,7 @@ import { describe, test, vi } from "vitest"
 import { z } from "zod/v4"
 import { createRouter } from "@/router.ts"
 import { createEndpoint } from "@/endpoint.ts"
+import { HeadersBuilder } from "@/headers.ts"
 import { GETRequest } from "@test/hooks/presets.ts"
 
 describe("onHeaders hook (replaces getRouteParams)", () => {
@@ -48,6 +49,29 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
         expect(res.status).toBe(422)
         expect(await res.json()).toEqual({ error: "bad params" })
         expect(handler).not.toHaveBeenCalled()
+    })
+
+    test("returns replacement HeadersHookContext — uses replacement headers", async ({ expect }) => {
+        const endpoint = createEndpoint(
+            "GET",
+            "/users/:userId",
+            (ctx) => {
+                return ctx.json({ userId: ctx.headers.getHeader("x-user-id") })
+            },
+            {
+                hooks: {
+                    onHeaders: (ctx) => {
+                        return {
+                            ...ctx,
+                            headers: new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-123"),
+                        }
+                    },
+                },
+            }
+        )
+
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(await response.json()).toEqual({ userId: "replacement-123" })
     })
 
     test("validates headers with Zod schema", async ({ expect }) => {
