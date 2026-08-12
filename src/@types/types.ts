@@ -101,7 +101,7 @@ export interface HeadersHookContext<Route extends RoutePattern> extends MatchHoo
 
 export type OnHeadersHook<Route extends RoutePattern> = (
     ctx: HeadersHookContext<Route>
-) => Awaitable<void | HeadersHookContext<Route> | Response>
+) => Awaitable<void | HeadersBuilder | Response>
 
 /**
  * Replaces `getRouteParams()`. Receives raw trie-matched params (no schema validation).

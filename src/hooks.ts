@@ -60,10 +60,7 @@ export const runOnHeaders = async (
     headers: HeadersBuilder,
     ctx: MatchHookContext<any>
 ): Promise<HeadersBuilder | Response> => {
-    const result = await runHook(hook, [{ ...ctx, headers }], headers)
-    if (result instanceof Response) return result
-    // @ts-ignore
-    return result instanceof HeadersBuilder ? result : result?.headers
+    return await runHook(hook, [{ ...ctx, headers }], headers)
 }
 
 /**

@@ -61,10 +61,7 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
             {
                 hooks: {
                     onHeaders: (ctx) => {
-                        return {
-                            ...ctx,
-                            headers: new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-123"),
-                        }
+                        return new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-123")
                     },
                 },
             }
