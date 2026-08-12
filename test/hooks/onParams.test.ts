@@ -5,17 +5,17 @@ import { GETRequest } from "@test/hooks/presets.ts"
 
 describe("onParams hook (replaces getRouteParams)", () => {
     test("receives raw trie params and handler gets hook result", async ({ expect }) => {
-        let rawReceived: Record<string, string> | null = null
+        let raw: Record<string, string> | null = null
         const endpoint = createEndpoint("GET", "/users/:userId", (ctx) => ctx.json({ userId: ctx.params.userId }), {
             hooks: {
                 onParams: (ctx) => {
-                    rawReceived = ctx.params
+                    raw = ctx.params
                     return { userId: `transformed-${ctx.params.userId}` }
                 },
             },
         })
         const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
-        expect(rawReceived).toEqual({ userId: "123" })
+        expect(raw).toEqual({ userId: "123" })
         expect(await response.json()).toEqual({ userId: "transformed-123" })
     })
 
@@ -71,5 +71,37 @@ describe("onParams hook (replaces getRouteParams)", () => {
         })
         await createRouter([endpoint]).GET(GETRequest("/users/1"))
         expect(ctxCapture).toEqual({ route: "/users/:userId", method: "GET" })
+    })
+
+    test("returns replacement ParamsHookContext — uses replacement params", async ({ expect }) => {
+        let raw: Record<string, string> | null = null
+        const endpoint = createEndpoint("GET", "/users/:userId", (ctx) => ctx.json({ ...ctx.params }), {
+            hooks: {
+                onParams: (ctx) => {
+                    raw = ctx.params
+                    return { userId: `replacement-${ctx.params.userId}`, bookId: "replacement-book-id" }
+                },
+            },
+        })
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(raw).toEqual({ userId: "123" })
+        expect(await response.json()).toEqual({ userId: "replacement-123", bookId: "replacement-book-id" })
+    })
+
+    test("returns replacement ParamsHookContext", async ({ expect }) => {
+        let raw: Record<string, string> | null = null
+        const endpoint = createEndpoint("GET", "/users/:userId", (ctx) => ctx.json({ ...ctx.params }), {
+            hooks: {
+                onParams: (ctx) => {
+                    raw = ctx.params
+                    const params = ctx.params as Record<string, string>
+                    params.userId = `replacement-${params.userId}`
+                    params.bookId = "replacement-book-id"
+                },
+            },
+        })
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(raw).toEqual({ userId: "replacement-123", bookId: "replacement-book-id" })
+        expect(await response.json()).toEqual({ userId: "replacement-123", bookId: "replacement-book-id" })
     })
 })

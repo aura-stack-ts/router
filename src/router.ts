@@ -132,14 +132,9 @@ const handleRequest = async (
         headers = getHeaders(headers, endpoint.config)
 
         /** onParams hook */
-        let dynamicParams: Record<string, unknown> | unknown
-        if (endpoint.config.hooks?.onParams) {
-            const onParamsResult = await runOnParams(endpoint.config.hooks.onParams, params, matchCtx)
-            if (onParamsResult instanceof Response) return onParamsResult
-            dynamicParams = onParamsResult
-        } else {
-            dynamicParams = getRouteParams(params, endpoint.config)
-        }
+        let dynamicParams: any = await runOnParams(endpoint.config.hooks?.onParams, params, matchCtx)
+        if (dynamicParams instanceof Response) return dynamicParams
+        dynamicParams = getRouteParams(dynamicParams, endpoint.config)
 
         /** onSearchParams hook */
         let searchParams: Record<string, unknown> | URLSearchParams
