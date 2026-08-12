@@ -1,9 +1,10 @@
 import { TrieRouter } from "@/trie.ts"
 import { onError } from "@/on-error.ts"
 import { AuraRouterError } from "@/error.ts"
+import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedMethod } from "@/assert.ts"
-import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
+import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
 import {
     runOnRequest,
     runOnMatch,
@@ -27,7 +28,6 @@ import type {
     EndpointMeta,
     RequestContext,
 } from "@/@types/index.ts"
-import { HeadersBuilder } from "./headers.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
@@ -56,10 +56,11 @@ const handleRequest = async (
     config: RouterConfig,
     router: TrieRouter
 ): Promise<Response> => {
-    let errorCtx: RequestHookContext | MatchHookContext<any> = {
+    let errorCtx: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>> = {
         request,
         context: config.context ?? ({} as GlobalContext),
         json,
+        phase: "onRequest",
     }
     let endpoint: RouteEndpoint<any, any, any, any> | undefined
     try {
@@ -68,7 +69,12 @@ const handleRequest = async (
         }
 
         /** onRequest hook */
-        let requestCtx: RequestHookContext = { request, context: config.context ?? ({} as GlobalContext), json }
+        let requestCtx: RequestHookContext = {
+            request,
+            context: config.context ?? ({} as GlobalContext),
+            json,
+            phase: "onRequest",
+        }
 
         const globalOnRequestResult = await runOnRequest(config.hooks?.onRequest, requestCtx)
         if (globalOnRequestResult instanceof Response) return globalOnRequestResult
@@ -82,7 +88,7 @@ const handleRequest = async (
         )
         if (globalRequestContext instanceof Response) return globalRequestContext
 
-        requestCtx = { request: globalRequestContext.request, context: globalRequestContext.context, json }
+        requestCtx = { request: globalRequestContext.request, context: globalRequestContext.context, json, phase: "onRequest" }
         errorCtx = requestCtx
 
         const url = new URL(requestCtx.request.url)
@@ -99,70 +105,71 @@ const handleRequest = async (
         const { params } = node
         endpoint = node.endpoint
 
-        let matchCtx: MatchHookContext<any> = {
+        let matchCtx = {
             request: requestCtx.request,
             context: requestCtx.context,
             route: endpoint.route,
             method: requestCtx.request.method as HTTPMethod,
             json,
-        }
+            phase: "onMatch",
+        } as MatchHookContext<any>
         errorCtx = matchCtx
 
-        const endpointOnRequestResult = await runOnRequest(endpoint.config.hooks?.onRequest, matchCtx)
+        const endpointOnRequestCtx = { ...matchCtx, phase: "onRequest" as const }
+        errorCtx = endpointOnRequestCtx
+        const endpointOnRequestResult = await runOnRequest(endpoint.config.hooks?.onRequest, endpointOnRequestCtx)
         if (endpointOnRequestResult instanceof Response) return endpointOnRequestResult
-        if (endpointOnRequestResult !== matchCtx) {
+        if (endpointOnRequestResult !== endpointOnRequestCtx) {
             matchCtx = { ...matchCtx, ...endpointOnRequestResult }
             errorCtx = matchCtx
         }
 
         /** onMatch hook */
+        matchCtx.phase = "onMatch"
+        errorCtx = matchCtx
         const onMatchResult = await runOnMatch(endpoint.config.hooks?.onMatch, matchCtx)
         if (onMatchResult instanceof Response) return onMatchResult
         if (onMatchResult !== matchCtx) {
-            matchCtx = onMatchResult
+            matchCtx = { ...matchCtx, ...onMatchResult }
             errorCtx = matchCtx
         }
 
+        /** onHeaders hook */
+        const headersCtx = { ...matchCtx, phase: "onHeaders" as const }
+        errorCtx = headersCtx
         let headers: any = await runOnHeaders(
             endpoint.config.hooks?.onHeaders,
             new HeadersBuilder(requestCtx.request.headers),
-            matchCtx
+            headersCtx
         )
         if (headers instanceof Response) return headers
         headers = getHeaders(headers, endpoint.config)
 
         /** onParams hook */
-        let dynamicParams: Record<string, unknown> | unknown
-        if (endpoint.config.hooks?.onParams) {
-            const onParamsResult = await runOnParams(endpoint.config.hooks.onParams, params, matchCtx)
-            if (onParamsResult instanceof Response) return onParamsResult
-            dynamicParams = onParamsResult
-        } else {
-            dynamicParams = getRouteParams(params, endpoint.config)
-        }
+        const paramsCtx = { ...matchCtx, phase: "onParams" as const }
+        errorCtx = paramsCtx
+        let dynamicParams: any = await runOnParams(endpoint.config.hooks?.onParams, params, paramsCtx)
+        if (dynamicParams instanceof Response) return dynamicParams
+        dynamicParams = getRouteParams(dynamicParams, endpoint.config)
 
         /** onSearchParams hook */
-        let searchParams: Record<string, unknown> | URLSearchParams
-        if (endpoint.config.hooks?.onSearchParams) {
-            const rawSearchParams = new URLSearchParams(url.searchParams.toString())
-            const onSearchParamsResult = await runOnSearchParams(endpoint.config.hooks.onSearchParams, rawSearchParams, matchCtx)
-            if (onSearchParamsResult instanceof Response) return onSearchParamsResult
-            searchParams = onSearchParamsResult
-        } else {
-            // @ts-ignore Skip type checking here because there's overlapping types
-            searchParams = getSearchParams(requestCtx.request.url, endpoint.config)
-        }
+        const searchParamsCtx = { ...matchCtx, phase: "onSearchParams" as const }
+        errorCtx = searchParamsCtx
+        let searchParams: any = await runOnSearchParams(
+            endpoint.config.hooks?.onSearchParams,
+            new URLSearchParams(url.searchParams.toString()),
+            searchParamsCtx
+        )
+        if (searchParams instanceof Response) return searchParams
+        searchParams = getSearchParams(searchParams, endpoint.config)
 
         /** onBody hook */
-        let body: unknown
-        if (endpoint.config.hooks?.onBody) {
-            const rawBody = await parseBodyRaw(requestCtx.request)
-            const onBodyResult = await runOnBody(endpoint.config.hooks.onBody, rawBody, matchCtx)
-            if (onBodyResult instanceof Response) return onBodyResult
-            body = onBodyResult
-        } else {
-            body = await getBody(requestCtx.request, endpoint.config)
-        }
+        const rawBody = await parseBodyRaw(requestCtx.request)
+        const bodyCtx = { ...matchCtx, phase: "onBody" as const }
+        errorCtx = bodyCtx
+        let body: unknown = await runOnBody(endpoint.config.hooks?.onBody, rawBody, bodyCtx)
+        if (body instanceof Response) return body
+        body = await getBody(body, endpoint.config)
 
         let context: any = {
             params: dynamicParams,
@@ -175,6 +182,7 @@ const handleRequest = async (
             route: endpoint.route,
             context: requestCtx.context ?? ({} as GlobalContext),
             json,
+            phase: "onBody",
         }
         errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
 
@@ -183,6 +191,8 @@ const handleRequest = async (
         errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
 
         /** onHandler hook */
+        context.phase = "onHandler"
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
         const onHandlerResult = await runOnHandler(endpoint.config.hooks?.onHandler, context)
         if (onHandlerResult instanceof Response) return onHandlerResult
         context = onHandlerResult
@@ -193,6 +203,8 @@ const handleRequest = async (
         let response = inferHandlerResponse(handlerResult)
 
         /** onResponse hook */
+        context.phase = "onResponse"
+        errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
         response = await runOnResponse(endpoint.config.hooks?.onResponse, response, context)
         response = await runOnResponse(config.hooks?.onResponse as any, response, context)
 

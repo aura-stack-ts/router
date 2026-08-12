@@ -25,7 +25,7 @@ export const onError = async (
     endpointOnError?: OnErrorHook<any>,
     ctx?: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>>
 ): Promise<Response> => {
-    const errorCtx = ctx ?? ({ request, context: config.context ?? {}, json } satisfies RequestHookContext)
+    const errorCtx = ctx ?? ({ request, context: config.context ?? {}, json, phase: "onRequest" } satisfies RequestHookContext)
 
     if (endpointOnError) {
         try {

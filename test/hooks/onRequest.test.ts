@@ -114,4 +114,20 @@ describe("onRequest hook", () => {
             expect(order).toEqual(["global", "endpoint"])
         })
     })
+
+    test("throws error", async ({ expect }) => {
+        const endpoint = createEndpoint("GET", "/users", (ctx) => ctx.json({ ok: true }), {
+            hooks: {
+                onRequest: async () => {
+                    throw new Error("Unexpected error")
+                },
+                onError: (ctx) => {
+                    return ctx.json({ phase: ctx.phase })
+                },
+            },
+        })
+        const { GET } = createRouter([endpoint])
+        const response = await GET(GETRequest("/users"))
+        expect(await response.json()).toEqual({ phase: "onRequest" })
+    })
 })

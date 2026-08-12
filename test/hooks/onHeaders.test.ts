@@ -61,10 +61,7 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
             {
                 hooks: {
                     onHeaders: (ctx) => {
-                        return {
-                            ...ctx,
-                            headers: new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-123"),
-                        }
+                        return new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-123")
                     },
                 },
             }
@@ -72,6 +69,26 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
 
         const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
         expect(await response.json()).toEqual({ userId: "replacement-123" })
+    })
+
+    test("returns replacement HeadersHookContext object — uses replacement headers", async ({ expect }) => {
+        const endpoint = createEndpoint(
+            "GET",
+            "/users/:userId",
+            (ctx) => {
+                return ctx.json({ userId: ctx.headers.getHeader("x-user-id") })
+            },
+            {
+                hooks: {
+                    onHeaders: (ctx) => {
+                        return new HeadersBuilder(ctx.headers.toHeaders()).setHeader("x-user-id", "replacement-context-123")
+                    },
+                },
+            }
+        )
+
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(await response.json()).toEqual({ userId: "replacement-context-123" })
     })
 
     test("validates headers with Zod schema", async ({ expect }) => {
@@ -169,5 +186,27 @@ describe("onHeaders hook (replaces getRouteParams)", () => {
                 },
             },
         })
+    })
+
+    test("throws error", async ({ expect }) => {
+        const endpoint = createEndpoint(
+            "GET",
+            "/users/:userId",
+            (ctx) => {
+                return ctx.json({ userId: ctx.headers.getHeader("x-user-id") })
+            },
+            {
+                hooks: {
+                    onBody: async (ctx) => {
+                        await ctx.request.json()
+                    },
+                    onError: (ctx) => {
+                        return Response.json({ phase: ctx.phase }, { status: 500 })
+                    },
+                },
+            }
+        )
+        const response = await createRouter([endpoint]).GET(GETRequest("/users/123"))
+        expect(await response.json()).toEqual({ phase: "onBody" })
     })
 })

@@ -162,6 +162,7 @@ describe("createRouter", () => {
                 new Request("https://example.com/auth/credentials", {
                     method: "POST",
                     body: JSON.stringify(body),
+                    headers: { "Content-Type": "application/json" },
                 })
             )
             expect(post.status).toBe(200)
