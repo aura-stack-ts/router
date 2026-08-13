@@ -5,6 +5,7 @@ import { createRouter } from "@/router.ts"
 import { isRouterError } from "@/assert.ts"
 import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
 import { HeadersBuilder } from "@/headers.ts"
+import type { Awaitable, GetHttpHandlers } from "@/index.ts"
 
 describe("createRouter", () => {
     describe("OAuth endpoints", () => {
@@ -15,7 +16,7 @@ describe("createRouter", () => {
                 }),
             },
         })
-        const sessionConfig = createEndpointConfig({
+        const sessionConfig = createEndpointConfig("/auth/session", {
             use: [
                 (ctx) => {
                     ctx.headers.setCookie("session-token", "123abc-token")
@@ -66,7 +67,7 @@ describe("createRouter", () => {
             credentialsConfig
         )
 
-        const router = createRouter([signIn, callback, session, credentials])
+        const router = createRouter([signIn, callback, credentials, session])
 
         test("Callback handler", async () => {
             const { GET } = router
@@ -199,6 +200,13 @@ describe("createRouter", () => {
             })
             expect(post.status).toBe(422)
         })
+
+        test("Types", () => {
+            expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                GET: (request: Request) => Awaitable<Response>
+                POST: (request: Request) => Awaitable<Response>
+            }>()
+        })
     })
 
     describe("Invalid endpoints", () => {
@@ -270,6 +278,12 @@ describe("createRouter", () => {
                     "The requested route address cannot be found or is unavailable on this application endpoint server context.",
             })
         })
+
+        test("Types", () => {
+            expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                GET: (request: Request) => Awaitable<Response>
+            }>()
+        })
     })
 
     describe("With global middlewares", () => {
@@ -307,6 +321,13 @@ describe("createRouter", () => {
                 expect(post.headers.get("x-powered-by")).toBe("@aura-stack")
                 expect(await post.json()).toEqual({ message: "Sign in with OAuth" })
             })
+
+            test("Types", () => {
+                expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                    GET: (request: Request) => Awaitable<Response>
+                    POST: (request: Request) => Awaitable<Response>
+                }>()
+            })
         })
 
         describe("Block request middleware", () => {
@@ -329,6 +350,12 @@ describe("createRouter", () => {
                 expect(get).toBeInstanceOf(Response)
                 expect(get.status).toBe(403)
                 expect(await get.json()).toEqual({ message: "Forbidden" })
+            })
+
+            test("Types", () => {
+                expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                    GET: (request: Request) => Awaitable<Response>
+                }>()
             })
         })
     })
@@ -424,6 +451,12 @@ describe("createRouter", () => {
             )
             expect(request.status).toBe(200)
             expect(await request.json()).toEqual({ message: "Get user", body: { username: "John", password: "Doe" } })
+        })
+
+        test("Types", () => {
+            expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                POST: (request: Request) => Awaitable<Response>
+            }>()
         })
     })
 

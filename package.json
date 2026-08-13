@@ -13,6 +13,7 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "vitest --run",
+    "test:types": "vitest --run --typecheck.only",
     "test:watch": "vitest",
     "test:bench": "vitest --run bench",
     "type-check": "tsc --noEmit",
