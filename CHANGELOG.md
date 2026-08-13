@@ -7,6 +7,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.10.0] - 2026-08-13
+
 ### Added
 
 - Added the `phase` field to the `onError` hook context to identify the lifecycle phase that caused an error, such as `onRequest`, `onMatch`, `onBody`, and other request processing phases. [#63](https://github.com/aura-stack-ts/router/pull/63)
