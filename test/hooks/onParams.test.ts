@@ -108,7 +108,7 @@ describe("onParams hook (replaces getRouteParams)", () => {
     test("throws errors", async ({ expect }) => {
         const endpoint = createEndpoint("GET", "/users/:userId", (ctx) => ctx.json({ userId: ctx.params.userId }), {
             hooks: {
-                onParams: (ctx) => {
+                onParams: () => {
                     throw new Error("onParams error")
                 },
                 onError: (ctx) => {

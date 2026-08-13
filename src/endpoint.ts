@@ -85,12 +85,12 @@ export const createEndpoint = <
  */
 export function createEndpointConfig<
     Route extends RoutePattern,
-    Config extends EndpointConfig<Route, HTTPMethod | HTTPMethod[], EndpointSchemas>,
+    Config extends EndpointConfig<Route, NoInfer<HTTPMethod | HTTPMethod[]>, EndpointSchemas>,
 >(route: Route, config: Config): Config
 
-export function createEndpointConfig<Config extends EndpointConfig<RoutePattern, HTTPMethod | HTTPMethod[], EndpointSchemas>>(
-    config: Config
-): Config
+export function createEndpointConfig<
+    Config extends EndpointConfig<RoutePattern, NoInfer<HTTPMethod | HTTPMethod[]>, EndpointSchemas>,
+>(config: Config): Config
 
 export function createEndpointConfig(...args: unknown[]) {
     if (typeof args[0] === "string") return args[1]

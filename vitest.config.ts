@@ -7,6 +7,11 @@ export default defineConfig({
         benchmark: {
             include: ["bench/**/*.bench.ts"],
         },
+        typecheck: {
+            enabled: false,
+            include: ["test/**/*.test-d.ts"],
+            exclude: ["test/**/*.test.ts"],
+        },
     },
     resolve: {
         alias: {
