@@ -3,21 +3,132 @@ title: Error Handling
 description: Centralize error handling for your router with the onError configuration, and distinguish internal router errors from your own application errors.
 ---
 
-The `onError` option on `createRouter` captures errors arising from route handlers, endpoint middlewares, global middlewares, and internal router logic. It's a centralized place to shape error responses and add diagnostics.
+Aura Router provides a robust, phase-aware error handling system. The recommended approach is to use **Lifecycle Hooks** (`hooks.onError`), which provide granular control over failures at both the endpoint and router levels.
+
+<Callout type="warn">
+  **Deprecation Notice:** The legacy top-level `onError` configuration is still supported for backward compatibility but is
+  deprecated. We strongly recommend migrating to `hooks.onError`.
+</Callout>
+
+## `hooks.onError`
+
+The `onError` hook is the only lifecycle hook that runs conditionally—it executes exclusively when an error is thrown during any earlier phase of the request pipeline. It is your centralized location to intercept failures, log diagnostics, and shape the HTTP response sent to the client.
+
+The context object passed to `onError` contains:
+
+- `phase`: The exact lifecycle phase where the crash occurred (`onRequest`, `onHeaders`, `onParams`, `onBody`, `onHandler`, etc.).
+- `error`: The raw error object that was thrown.
+- `json` / `context`: Standard context helpers to construct responses or access injected dependencies.
+
+<Tabs items={["Router-Level", "Endpoint-Level"]}>
+
+<Tab value="Router-Level">
+
+A router-level `onError` hook captures errors arising from _any_ endpoint, middleware, or internal router logic. It is the ideal place to format standard `500 Internal Server Error` responses.
+
+```ts lineNumbers
+import { createRouter, createEndpoint } from "@aura-stack/router"
+
+const getBook = createEndpoint("GET", "/books/:bookId", (ctx) => {
+  throw new Error("Database connection lost")
+})
+
+export const router = createRouter([getBook], {
+  hooks: {
+    onError: ({ phase, error, json, context }) => {
+      // 💡 `context.log` is a custom injected service
+      context.log.error(`[${phase}] Crash: ${error.message}`)
+      return json({ error: `Internal execution failed during ${phase}` }, { status: 500 })
+    },
+  },
+})
+```
+
+</Tab>
+
+<Tab value="Endpoint-Level">
+
+An endpoint-level `onError` hook handles errors only for that specific route.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+export const getBook = createEndpoint(
+  "GET",
+  "/books/:bookId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onHeaders: () => {
+        throw new Error("Missing required trace headers")
+      },
+      onError: ({ phase, error, json }) => {
+        // Handle failures specific to this endpoint's strict requirements
+        return json({ message: `Book API Error (${phase}): ${error.message}` }, { status: 400 })
+      },
+    },
+  }
+)
+```
+
+</Tab>
+
+</Tabs>
+
+## Identifying Router Errors
+
+To detect whether an error originated from Aura Router's internal mechanics (like a malformed URL or a missing route) versus your own application logic, use the `isRouterError` helper.
+
+A `RouterError` provides:
+
+- `message`: A descriptive string of the failure.
+- `statusCode`: The appropriate HTTP status code (e.g., `404`, `400`, `500`).
+- `statusText`: The HTTP status text (e.g., `Not Found`, `Bad Request`).
+
+```ts lineNumbers
+import { createRouter, isRouterError } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  hooks: {
+    onError: ({ error, json }) => {
+      // 1. Handle Aura Router internal errors safely
+      if (isRouterError(error)) {
+        return json({ error: error.statusText, details: error.message }, { status: error.statusCode })
+      }
+
+      // 2. Handle your custom application errors
+      if (error instanceof DOMException && error.name === "TimeoutError") {
+        return json({ error: "Upstream service timeout" }, { status: 504 })
+      }
+
+      // 3. Uncaught exceptions (Do not leak stack traces to the client!)
+      console.error("[Unhandled Exception]", error)
+      return json({ error: "Internal Server Error" }, { status: 500 })
+    },
+  },
+})
+```
+
+## Legacy Config `onError`
+
+Prior to the introduction of lifecycle hooks, Aura Router relied on a top-level `onError` configuration property. While still supported, this API lacks access to the rich `ctx` object and phase awareness.
 
 <Callout>
-  This is distinct from the endpoint-level `hooks.onError` covered in [Lifecycle onError](/docs/concepts/lifecycle#onerror). If an
-  endpoint defines its own `hooks.onError` and it returns a response, that error is considered handled and never reaches the
-  router-level `onError` below. Router-level `onError` is your catch-all endpoint-level `hooks.onError` is for errors you want to
-  handle differently for one specific route.
+  Unlike hooks, this legacy callback receives only the raw error and standard request objects. You must construct the response
+  using the native `Response.json()` API rather than `ctx.json()`.
 </Callout>
 
 ```ts lineNumbers
 import { createRouter, isRouterError, type RouterConfig } from "@aura-stack/router"
 
-const onErrorHandler: RouterConfig["onError"] = (error, request) => {
-  const message = isRouterError(error) ? "Unexpected Internal Error" : `The error was caused by ${error.message}`
-  return Response.json({ message })
+const onErrorHandler: RouterConfig["onError"] = (error) => {
+  if (isRouterError(error)) {
+    return Response.json({ message: "Unexpected Internal Error" }, { status: error.statusCode })
+  }
+  console.error(error)
+  return Response.json({ message: "Internal Server Error" }, { status: 500 })
 }
 ```
 
@@ -25,20 +136,10 @@ const onErrorHandler: RouterConfig["onError"] = (error, request) => {
   Unlike endpoint hooks, this callback doesn't receive a `ctx` object — only the raw `error` and the original `request` — so
   responses here are built with `Response.json`, not `ctx.json`.
 </Callout>
-### Identifying Router Errors
- 
-To detect whether an error originated from the router internals or from your own endpoint logic, use the `isRouterError` helper.
- 
-A `RouterError` provides:
- 
-- `message`
-- `statusCode`
-- `statusText`
-These map directly onto a structured JSON error response.
- 
+
 ```ts lineNumbers
 import { createRouter, isRouterError, type RouterConfig } from "@aura-stack/router"
- 
+
 const onError: RouterConfig["onError"] = (error, request) => {
   if (isRouterError(error)) {
     const { message, statusText, statusCode } = error
@@ -52,86 +153,8 @@ const onError: RouterConfig["onError"] = (error, request) => {
   }
   return Response.json({ message: "Internal Server Error" }, { status: 500 })
 }
- 
+
 export const router = createRouter([], {
   onError,
-})
-```
-
-## Usage
-
-### Basic Usage
-
-The `onError` handler can be passed directly to `createRouter`.
-
-```ts lineNumbers
-import { createRouter } from "@aura-stack/router"
-
-export const router = createRouter([], {
-  onError: (error, request) => {
-    console.error("Router error:", error)
-    return Response.json({ message: "Internal Server Error" }, { status: 500 })
-  },
-})
-```
-
-### Using the `RouterConfig` Type
-
-Typing the handler with `RouterConfig["onError"]` improves clarity and lets you define it outside `createRouter` for reuse.
-
-```ts lineNumbers
-import { createRouter, type RouterConfig } from "@aura-stack/router"
-
-const onErrorHandler: RouterConfig["onError"] = (error, request) => {
-  console.error("Router error:", error)
-  return Response.json({ message: "Internal Server Error" }, { status: 500 })
-}
-
-export const router = createRouter([], {
-  onError: onErrorHandler,
-})
-```
-
-### Advanced Usage
-
-For richer diagnostics, combine `isRouterError` with your own error classes.
-
-```ts lineNumbers
-import { createRouter, isRouterError, statusCode, type RouterConfig } from "@aura-stack/router"
-
-class LoginError extends Error {}
-
-interface ErrorResponse {
-  message: string
-  code: string
-}
-
-const onErrorHandler: RouterConfig["onError"] = (error, request) => {
-  if (isRouterError(error)) {
-    const { message, statusText, statusCode: routerStatusCode } = error
-
-    const response: ErrorResponse = {
-      message,
-      code: statusText,
-    }
-
-    return Response.json(response, { status: routerStatusCode })
-  }
-
-  // Not a RouterError — an exception from your own code. Log the full error
-  // (including its stack) server-side, but never send a stack trace to the
-  // client: it can leak file paths, internal structure, and other details.
-  console.error(error)
-
-  const response: ErrorResponse = {
-    message: error instanceof LoginError ? "Invalid credentials" : "Bad Request",
-    code: error instanceof LoginError ? "LOGIN_FAILED" : "BAD_REQUEST",
-  }
-
-  return Response.json(response, { status: statusCode.BAD_REQUEST })
-}
-
-export const router = createRouter([], {
-  onError: onErrorHandler,
 })
 ```

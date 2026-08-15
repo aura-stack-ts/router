@@ -139,7 +139,8 @@ const createUser = createEndpoint(
 </Tabs>
 
 <Callout type="warn">
-  The `password` field validated by `schemas.body` is the *plaintext* value sent by the client. `onBody` runs before validation,
-  so it hashes the already-validated password before it reaches the handler — `ctx.body.password` in the handler is the hashed
-  value, not the original.
+  **Lifecycle Execution Order:** The `onBody` hook receives the parsed but *unvalidated* payload and executes before schema
+  validation. This means your schema will validate the *mutated* (hashed) password. If you need to validate the original plaintext
+  password (e.g., enforcing a minimum length of 8 characters), move your hashing logic to the `onHandler` hook or directly inside
+  the endpoint handler, which executes *after* schema validation succeeds.
 </Callout>

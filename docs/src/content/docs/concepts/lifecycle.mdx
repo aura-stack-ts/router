@@ -36,10 +36,11 @@ Hooks can be defined at the router level or the endpoint level. When both define
 
 A hook is a function called at a specific phase of the request/response lifecycle. Each hook receives a context object scoped to that phase.
 
-<Callout>
-  If a hook returns a value other than `undefined` typically a `Response` built via `json` the lifecycle short-circuits: no
-  further hooks or the handler run, and that value is sent to the client as-is. This is how the `onRequest` example below rejects
-  unauthenticated requests before routing even happens.
+<Callout type="info">
+  **Lifecycle Short-Circuiting:** Returning a `Response` (e.g., via `ctx.json()`) from a pre-handler hook instantly short-circuits
+  the request pipeline—no further pre-hooks or the main handler will run. Returning non-`Response` values, however, may simply
+  update the hook context and allow the pipeline to continue. Note that any `Response` returned from an endpoint's `onResponse`
+  hook will still cascade through the router-level `onResponse` hook before reaching the client.
 </Callout>
 
 Hooks can also mutate the context object passed to them. Where a hook runs _before_ schema validation for its field (`onHeaders`,

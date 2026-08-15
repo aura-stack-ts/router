@@ -86,7 +86,7 @@ export const config = createEndpointConfig({
   schemas: {
     searchParams: type({
       q: "string > 0",
-      page: "(number.integer > 0) = 1",
+      page: type("string.integer.parse").to("number > 0").default(1),
     }),
   },
 })
