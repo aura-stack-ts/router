@@ -1,0 +1,208 @@
+---
+title: createRouter
+description: Create routers to group endpoints and expose type-safe HTTP method handlers.
+---
+
+The `createRouter` function is a declarative API for defining routers that group endpoints and expose type-safe HTTP method handlers. The router automatically matches incoming requests based on the HTTP method and URL pattern, dispatching them to the correct endpoint.
+
+<Callout>
+  `createRouter` is designed for use **inside existing backend runtimes** such as Next.js, Nuxt.js, SvelteKit, Cloudflare Workers,
+  Bun, Deno, and Node.js (via Web APIs). It is **not** currently intended for building a backend from scratch, although this
+  capability is planned for the future.
+</Callout>
+
+## Signature
+
+```ts lineNumbers
+import type { RouteEndpoint, RouterConfig, GetHttpHandlers } from "@aura-stack/router/types"
+
+function createRouter<const Endpoints extends RouteEndpoint<any, any, any, any>[]>(
+  endpoints: Endpoints,
+  config: RouterConfig = {}
+): Router<Endpoints>
+```
+
+### Parameters
+
+| Parameter   | Type              | Description                                         |
+| ----------- | ----------------- | --------------------------------------------------- |
+| `endpoints` | `RouteEndpoint[]` | The list of endpoints created via `createEndpoint`. |
+| `config`    | `RouterConfig`    | Optional router configuration.                      |
+
+#### Endpoints [!toc]
+
+The `endpoints` parameter is a list of endpoint definitions to be loaded and managed by the router. All HTTP methods defined in the router are returned as HTTP route handlers and can be accessed based on specific needs (see [Type Inference](#type-inference)).
+
+```ts lineNumbers
+import { createRouter, createEndpoint } from "@aura-stack/router"
+
+const signIn = createEndpoint("GET", "/auth/:oauth", async (ctx) => {
+  const oauth = ctx.oauth
+  return Response.json({ oauth })
+})
+
+const callback = createEndpoint("POST", "/callback/:oauth", async (ctx) => {
+  const oauth = ctx.oauth
+  return Response.json({ oauth }, { status: 301 })
+})
+
+export const { GET } = createRouter([signIn, callback])
+```
+
+#### RouterConfig [!toc]
+
+The `config` parameter allows setting additional options for customization.
+
+| Option        | Type                                                                     | Description                                                 |
+| ------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `basePath`    | `string`                                                                 | Prefix applied to all routes (recommended: start with `/`). |
+| `use`         | `GlobalMiddleware[]`                                                     | Global middlewares executed before endpoint handlers.       |
+| `context`     | `GlobalMiddlewareContext`                                                | Global context for endpoints and middlewares.               |
+| `hooks`       | `RouterHooks`                                                            | Optional hooks for router lifecycle events.                 |
+| ~~`onError`~~ | `(error: Error \| RouterError, request: Request) => Awaitable<Response>` | Global error handler.                                       |
+
+##### `basePath` [#base-path]
+
+The `basePath` option is a router configuration that prefixes all endpoint routes. This is useful for API versioning or namespacing. The value should start with a leading slash (e.g., `/api/v1`).
+
+<Callout>
+  The `basePath` is prepended to every endpoint route upon router creation. Requests must include the full path (`basePath +
+  route`) — for example, with `basePath: "/api/v1"` and an endpoint route `/users`, the request path is `/api/v1/users`.
+</Callout>
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+/* 
+  Request to GET /api/v1/users
+  Request to POST /api/v1/users
+*/
+export const router = createRouter([], {
+  basePath: "/api/v1",
+})
+```
+
+#### `hooks` [#hooks]
+
+The `hooks` configuration property allows defining lifecycle hooks for the router. These hooks provide a way to execute custom logic at specific points during the request handling process.
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  hooks: {
+    onRequest: ({ request }) => {
+      const timestamp = new Date().toISOString()
+      console.log(`[${timestamp}] ${request.method} ${request.url}`)
+      request.headers.set("x-request-id", crypto.randomUUID())
+    },
+  },
+})
+```
+
+<Callout>
+
+The `onRequest` hook runs before any route matching or endpoint execution. It could an lifecycle alternative to `use` global middlewares, but it is not recommended to use both at the same time. The `onRequest` hook is ideal for logging, auditing, and request mutation.
+
+</Callout>
+
+##### `use` [#use]
+
+The `use` configuration property defines global middleware functions that run for every matched request. Global middlewares execute after route matching but before endpoint middlewares and the route handler.
+
+<Callout>
+  Global middlewares access the request via the `context` property. The context must be configured on the router to be accessible
+  for global middlewares and endpoint middlewares.
+</Callout>
+
+```ts lineNumbers
+import { createRouter, type GlobalMiddleware } from "@aura-stack/router"
+
+const auditMiddleware: GlobalMiddleware = async (ctx) => {
+  const timestamp = new Date().toISOString()
+  console.log(`[${timestamp}] ${ctx.request.method} ${ctx.request.url}`)
+
+  /*
+    Add request ID to all responses
+  */
+  ctx.request.headers.set("x-request-id", crypto.randomUUID())
+  return ctx
+}
+
+export const router = createRouter([], {
+  use: [auditMiddleware],
+})
+```
+
+#### `context`
+
+The `context` option defines global state for the application, accessible by endpoints and middlewares.
+
+For better type safety with the global context, create a `types.d.ts` file and augment the module by updating the
+`GlobalContext` type with custom context object types. For more details, see [Module
+Augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation).
+
+```ts title="types.d.ts" lineNumbers
+import type { GlobalContext } from "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  interface GlobalContext {
+    state: string
+    appInstance: {
+      name: string
+      port: string
+    }
+  }
+}
+```
+
+```ts title="@/index" lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  context: {
+    state: "state-value",
+    appInstance: {
+      name: "app-name",
+      port: process.env.PORT!,
+    },
+  },
+})
+```
+
+---
+
+#### `onError` [#on-error]
+
+The `onError` function is a global error handler that runs whenever an error is thrown inside a route handler, an endpoint middleware, or a global middleware. It allows overriding the default error response emitted by the router and returning a fully customized HTTP response.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const session = createEndpoint("GET", "/session", async () => {
+  throw new Error("Unexpected error in GET /session")
+})
+
+export const { GET } = createRouter([session], {
+  onError(error) {
+    return Response.json({ error: error.message }, { status: 500 })
+  },
+})
+```
+
+<Callout type="warning">
+  The `onError` function is deprecated and will be removed in future versions. Use the `hooks.onError` option instead.
+</Callout>
+
+### Returns
+
+The `createRouter` function returns a typed object containing only the HTTP handlers defined by the endpoints in the router. This ensures that developers can only access valid handler methods and prevents runtime errors by leveraging TypeScript's static type system.
+
+| Return        | Type                                                 | Description                                                                            |
+| ------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| http handlers | `GetHttpHandlers<Endpoints extends RouteEndpoint[]>` | Generates an object containing only the allowed HTTP methods defined in the endpoints. |
+
+<Callout>
+  This return type ensures full type safety. If an endpoint does not define a DELETE method, TypeScript prevents access to DELETE
+  on the router.
+</Callout>

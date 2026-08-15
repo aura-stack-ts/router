@@ -1,0 +1,276 @@
+---
+title: Headers
+description: Learn how to validate request headers in Aura Stack Router using schema validation.
+---
+
+Request headers can be validated with the `schemas.headers` option, which checks the incoming headers against the defined schema.
+
+<Callout>
+  Defining `schemas.headers` lets the endpoint infer the type of the headers, accessible via `ctx.headers`. If no schema is
+  defined, `ctx.headers` defaults to an instance of `HeadersBuilder` instead.
+</Callout>
+
+<Callout type="warn">
+  HTTP headers are case-insensitive. Define schema keys in lowercase (`authorization`, not `Authorization`) so they match
+  correctly.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: z.object({
+      authorization: z.string(),
+      "x-csrf-token": z.string(),
+    }),
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig({
+  schemas: {
+    headers: valibot.object({
+      authorization: valibot.string(),
+      "x-csrf-token": valibot.string(),
+    }),
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: type({
+      authorization: "string",
+      "x-csrf-token": "string",
+    }),
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: Type.Object({
+      authorization: Type.String(),
+      "x-csrf-token": Type.String(),
+    }),
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+Before the headers are validated, they can be transformed or normalized with the `onHeaders` hook — called after headers are read, but before they're checked against the schema.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: z.object({
+      authorization: z.string(),
+      "x-csrf-token": z.string(),
+    }),
+  },
+  hooks: {
+    onHeaders: ({ headers }) => {
+      headers.setHeader("x-api-version", "1.0.0")
+    },
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig({
+  schemas: {
+    headers: valibot.object({
+      authorization: valibot.string(),
+      "x-csrf-token": valibot.string(),
+    }),
+  },
+  hooks: {
+    onHeaders: ({ headers }) => {
+      headers.setHeader("x-api-version", "1.0.0")
+    },
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: type({
+      authorization: "string",
+      "x-csrf-token": "string",
+    }),
+  },
+  hooks: {
+    onHeaders: ({ headers }) => {
+      headers.setHeader("x-api-version", "1.0.0")
+    },
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    headers: Type.Object({
+      authorization: Type.String(),
+      "x-csrf-token": Type.String(),
+    }),
+  },
+  hooks: {
+    onHeaders: ({ headers }) => {
+      headers.setHeader("x-api-version", "1.0.0")
+    },
+  },
+})
+
+export const signOut = createEndpoint(
+  "POST",
+  "/signOut",
+  async (ctx) => {
+    const { authorization } = ctx.headers
+    return ctx.json({ message: "Signed out successfully" })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+<Callout>
+  Type inference for the headers comes from the schema definition, so you get type-safe access to `ctx.headers`. That inference
+  describes the *shape* TypeScript expects, not a runtime guarantee — invalid requests are still rejected by the validator itself
+  before the handler runs.
+</Callout>

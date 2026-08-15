@@ -1,0 +1,317 @@
+---
+title: createEndpoint
+description: Define type-safe API endpoints with automatic parameter inference, optional schema validation, and middleware support.
+---
+
+The `createEndpoint` function is a declarative API for defining type-safe, framework-agnostic endpoints with automatic parameter inference, optional schema validation, and built-in middleware support. It serves as the primary building block for defining routes in an application.
+
+<Callout>
+  `createEndpoint` does not execute any logic definition time. It defines endpoint metadata and provides strong type inference. At
+  runtime, `createRouter` uses these definitions to perform route matching and execute handlers.
+</Callout>
+
+## Signature
+
+The `createEndpoint` function accepts a structured set of parameters that define an endpoint’s method, route pattern, runtime handler, and configuration options.
+
+```ts lineNumbers
+function createEndpoint = <
+  const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
+  const Route extends RoutePattern,
+  Schemas extends EndpointSchemas,
+  Handler extends RouteHandler<Route, Method, { schemas?: Schemas }, RouteHandlerReturn>,
+>(
+  method: Method,
+  route: Route,
+  handler: Handler,
+  config: EndpointConfig<Route, Method, Schemas> = {} as EndpointConfig<Route, Method, Schemas>
+): RouteEndpoint<Route, Method, { schemas?: Schemas }, Handler>
+```
+
+### Parameters
+
+| Parameter | Type                                                                                                             | Description                                                                        |
+| --------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `method`  | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` \| `"DELETE"` \| `"HEAD"` \| `"CONNECT"` \| `"OPTIONS"` \| `"TRACE"` | The HTTP method used by the endpoint.                                              |
+| `route`   | `RoutePattern`                                                                                                   | The route definition, supporting static and dynamic segments (e.g., `/users/:id`). |
+| `handler` | `RouteHandler`                                                                                                   | Async function that processes the request and returns a `Response`                 |
+| `config`  | `EndpointConfig`                                                                                                 | Optional configuration for schemas and middlewares                                 |
+
+> All standard HTTP methods are supported: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `CONNECT`, `OPTIONS`, and `TRACE`. See the [RFC specification](https://datatracker.ietf.org/doc/html/rfc2616) for details.
+
+## `method` [#http-method]
+
+The `method` is a required value in an endpoint definition. It specifies the HTTP method the endpoint responds to. All supported methods follow the [HTTP/1.1 RFC specification](https://datatracker.ietf.org/doc/html/rfc2616#section-9).
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const getUser = createEndpoint("GET", "/users/:id", async (ctx) => {
+  const { id } = ctx.params
+  return ctx.json({ userId: id })
+})
+```
+
+It is possible to define multiple HTTP methods for a single endpoint by passing an array of methods. The handler will be executed for any of the specified methods.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const multiMethodEndpoint = createEndpoint(["GET", "POST"], "/multi", async (ctx) => {
+  if (ctx.method === "GET") {
+    return ctx.json({ message: "Handled GET request" })
+  } else if (ctx.method === "POST") {
+    return ctx.json({ message: "Handled POST request" })
+  }
+})
+```
+
+## `route` [#route]
+
+The `route` is a required value in the endpoint definition. It defines the path pattern used for route matching and must always start with a leading slash.
+
+<Callout>The `route` value must begin with a leading slash, e.g., `/users`, `/users/:id`, `/auth/signIn/`.</Callout>
+
+```ts lineNumbers
+import type { RoutePattern } from "@aura-stack/router/types"
+
+export const route: RoutePattern = "/auth/signIn/:providerId"
+```
+
+## `handler` [#route-handler]
+
+The `handler` is a required property in every endpoint definition. It defines the logic that executes when an incoming request matches the endpoint’s route.
+
+`createEndpoint` automatically infers all generic types based on the provided route pattern and configuration. Generics do not need to be manually specified unless explicitly required.
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/credentials",
+  async (ctx) => {
+    const { username } = ctx.body
+    return ctx.json({ username })
+  },
+  {
+    schemas: {
+      body: z.object({
+        username: z.string(),
+        password: z.string(),
+      }),
+    },
+  }
+)
+```
+
+## `config` [#endpoint-config]
+
+The fourth parameter of `createEndpoint` is an optional configuration object that allows defining schema validations, middlewares, and hooks for the endpoint.
+
+<Callout>
+
+All of the endpoint configuration can be passed directly to `createEndpoint` or defined in a separate `createEndpointConfig` function. For more information, see the [createEndpointConfig API reference](/docs/api-reference/create-endpoint-config).
+
+</Callout>
+
+### `schemas` [#endpoint-schemas]
+
+The `schemas` object allows defining validation schemas for the supported validators (Zod, TypeBox, Valibot and ArkType). The schemas are used to validate the incoming request data and provide type inference for the request context.
+
+<Tabs items={["zod", "typebox", "valibot", "arktype"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const endpoint = createEndpoint(
+  "POST",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    const { name, email } = ctx.body
+    return ctx.json({ userId, name, email })
+  },
+  {
+    schemas: {
+      params: z.object({
+        userId: z.string(),
+      }),
+      body: z.object({
+        name: z.string(),
+        email: z.string().email(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const endpoint = createEndpoint(
+  "POST",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    const { name, email } = ctx.body
+    return ctx.json({ userId, name, email })
+  },
+  {
+    schemas: {
+      params: Type.Object({
+        userId: Type.String(),
+      }),
+      body: Type.Object({
+        name: Type.String(),
+        email: Type.String(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const endpoint = createEndpoint(
+  "POST",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    const { name, email } = ctx.body
+    return ctx.json({ userId, name, email })
+  },
+  {
+    schemas: {
+      params: valibot.object({
+        userId: valibot.string(),
+      }),
+      body: valibot.object({
+        name: valibot.string(),
+        email: valibot.string(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+const endpoint = createEndpoint(
+  "POST",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    const { name, email } = ctx.body
+    return ctx.json({ userId, name, email })
+  },
+  {
+    schemas: {
+      params: type({
+        userId: "string",
+      }),
+      body: type({
+        name: "string",
+        email: "string",
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+</Tabs>
+
+For more information on schema validation, see the [Schema Validation Guide](/docs/guides/schema-validation).
+
+### `use` [#endpoint-middlewares]
+
+Middlewares run before the route handler and have access to the parsed and typed context (`ctx`).
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const getProfile = createEndpoint(
+  "GET",
+  "/profile",
+  async (ctx) => {
+    const userId = ctx.headers.getHeader("x-user-id")
+    return ctx.json({ userId })
+  },
+  {
+    use: [
+      // Authentication middleware
+      async (ctx) => {
+        const token = ctx.request.headers.get("authorization")
+
+        if (!token) {
+          throw new Error("Unauthorized")
+        }
+
+        // Attach user information
+        ctx.headers.setHeader("x-user-id", "user-123")
+        return ctx
+      },
+    ],
+  }
+)
+```
+
+### `hooks` [#endpoint-hooks]
+
+Hooks provide a atomic way to extend the endpoint's behavior at specific lifecycle events. The available hooks are:
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+import { createRateLimiter } from "@aura-stack/router/rate-limiter"
+
+const limiter = createRateLimiter({
+  rules: {
+    createUser: {
+      algorithm: "fixed-window",
+      limit: 10,
+      windowMs: 15 * 60 * 1000, // 15 minutes
+    },
+  },
+})
+
+const endpoint = createEndpoint(
+  "POST",
+  "/users/:userId",
+  async (ctx) => {
+    const { userId } = ctx.params
+    const { name, email } = ctx.body
+    return ctx.json({ userId, name, email })
+  },
+  {
+    onRequest: (ctx) => {
+      const limit = limiter.createUser.check(ctx.request)
+      if (!limit.ok) {
+        return limit.toResponse()
+      }
+    },
+  }
+)
+```

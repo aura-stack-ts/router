@@ -3,121 +3,24 @@ title: createEndpointConfig
 description: Declaratively define configuration options for an endpoint, including schema validation and middleware.
 ---
 
-# `createEndpointConfig`
-
 The `createEndpointConfig` function is a declarative API used to define optional configuration for endpoints created with `createEndpoint`. It provides strong type inference for schemas, context, and middlewares.
-
-```ts lineNumbers
-import { z } from "zod"
-import { createEndpointConfig } from "@aura-stack/router"
-
-const config = createEndpointConfig({
-  schemas: {
-    body: z.object({
-      username: z.string(),
-      password: z.string(),
-    }),
-  },
-})
-```
 
 > This function improves type inference at build time and does not perform runtime validation.
 
----
-
-## Overview
-
-This documentation provides a comprehensive guide to the `createEndpointConfig` API, covering everything from basic usage to advanced type inference.
-
-- [Key Concepts](#key-concepts)
-- [Type Inference](#type-inference)
-- [API Reference](#api-reference)
-  - [Parameters](#parameters)
-  - [Overloads](#overloads)
-- [Usage Examples](#usage)
-
----
-
-## Key Concepts
-
-- `createEndpointConfig` enables full type inference for the endpoint context, schemas, and middlewares.
-- The function provides two overloads:
-  - **Overload 1:** Configuration object only — used when the endpoint does not rely on dynamic route parameters.
-  - **Overload 2:** Route pattern + configuration object — used when typed dynamic parameters are required within middlewares.
-
----
-
-## Type Inference
-
-Configurations created through `createEndpointConfig` provide more accurate type inference than passing the configuration inline to `createEndpoint`. While implicit inference is recommended, explicit types can still be imported if stricter definitions are required.
-
-> Types can be accessed from the main entry points `/` or `/types`.
-
-### Example: Inferred Context with Schemas
+## Signature
 
 ```ts lineNumbers
-import { z } from "zod"
-import { createEndpointConfig } from "@aura-stack/router"
+function createEndpointConfig<
+  Route extends RoutePattern,
+  Config extends EndpointConfig<Route, NoInfer<HTTPMethod | HTTPMethod[]>, EndpointSchemas>,
+>(route: Route, config: Config): Config
 
-const config = createEndpointConfig({
-  schemas: {
-    searchParams: z.object({
-      redirect_uri: z.string(),
-      code: z.string(),
-      state: z.string(),
-    }),
-  },
-  use: [
-    async (ctx) => {
-      const { redirect_uri, code, state } = ctx.searchParams
-      return ctx
-    },
-  ],
-})
+function createEndpointConfig<Config extends EndpointConfig<RoutePattern, NoInfer<HTTPMethod | HTTPMethod[]>, EndpointSchemas>>(
+  config: Config
+): Config
 ```
-
-### Example: Inferred Dynamic Params with Explicit Route
-
-```ts lineNumbers
-import { z } from "zod"
-import { createEndpointConfig } from "@aura-stack/router"
-
-const config = createEndpointConfig("/auth/signIn/:oauth/", {
-  schemas: {
-    searchParams: z.object({
-      redirect_uri: z.string(),
-      code: z.string(),
-      state: z.string(),
-    }),
-  },
-  use: [
-    async (ctx) => {
-      const { oauth } = ctx.params
-      const { redirect_uri, code, state } = ctx.searchParams
-      return ctx
-    },
-  ],
-})
-```
-
----
-
-## API Reference
 
 ### Parameters
-
-The `createEndpointConfig` function accepts parameters based on the chosen overload.
-
-```ts lineNumbers
-function createEndpointConfig<Schemas extends EndpointSchemas>(
-  config: EndpointConfig<RoutePattern, Schemas>
-): EndpointConfig<RoutePattern, Schemas>
-
-function createEndpointConfig<Route extends RoutePattern, Schemas extends EndpointSchemas>(
-  route: Route,
-  config: EndpointConfig<Route, Schemas>
-): EndpointConfig<Route, Schemas>
-```
 
 | Parameter | Type              | Description                                                                               |
 | --------- | ----------------- | ----------------------------------------------------------------------------------------- |
@@ -160,11 +63,7 @@ const config = createEndpointConfig("/auth/signIn/:oauth", {
 })
 ```
 
----
-
-## Usage
-
-### With Basic Overload
+### Basic Overload
 
 The basic overload is used when the endpoint does not define dynamic route parameters.
 
@@ -192,7 +91,7 @@ const config = createEndpointConfig({
 })
 ```
 
-### With Dynamic Overload
+### Dynamic Overload
 
 This overload matches when the endpoint includes dynamic route parameters, enabling full type inference for `ctx.params`.
 

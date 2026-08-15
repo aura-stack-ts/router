@@ -1,0 +1,309 @@
+---
+title: Search Params
+description: Learn how to validate request search params in Aura Stack Router using schema validation.
+---
+
+Search params (query params) can be validated with the `schemas.searchParams` option.
+
+<Callout>
+  Defining `schemas.searchParams` lets the endpoint infer the type of the search params, accessible via `ctx.searchParams`. If no
+  schema is defined, `ctx.searchParams` is the native `URLSearchParams` object instead.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: z.object({
+      q: z.string().min(1),
+      page: z.coerce.number().int().positive().default(1),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: valibot.object({
+      q: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      page: valibot.fallback(
+        valibot.pipe(
+          valibot.unknown(),
+          valibot.transform((input) => Number(input)),
+          valibot.number(),
+          valibot.integer(),
+          valibot.positive()
+        ),
+        1
+      ),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: type({
+      q: "string > 0",
+      page: type("string.integer.parse").to("number > 0").default(1),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: Type.Object({
+      q: Type.String({ minLength: 1 }),
+      page: Type.Transform(
+        Type.Integer({
+          minimum: 1,
+          default: 1,
+        })
+      )
+        .Decode((value) => Number(value))
+        .Encode((value) => value),
+    }),
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+Before the search params are validated, they can be transformed or normalized with the `onSearchParams` hook — called after the query string is parsed, but before it's checked against the schema.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: z.object({
+      q: z.string().min(1),
+      page: z.coerce.number().int().positive().default(1),
+    }),
+  },
+  hooks: {
+    onSearchParams: ({ searchParams }) => {
+      searchParams.set("limit", "10")
+      const page = searchParams.has("page") ? Number(searchParams.get("page")) : 1
+      searchParams.set("offset", String((page - 1) * 10))
+    },
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: valibot.object({
+      q: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      page: valibot.fallback(
+        valibot.pipe(
+          valibot.unknown(),
+          valibot.transform((input) => Number(input)),
+          valibot.number(),
+          valibot.integer(),
+          valibot.positive()
+        ),
+        1
+      ),
+    }),
+  },
+  hooks: {
+    onSearchParams: ({ searchParams }) => {
+      searchParams.set("limit", "10")
+      const page = searchParams.has("page") ? Number(searchParams.get("page")) : 1
+      searchParams.set("offset", String((page - 1) * 10))
+    },
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: type({
+      q: "string > 0",
+      page: "(number.integer > 0) = 1",
+    }),
+  },
+  hooks: {
+    onSearchParams: ({ searchParams }) => {
+      searchParams.set("limit", "10")
+      const page = searchParams.has("page") ? Number(searchParams.get("page")) : 1
+      searchParams.set("offset", String((page - 1) * 10))
+    },
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    searchParams: Type.Object({
+      q: Type.String({ minLength: 1 }),
+      page: Type.Transform(
+        Type.Integer({
+          minimum: 1,
+          default: 1,
+        })
+      )
+        .Decode((value) => Number(value))
+        .Encode((value) => value),
+    }),
+  },
+  hooks: {
+    onSearchParams: ({ searchParams }) => {
+      searchParams.set("limit", "10")
+      const page = searchParams.has("page") ? Number(searchParams.get("page")) : 1
+      searchParams.set("offset", String((page - 1) * 10))
+    },
+  },
+})
+
+export const searchUsers = createEndpoint(
+  "GET",
+  "/users/search",
+  async (ctx) => {
+    const { q, page } = ctx.searchParams
+    return ctx.json({ query: q, page, results: [] })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+<Callout>
+  Type inference for the search params comes from the schema definition, so you get type-safe access to `ctx.searchParams`. That
+  inference describes the *shape* TypeScript expects, not a runtime guarantee — invalid requests are still rejected by the
+  validator itself before the handler runs.
+</Callout>

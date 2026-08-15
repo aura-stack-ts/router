@@ -1,0 +1,276 @@
+---
+title: Body
+description: Learn how to validate request body in Aura Stack Router using schema validation.
+---
+
+The request body can be validated with the `schemas.body` option.
+
+<Callout>
+  Defining `schemas.body` lets the endpoint infer the type of the body, accessible via `ctx.body`. If no schema is defined,
+  `ctx.body` defaults to `unknown`, since its shape can't be inferred.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+ 
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+ 
+export const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+    }),
+  },
+})
+ 
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+ 
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: valibot.object({
+      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      email: valibot.pipe(valibot.string(), valibot.email()),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+ 
+export const config = createEndpointConfig({
+  schemas: {
+    body: type({
+      name: "string > 0",
+      email: "string.email",
+    }),
+  },
+})
+ 
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+ 
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: Type.Object({
+      name: Type.String({ minLength: 1 }),
+      email: Type.String({ format: "email" }),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+Before the body is validated, it can be transformed or normalized with the `onBody` hook called after the body is parsed, but before it's checked against the schema.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+ 
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+ 
+export const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+    }),
+  },
+  hooks: {
+    onBody: ({ body }) => {
+      body.name = body.name.trim()
+      body.email = body.email.toLowerCase()
+    },
+  },
+})
+ 
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+ 
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: valibot.object({
+      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      email: valibot.pipe(valibot.string(), valibot.email()),
+    }),
+  },
+  hooks: {
+    onBody: ({ body }) => {
+      body.name = body.name.trim()
+      body.email = body.email.toLowerCase()
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+ 
+export const config = createEndpointConfig({
+  schemas: {
+    body: type({
+      name: "string > 0",
+      email: "string.email",
+    }),
+  },
+  hooks: {
+    onBody: ({ body }) => {
+      body.name = body.name.trim()
+      body.email = body.email.toLowerCase()
+    },
+  },
+})
+ 
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+ 
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    body: Type.Object({
+      name: Type.String({ minLength: 1 }),
+      email: Type.String({ format: "email" }),
+    }),
+  },
+  hooks: {
+    onBody: ({ body }) => {
+      body.name = body.name.trim()
+      body.email = body.email.toLowerCase()
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ id: "new-id", name, email }, 201)
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+<Callout type="warn">
+  `onBody` runs *before* `schemas.body` validates the payload, so anything you write into a field here is what gets validated not
+  the client's original value. That's fine for normalization like trimming or case-folding above, but don't use `onBody` for
+  transforms that depend on validation having already passed hashing a password after its length has been checked, for example.
+  Use `onHandler` for that instead; see [Lifecycle onBody](/docs/concepts/lifecycle#onbody) for details.
+</Callout>

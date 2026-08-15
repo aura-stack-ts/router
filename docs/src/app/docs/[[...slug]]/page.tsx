@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { source } from "@/lib/source"
-import { DocsBody, DocsPage } from "fumadocs-ui/page"
+import { DocsBody, DocsPage, DocsTitle, DocsDescription } from "fumadocs-ui/page"
 import { getMDXComponents } from "@/mdx-components"
 import { createRelativeLink } from "fumadocs-ui/mdx"
 
@@ -14,6 +14,8 @@ export default async function Page(props: Readonly<PageProps<"/docs/[[...slug]]"
 
     return (
         <DocsPage toc={page.data.toc} full={page.data.full}>
+            <DocsTitle>{page.data.title}</DocsTitle>
+            <DocsDescription className="pb-6 border-b">{page.data.description}</DocsDescription>
             <DocsBody>
                 <Mdx
                     components={getMDXComponents({

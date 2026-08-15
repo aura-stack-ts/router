@@ -1,0 +1,344 @@
+---
+title: Lifecycle
+description: Aura Router provides a set of lifecycle hooks that allow you to customize the behavior of your endpoints and middleware.
+---
+
+Aura Router supports first-class lifecycle hooks that give you fine-grained control over every phase of the request and response lifecycle.
+
+Hooks can be defined at the router level or the endpoint level. When both define the same hook, the endpoint-level hook overrides the router-level one.
+
+<Callout>
+  The router level only supports the `onRequest`, `onResponse`, and `onError` hooks. The endpoint level supports all nine hooks.
+</Callout>
+
+<Cards>
+
+<Card title="onRequest">Runs before routing. Only the raw `Request` is available no params, body, or matched endpoint yet.</Card>
+ 
+<Card title="onMatch">Runs once the request has been matched to an endpoint, before any parsing begins.</Card>
+ 
+<Card title="onHeaders">Runs after request headers are read, before they're validated against `schemas.headers`.</Card>
+ 
+<Card title="onParams">Runs after route params are extracted, before they're validated against `schemas.params`.</Card>
+ 
+<Card title="onSearchParams">Runs after the query string is parsed, before it's validated against `schemas.searchParams`.</Card>
+ 
+<Card title="onBody">Runs after the body is parsed, before it's validated against `schemas.body`.</Card>
+ 
+<Card title="onHandler">Runs immediately before the endpoint handler, once every field has been parsed and validated.</Card>
+ 
+<Card title="onResponse">Runs after the handler returns a response, before it's sent to the client.</Card>
+ 
+<Card title="onError">Runs when an error is thrown at any earlier phase.</Card>
+</Cards>
+
+## Hooks
+
+A hook is a function called at a specific phase of the request/response lifecycle. Each hook receives a context object scoped to that phase.
+
+<Callout type="info">
+  **Lifecycle Short-Circuiting:** Returning a `Response` (e.g., via `ctx.json()`) from a pre-handler hook instantly short-circuits
+  the request pipeline—no further pre-hooks or the main handler will run. Returning non-`Response` values, however, may simply
+  update the hook context and allow the pipeline to continue. Note that any `Response` returned from an endpoint's `onResponse`
+  hook will still cascade through the router-level `onResponse` hook before reaching the client.
+</Callout>
+
+Hooks can also mutate the context object passed to them. Where a hook runs _before_ schema validation for its field (`onHeaders`,
+`onParams`, `onSearchParams`, `onBody`), any mutation is applied to the value the schema then validates see the callout on each
+section below for what that means in practice.
+
+### Execution Order
+
+```
+onRequest -> onMatch -> onHeaders -> onParams -> onSearchParams -> onBody -> onHandler -> onResponse -> onError
+```
+
+<Callout>
+  This is the order hooks run in for a request with no errors. `onError` isn't a fixed final step it fires whenever an error is
+  thrown in *any* of the preceding phases, and receives which phase it interrupted.
+</Callout>
+
+## `onRequest`
+
+`onRequest` runs before the request is matched to an endpoint. It's the earliest point in the lifecycle, so only the native `Request` object is available no params, body, headers parsing, or matched route yet.
+
+This makes it a good fit for checks that should reject a request outright, before any routing or parsing work is spent on it: authentication, IP filtering, or global logging.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getSession = createEndpoint(
+  "GET",
+  "/session",
+  (ctx) => {
+    return ctx.json({ session: "" })
+  },
+  {
+    hooks: {
+      onRequest: ({ request, json }) => {
+        if (!request.headers.has("Authorization")) {
+          return json({ error: "Unauthorized" }, 401)
+        }
+      },
+    },
+  }
+)
+```
+
+`onRequest` is one of three hooks also supported at the router level. Define it there to apply the same check across every endpoint, instead of repeating it per endpoint:
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([getSession], {
+  hooks: {
+    onRequest: ({ request, json }) => {
+      if (!request.headers.has("Authorization")) {
+        return json({ error: "Unauthorized" }, 401)
+      }
+    },
+  },
+})
+```
+
+## `onMatch`
+
+`onMatch` runs once the request has been matched to an endpoint, before any parsing has started. At this point you know which endpoint will handle the request, but nothing about its params, headers, or body yet.
+
+Useful for per-route metrics or feature-flag checks tied to a specific endpoint.
+
+<Callout>
+  This hook isn't available at the router level, because the router doesn't yet know which endpoint will match when the request
+  first arrives. It can only be defined at the endpoint level.
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getSession = createEndpoint(
+  "GET",
+  "/session",
+  (ctx) => {
+    return ctx.json({ session: "" })
+  },
+  {
+    hooks: {
+      onMatch: () => {
+        console.log("Request matched to endpoint")
+      },
+    },
+  }
+)
+```
+
+## `onHeaders`
+
+`onHeaders` runs once the incoming request headers have been read, before they're validated against `schemas.headers` (if defined). The hook receives the same `HeadersBuilder` used to construct the response, so it's also a convenient place to set response headers or cookies that should apply no matter how the request is later handled e.g. a version header on every response.
+
+<Callout>This hook isn't available at the router level.</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getSession = createEndpoint(
+  "GET",
+  "/session",
+  (ctx) => {
+    return ctx.json({ session: "" })
+  },
+  {
+    hooks: {
+      onHeaders: ({ request, headers }) => {
+        headers.setHeader("x-version-api", "1.0.0")
+      },
+    },
+  }
+)
+```
+
+<Callout>
+  If `schemas.headers` is defined, invalid headers reject the request with `422 Unprocessable Entity` after this hook runs. See
+  [Schema Validation](/docs/guides/schema-validation).
+</Callout>
+
+## `onParams`
+
+`onParams` runs after route params have been extracted from the path, before they're validated against `schemas.params` (if defined). Use it to normalize dynamic segments case-folding, trimming, coercing before validation sees them.
+
+<Callout>This hook isn't available at the router level.</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getBookByUser = createEndpoint(
+  "GET",
+  "/books/:bookId/users/:userId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onParams: ({ params }) => {
+        params.bookId = params.bookId.toUpperCase()
+      },
+    },
+  }
+)
+```
+
+<Callout>
+  If `schemas.params` is defined, invalid params reject the request with `422 Unprocessable Entity` after this hook runs, and
+  against the (possibly transformed) value it produced. See [Schema Validation](/docs/guides/schema-validation).
+</Callout>
+
+## `onSearchParams`
+
+`onSearchParams` runs after the query string is parsed, before it's validated against `schemas.searchParams` (if defined).
+
+<Callout>This hook isn't available at the router level.</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getBook = createEndpoint(
+  "GET",
+  "/books/:bookId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onSearchParams: ({ searchParams }) => {
+        searchParams.set("limit", "10")
+      },
+    },
+  }
+)
+```
+
+<Callout>
+  If `schemas.searchParams` is defined, invalid search params reject the request with `422 Unprocessable Entity` after this hook
+  runs. See [Schema Validation](/docs/guides/schema-validation).
+</Callout>
+
+## `onBody`
+
+`onBody` runs after the request body is parsed, before it's validated against `schemas.body` (if defined).
+
+<Callout>This hook isn't available at the router level.</Callout>
+
+<Callout>
+  The body passed to this hook is the automatically parsed body, based on the `Content-Type` header, and is cloned before being
+  passed in. Prefer mutating `body` here over calling `request.json()` or `request.text()` directly hose re-parse the request and
+  add unnecessary overhead.
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  (ctx) => {
+    return ctx.json(ctx.body)
+  },
+  {
+    hooks: {
+      onBody: ({ body }) => {
+        body.name = body.name.toUpperCase()
+        body.email = body.email.toLowerCase()
+      },
+    },
+  }
+)
+```
+
+<Callout type="warn">
+  Because `onBody` runs *before* validation, any field you overwrite here is what gets validated not the client's original value.
+  If a schema rule is meant to constrain what the client actually sent (e.g. `password: z.string().min(8)`), transform that field
+  in `onHandler` instead, which runs after validation has already passed.
+</Callout>
+
+## `onHandler`
+
+`onHandler` runs immediately before the endpoint handler, once every field has been parsed and validated. `ctx` at this point is the same fully-typed, validated context the handler itself receives.
+
+<Callout>This hook isn't available at the router level.</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getBook = createEndpoint(
+  "GET",
+  "/books/:bookId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onHandler: () => {
+        console.log("Request is about to be handled by the endpoint")
+      },
+    },
+  }
+)
+```
+
+## `onResponse`
+
+`onResponse` runs after the handler returns a response, before it's sent to the client. Use it to inspect or mutate the outgoing response, for example, to attach a header conditionally based on the response's status.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getBook = createEndpoint(
+  "GET",
+  "/books/:bookId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onResponse: ({ response }) => {
+        if (response.status === 302) {
+          response.headers.set("Location", "https://example.com")
+        }
+      },
+    },
+  }
+)
+```
+
+## `onError`
+
+`onError` runs when an error is thrown during any earlier phase. It's the only hook that runs conditionally only on failure and is where you decide how that failure is surfaced to the client.
+
+The context object passed to `onError` contains:
+
+- `phase`: the phase in which the error occurred: `onRequest`, `onMatch`, `onHeaders`, `onParams`, `onSearchParams`, `onBody`, `onHandler`, or `onResponse`.
+- `error`: the error object that was thrown.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+export const getBook = createEndpoint(
+  "GET",
+  "/books/:bookId",
+  (ctx) => {
+    return ctx.json({ bookId: ctx.params.bookId })
+  },
+  {
+    hooks: {
+      onHeaders: () => {
+        throw new Error("Something went wrong")
+      },
+      onError: ({ phase, error, json, context }) => {
+        // `log` here is a service the app registered on `ctx.context`
+        // it isn't a built-in. See Request Context `context`.
+        context.log.error(`Error in phase ${phase}: ${error.message}`)
+        return json({ message: `Error in phase ${phase}: ${error.message}` }, 500)
+      },
+    },
+  }
+)
+```

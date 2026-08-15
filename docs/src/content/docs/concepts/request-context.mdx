@@ -1,0 +1,211 @@
+---
+title: Request Context
+description: Understand the typed ctx object passed to handlers and endpoint middlewares.
+---
+
+The `Request Context (ctx)` is the central object passed to endpoint handlers and endpoint-level `use` middlewares. It provides access to parsed route data, schema-validated inputs, shared context, and helpers for building responses.
+
+<Callout>
+  Global middlewares do not receive this object. They run before route matching and only receive the original `Request` plus the
+  router context.
+</Callout>
+
+<Callout>
+  Most fields on `ctx` are populated progressively as the request moves through the [lifecycle](/docs/concepts/lifecycle)
+  `ctx.params` doesn't exist yet during `onRequest`, for example. By the time your handler (or an `onHandler` hook) runs, every
+  field below is parsed and validated.
+</Callout>
+
+## `request`
+
+`ctx.request` is the original `Request` object received by the router. It contains all the standard properties and methods of the Fetch API's `Request`, such as `headers`, `method`, `url`, and body parsing methods.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint("GET", "/example", (ctx) => {
+  const userAgent = ctx.request.headers.get("user-agent")
+  return Response.json({ userAgent })
+})
+```
+
+## `json`
+
+`ctx.json` is a helper method for creating JSON responses. It preserves the typed response payload and automatically sets the `Content-Type` header to `application/json`.
+
+```ts lineNumbers
+createEndpoint("GET", "/example", (ctx) => {
+  return ctx.json({ message: "Hello, world!" })
+})
+```
+
+<Callout>
+  `ctx.json` infers the response type from the payload you pass it. Prefer it over `Response.json` where possible, it gives you a
+  better developer experience and full type safety when the response is consumed through the client API.
+</Callout>
+
+## `headers`
+
+`ctx.headers` contains the parsed request headers. If `schemas.headers` is defined on the endpoint, these are validated against it and typed accordingly. If no schema is defined, `ctx.headers` is instead an instance of `HeadersBuilder` a helper for reading and mutating headers and cookies, with methods like `setHeader`, `setCookie`, `getHeader`, and `getCookie`.
+
+<Callout>
+  Aura Router offers a lifecycle hook called `onHeaders` that runs before headers are validated against the schema. This is useful
+  for transforming or normalizing headers before validation, or for setting response headers early. For more details, see
+  [onHeaders](/docs/concepts/lifecycle#onheaders).
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint("GET", "/profile", (ctx) => {
+  const sessionId = ctx.headers.getCookie("session_id")
+  return ctx.json({ message: sessionId ? "Authenticated" : "Unauthorized" })
+})
+```
+
+## `params`
+
+`ctx.params` contains the dynamic segments of the route path. They're automatically extracted, and only if `schemas.params` is defined on the endpoint validated against it; otherwise each value is the raw string extracted from the path.
+
+<Callout>
+  Aura Router offers a lifecycle hook called `onParams` that runs before params are validated against the schema. This is useful
+  for transforming or normalizing params before validation. For more details, see [onParams](/docs/concepts/lifecycle#onparams).
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint("GET", "/users/:userId/books/:bookId", (ctx) => {
+  const { userId, bookId } = ctx.params
+  return ctx.json({ userId, bookId })
+})
+```
+
+## `searchParams`
+
+`ctx.searchParams` contains the parsed query string values. If `schemas.searchParams` is defined on the endpoint, these are validated against it and typed accordingly; otherwise `ctx.searchParams` is the native `URLSearchParams` object.
+
+<Callout>
+  Aura Router offers a lifecycle hook called `onSearchParams` that runs before search params are validated against the schema.
+  This is useful for transforming or normalizing them before validation. For more details, see
+  [onSearchParams](/docs/concepts/lifecycle#onsearchparams).
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint(
+  "GET",
+  "/search",
+  (ctx) => {
+    const { query, page } = ctx.searchParams
+    return ctx.json({ query, page })
+  },
+  {
+    schemas: {
+      searchParams: z.object({
+        query: z.string(),
+        page: z.string().optional(),
+      }),
+    },
+  }
+)
+```
+
+## `body`
+
+`ctx.body` contains the parsed request payload, automatically parsed based on the `Content-Type` header. If `schemas.body` is defined on the endpoint, it's validated against it and typed accordingly; otherwise `ctx.body` is `unknown`.
+
+<Callout>
+  Aura Router offers a lifecycle hook called `onBody` that runs before the body is validated against the schema. This is useful
+  for transforming or normalizing the body before validation though a field you overwrite here is what gets validated, not the
+  client's original value. For more details, see [onBody](/docs/concepts/lifecycle#onbody).
+</Callout>
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint(
+  "POST",
+  "/users",
+  (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email })
+  },
+  {
+    schemas: {
+      body: z.object({
+        name: z.string(),
+        email: z.string().email(),
+      }),
+    },
+  }
+)
+```
+
+## `url`
+
+`ctx.url` is a parsed `URL` object for the incoming request. It provides access to properties like `pathname`, `searchParams`, and `origin`.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint("GET", "/example", (ctx) => {
+  const pathname = ctx.url.pathname
+  return ctx.json({ pathname })
+})
+```
+
+## `method`
+
+`ctx.method` is the resolved HTTP method for the request, normalized to uppercase.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint(["GET", "POST"], "/example", (ctx) => {
+  if (ctx.method === "GET") {
+    return ctx.json({ message: "This is a GET request" })
+  } else if (ctx.method === "POST") {
+    return ctx.json({ message: "This is a POST request" })
+  }
+})
+```
+
+## `route`
+
+`ctx.context` is the shared application context provided to `createRouter`. It can hold any values or services you want accessible across all handlers, middlewares, and hooks a database client, a logger, feature-flag config, and so on.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router/endpoint"
+
+createEndpoint("GET", "/users/:userId", (ctx) => {
+  return ctx.json({ route: ctx.route })
+})
+```
+
+## `context`
+
+`ctx.context` is the shared application context provided to `createRouter`. It can contain any values or services that you want to be accessible across all handlers and middlewares.
+
+```ts lineNumbers
+import { createRouter, createEndpoint } from "@aura-stack/router"
+
+const db = createDatabaseConnection()
+
+const router = createRouter([], {
+  context: {
+    db,
+  },
+})
+
+createEndpoint("GET", "/users", (ctx) => {
+  const users = ctx.context.db.query("SELECT * FROM users")
+  return ctx.json({ users })
+})
+```
+
+<Callout type="info">
+  **Need to add custom properties like a database or user to `ctx`?** Read our guide on [Extending the Global Context with Module
+  Augmentation](/docs/concepts/type-safety#extending-global-context).
+</Callout>

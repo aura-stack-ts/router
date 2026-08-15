@@ -1,0 +1,4 @@
+{
+  "title": "API Reference",
+  "pages": ["create-endpoint", "create-endpoint-config", "create-router", "create-client"]
+}
