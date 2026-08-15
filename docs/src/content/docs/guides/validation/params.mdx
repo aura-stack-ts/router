@@ -1,0 +1,275 @@
+---
+title: Params
+description: Learn how to validate request params in Aura Stack Router using schema validation.
+---
+
+Dynamic URL segments can be validated with the `schemas.params` option, which checks the incoming slugs against the defined schema.
+
+<Callout>
+  Defining `schemas.params` lets the endpoint infer the type of the params, accessible via `ctx.params`. If no schema is defined,
+  each param is instead inferred as a plain string, extracted directly from the route pattern.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: z.object({
+      userId: z.string().regex(/^[0-9]+$/),
+      bookId: z.uuid(),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: valibot.object({
+      userId: valibot.regex(/^[0-9]+$/, "Invalid userId format"),
+      bookId: valibot.uuid("Invalid bookId format"),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: type({
+      userId: "string",
+      bookId: "string.uuid",
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: Type.Object({
+      userId: Type.String({ format: "regex", pattern: "^[0-9]+$" }),
+      bookId: Type.String({ format: "uuid" }),
+    }),
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+Before the params are validated, they can be transformed or normalized with the `onParams` hook — called after params are extracted from the path, but before they're checked against the schema.
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+  
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: z.object({
+      userId: z.string().regex(/^[0-9]+$/),
+      bookId: z.uuid(),
+    }),
+  },
+  hooks: {
+    onParams: ({ params }) => {
+      params.userId = params.userId.trim()
+      params.bookId = params.bookId.toLowerCase()
+    },
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: valibot.object({
+      userId: valibot.regex(/^[0-9]+$/, "Invalid userId format"),
+      bookId: valibot.uuid("Invalid bookId format"),
+    }),
+  },
+  hooks: {
+    onParams: ({ params }) => {
+      params.userId = params.userId.trim()
+      params.bookId = params.bookId.toLowerCase()
+    },
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+  
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: type({
+      userId: "string",
+      bookId: "string.uuid",
+    }),
+  },
+  hooks: {
+    onParams: ({ params }) => {
+      params.userId = params.userId.trim()
+      params.bookId = params.bookId.toLowerCase()
+    },
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig("/users/:userId/books/:bookId", {
+  schemas: {
+    params: Type.Object({
+      userId: Type.String({ format: "regex", pattern: "^[0-9]+$" }),
+      bookId: Type.String({ format: "uuid" }),
+    }),
+  },
+  hooks: {
+    onParams: ({ params }) => {
+      params.userId = params.userId.trim()
+      params.bookId = params.bookId.toLowerCase()
+    },
+  },
+})
+
+export const getBookById = createEndpoint(
+  "GET",
+  "/users/:userId/books/:bookId",
+  async (ctx) => {
+    const { userId, bookId } = ctx.params
+    return ctx.json({ bookId })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+<Callout>
+  Type inference for the params comes from the schema definition, so you get type-safe access to `ctx.params`. That inference
+  describes the *shape* TypeScript expects, not a runtime guarantee — invalid requests are still rejected by the validator itself
+  before the handler runs.
+</Callout>

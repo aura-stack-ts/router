@@ -1,0 +1,163 @@
+---
+title: Middlewares
+description: Global and endpoint middlewares for auth, logging, CORS, rate limiting, and more.
+---
+
+Middlewares wrap around route handlers to implement cross‑cutting behaviors such as authentication, logging, CORS, and request/response shaping. There are two kinds:
+
+- [Endpoint Middlewares](#endpoint-middlewares): defined per endpoint, executed with the fully typed request context.
+- [Global Middlewares](#global-middlewares): applied to every request handled by a router. Middlewares run once, immediately before the route handler the same general point in the lifecycle as the `onHandler` hook. If you need behavior tied to an earlier phase (e.g. transforming a param before it's validated, or short-circuiting before routing even happens), use [hooks](/docs/concepts/lifecycle) instead.
+
+## Endpoint Middlewares
+
+Endpoint middlewares are attached declaratively via `createEndpointConfig` (or inline in the config object passed to `createEndpoint`). Because they're tied to the endpoint's schemas, `ctx` inside each middleware is already typed against `schemas.params`, `schemas.body`, and `schemas.searchParams`, if defined.
+
+```ts lineNumbers
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+const config = createEndpointConfig({
+  use: [
+    async (ctx) => {
+      console.log(`Request to ${ctx.url}`)
+      return ctx
+    },
+  ],
+})
+
+const handler = async () => Response.json({})
+const endpoint = createEndpoint("GET", "/protected", handler, config)
+```
+
+### Passing Data to the Handler
+
+A middleware can extend `ctx` by returning additional properties alongside it. Those properties are inferred and become available, fully typed, on every middleware and handler that runs after it.
+
+```ts lineNumbers
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+const verifyToken = (token: string) => {
+  /* Add logic */
+  return { id: "user-123" }
+}
+
+const authConfig = createEndpointConfig({
+  use: [
+    async (ctx) => {
+      const token = ctx.request.headers.get("authorization")
+      if (!token || !token.startsWith("Bearer ")) {
+        throw new Error("Unauthorized")
+      }
+
+      const user = verifyToken(token.slice(7))
+      return { ...ctx, user }
+    },
+  ],
+})
+
+const getProfile = createEndpoint(
+  "GET",
+  "/profile",
+  async (ctx) => {
+    return ctx.json({ userId: ctx.user.id, name: "John" })
+  },
+  authConfig
+)
+```
+
+<Callout type="warn">
+  Don't reach for `ctx.headers.setHeader(...)` to pass internal values like a resolved user ID between a middleware and the
+  handler — `ctx.headers` builds the outgoing response, so anything set there is sent back to the client. Use the extended-context
+  pattern above for internal, request-scoped data, and reserve `ctx.headers` for values that should actually appear on the
+  response (rate-limit counters, a version header, cookies, and so on).
+</Callout>
+
+### Chaining Multiple Middlewares
+
+Middlewares in a `use` array run in the order they're defined, each receiving the context returned by the one before it.
+
+```ts lineNumbers
+import { createEndpointConfig } from "@aura-stack/router"
+
+const config = createEndpointConfig({
+  use: [
+    // 1. Logging
+    async (ctx) => {
+      console.log("1. Logging request")
+      return ctx
+    },
+    // 2. Auth
+    async (ctx) => {
+      console.log("2. Checking auth")
+      const token = ctx.request.headers.get("authorization")
+      if (!token) throw new Error("Unauthorized")
+      return ctx
+    },
+    // 3. Response metadata
+    async (ctx) => {
+      console.log("3. Adding metadata")
+      ctx.headers.setHeader("x-processed", "true")
+      return ctx
+    },
+  ],
+})
+```
+
+## Global Middlewares
+
+Global middlewares are applied to every endpoint in a router, defined via the `use` option on `createRouter`.
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+import { getUser, getUsers } from "@/api/users.ts"
+
+export const router = createRouter([getUser, getUsers], {
+  use: [
+    async (ctx) => {
+      console.log(`[debug]: ${ctx.request.url}`)
+      return ctx
+    },
+  ],
+})
+```
+
+Like endpoint middlewares, global middlewares can chain and extend the context — every endpoint in the router picks up whatever they return.
+
+### Execution Order
+
+When both global and endpoint middlewares are defined, they run in this order:
+
+1. **Global middlewares** (from `createRouter`)
+2. **Endpoint middlewares** (from `createEndpointConfig`)
+3. **Route handler**
+
+```ts lineNumbers
+import { createEndpoint, createEndpointConfig, createRouter } from "@aura-stack/router"
+
+const endpointConfig = createEndpointConfig({
+  use: [
+    async (ctx) => {
+      console.log("2. Endpoint middleware")
+      return ctx
+    },
+  ],
+})
+
+const endpoint = createEndpoint(
+  "GET",
+  "/test",
+  async (ctx) => {
+    console.log("3. Handler")
+    return ctx.json({ ok: true })
+  },
+  endpointConfig
+)
+
+const router = createRouter([endpoint], {
+  use: [
+    async (ctx) => {
+      console.log("1. Global middleware")
+      return ctx
+    },
+  ],
+})
+```

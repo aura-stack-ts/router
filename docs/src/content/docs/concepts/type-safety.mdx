@@ -1,0 +1,132 @@
+---
+title: Type Safety
+description: Discover how Aura Router leverages TypeScript's advanced type system to deliver end-to-end type safety from server endpoints to client calls.
+---
+
+Type safety in Aura Router is designed to eliminate a whole class of runtime surprises. By combining TypeScript's inference with your choice of schema validation library (Zod, Valibot, ArkType, or TypeBox), the library types your request payloads, query parameters, headers, and responses consistently across both the server and client.
+
+Rather than writing manual TypeScript interfaces or duplicating types between your API and frontend, Aura Router infers everything directly from your route definitions and validation schemas.
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+import { createEndpointConfig } from "@aura-stack/router/endpoint"
+
+const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      username: z.string(),
+      role: z.enum(["admin", "member"]),
+    }),
+  },
+})
+
+export const updateUser = createEndpoint(
+  "PATCH",
+  "/users/:id",
+  async (ctx) => {
+    // ctx.params.id is typed as string
+    // ctx.body is fully typed as { username: string; role: "admin" | "member" }
+    const { username, role } = ctx.body
+
+    return ctx.json({ success: true, updatedUser: { username, role } })
+  },
+  config
+)
+```
+
+<Callout>
+  `createEndpointConfig` can also be imported from the `@aura-stack/router/endpoint` subpath, alongside `/client` and `/types`, if
+  you prefer importing from more granular entry points.
+</Callout>
+
+## End-to-End Type Safety
+
+When you assemble your router and pass its type to the client constructor, Aura Router maps the entire API surface. Your frontend or any consuming service gets full type safety with zero manual type definitions on the client side.
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+import { updateUser } from "@/api/endpoints/user.ts"
+
+export const router = createRouter([updateUser])
+
+// Export the router type for client consumption
+export type Router = typeof router
+```
+
+```ts lineNumbers
+import { createClient } from "@aura-stack/router/client"
+import type { Router } from "@/api/index.ts"
+
+const client = createClient<Router>({
+  baseURL: "https://api.example.com",
+})
+
+const response = await client.patch("/users/:id", {
+  params: { id: "uuid-123" },
+  body: {
+    username: "alice",
+    role: "admin",
+  },
+})
+```
+
+## Extending Global Context
+
+The global context lets you inject shared dependencies into every request a database client, a logger, an authenticated user session without threading them through each endpoint manually.
+
+Augmenting the `GlobalContext` interface makes your custom properties strongly typed and available on `ctx.context` in every endpoint, middleware, and hook.
+
+<Steps>
+
+<Step>
+
+### Augmenting the Type
+
+Create a declaration file (e.g., `globals.d.ts` or `types/aura.d.ts`) in your project and augment the `@aura-stack/router` module.
+
+```ts title="src/types/aura.d.ts" lineNumbers
+import "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  export interface GlobalContext {
+    db: PrismaClient
+    user: { id: string; role: "admin" | "member" } | null
+  }
+}
+```
+
+</Step>
+
+<Step>
+
+### Using the Extended Context
+
+The new properties are available under `ctx.context`, the same way `db` was shown in [Request Context](/docs/concepts/request-context#context) augmenting the interface doesn't change where it lives on `ctx`, only what's typed inside it.
+
+```ts lineNumbers
+import { createEndpoint, createRouter } from "@aura-stack/router"
+
+export const getProfile = createEndpoint("GET", "/profile", async (ctx) => {
+  if (!ctx.context.user) {
+    return ctx.json({ error: "Unauthorized" }, 401)
+  }
+
+  const profile = await ctx.context.db.profile.findUnique({
+    where: { userId: ctx.context.user.id },
+  })
+
+  return ctx.json({ profile })
+})
+
+export const router = createRouter([getProfile], {
+  context: {
+    db: prisma,
+    user: null, // populated per-request, e.g. by a global onRequest hook
+  },
+})
+```
+
+</Step>
+
+</Steps>

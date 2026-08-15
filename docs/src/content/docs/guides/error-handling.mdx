@@ -1,0 +1,137 @@
+---
+title: Error Handling
+description: Centralize error handling for your router with the onError configuration, and distinguish internal router errors from your own application errors.
+---
+
+The `onError` option on `createRouter` captures errors arising from route handlers, endpoint middlewares, global middlewares, and internal router logic. It's a centralized place to shape error responses and add diagnostics.
+
+<Callout>
+  This is distinct from the endpoint-level `hooks.onError` covered in [Lifecycle onError](/docs/concepts/lifecycle#onerror). If an
+  endpoint defines its own `hooks.onError` and it returns a response, that error is considered handled and never reaches the
+  router-level `onError` below. Router-level `onError` is your catch-all endpoint-level `hooks.onError` is for errors you want to
+  handle differently for one specific route.
+</Callout>
+
+```ts lineNumbers
+import { createRouter, isRouterError, type RouterConfig } from "@aura-stack/router"
+
+const onErrorHandler: RouterConfig["onError"] = (error, request) => {
+  const message = isRouterError(error) ? "Unexpected Internal Error" : `The error was caused by ${error.message}`
+  return Response.json({ message })
+}
+```
+
+<Callout>
+  Unlike endpoint hooks, this callback doesn't receive a `ctx` object — only the raw `error` and the original `request` — so
+  responses here are built with `Response.json`, not `ctx.json`.
+</Callout>
+### Identifying Router Errors
+ 
+To detect whether an error originated from the router internals or from your own endpoint logic, use the `isRouterError` helper.
+ 
+A `RouterError` provides:
+ 
+- `message`
+- `statusCode`
+- `statusText`
+These map directly onto a structured JSON error response.
+ 
+```ts lineNumbers
+import { createRouter, isRouterError, type RouterConfig } from "@aura-stack/router"
+ 
+const onError: RouterConfig["onError"] = (error, request) => {
+  if (isRouterError(error)) {
+    const { message, statusText, statusCode } = error
+    return Response.json(
+      {
+        error: statusText,
+        error_description: message,
+      },
+      { status: statusCode }
+    )
+  }
+  return Response.json({ message: "Internal Server Error" }, { status: 500 })
+}
+ 
+export const router = createRouter([], {
+  onError,
+})
+```
+
+## Usage
+
+### Basic Usage
+
+The `onError` handler can be passed directly to `createRouter`.
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  onError: (error, request) => {
+    console.error("Router error:", error)
+    return Response.json({ message: "Internal Server Error" }, { status: 500 })
+  },
+})
+```
+
+### Using the `RouterConfig` Type
+
+Typing the handler with `RouterConfig["onError"]` improves clarity and lets you define it outside `createRouter` for reuse.
+
+```ts lineNumbers
+import { createRouter, type RouterConfig } from "@aura-stack/router"
+
+const onErrorHandler: RouterConfig["onError"] = (error, request) => {
+  console.error("Router error:", error)
+  return Response.json({ message: "Internal Server Error" }, { status: 500 })
+}
+
+export const router = createRouter([], {
+  onError: onErrorHandler,
+})
+```
+
+### Advanced Usage
+
+For richer diagnostics, combine `isRouterError` with your own error classes.
+
+```ts lineNumbers
+import { createRouter, isRouterError, statusCode, type RouterConfig } from "@aura-stack/router"
+
+class LoginError extends Error {}
+
+interface ErrorResponse {
+  message: string
+  code: string
+}
+
+const onErrorHandler: RouterConfig["onError"] = (error, request) => {
+  if (isRouterError(error)) {
+    const { message, statusText, statusCode: routerStatusCode } = error
+
+    const response: ErrorResponse = {
+      message,
+      code: statusText,
+    }
+
+    return Response.json(response, { status: routerStatusCode })
+  }
+
+  // Not a RouterError — an exception from your own code. Log the full error
+  // (including its stack) server-side, but never send a stack trace to the
+  // client: it can leak file paths, internal structure, and other details.
+  console.error(error)
+
+  const response: ErrorResponse = {
+    message: error instanceof LoginError ? "Invalid credentials" : "Bad Request",
+    code: error instanceof LoginError ? "LOGIN_FAILED" : "BAD_REQUEST",
+  }
+
+  return Response.json(response, { status: statusCode.BAD_REQUEST })
+}
+
+export const router = createRouter([], {
+  onError: onErrorHandler,
+})
+```

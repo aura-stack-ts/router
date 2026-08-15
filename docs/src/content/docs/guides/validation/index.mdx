@@ -1,0 +1,85 @@
+---
+title: Schema Validation
+description: Learn how to add schema validation to your Aura Router endpoints using popular validation libraries.
+---
+
+Schema validation is an optional configuration in `createEndpoint` and `createEndpointConfig`. It enables runtime validation for `headers`, `params`, `searchParams`, and `body` — verifying the incoming data and giving the endpoint's request context full type safety.
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    const { username, password } = ctx.body
+    return Response.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: z.object({
+        username: z.string(),
+        password: z.string(),
+      }),
+    },
+  }
+)
+```
+
+## Installation
+
+To add schema validation support, install the corresponding validation library alongside `@aura-stack/router`. Supported validators are Zod, TypeBox, Valibot, and ArkType.
+
+<Tabs items={["zod", "typebox", "valibot", "arktype"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```npm
+npm install zod
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```npm
+npm install typebox
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```npm
+npm install valibot
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```npm
+npm install arktype
+```
+
+</Tab>
+
+</Tabs>
+
+<Cards>
+
+<Card title="Headers" href="/docs/guides/validation/headers">
+  Validate request headers using the `schemas.headers` option.
+</Card>
+<Card title="Params" href="/docs/guides/validation/params">
+  Validate request params using the `schemas.params` option.
+</Card>
+<Card title="Search Params" href="/docs/guides/validation/search-params">
+  Validate request search params using the `schemas.searchParams` option.
+</Card>
+<Card title="Body" href="/docs/guides/validation/body">
+  Validate request body using the `schemas.body` option.
+</Card>
+
+</Cards>

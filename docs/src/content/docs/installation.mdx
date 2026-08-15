@@ -1,0 +1,196 @@
+---
+title: Installation
+description: Get up and running with Aura Router in minutes. Install the package, define type-safe endpoints, and create your client API.
+---
+
+<Steps>
+
+<Step>
+
+## Install the Package
+
+Aura Router package are distributed via [npmjs](https://www.npmjs.com/), [jsr.io](https://jsr.io/) and [jsDelivr](https://www.jsdelivr.com/) registries. You could install the package in any JavaScript project.
+
+```npm
+npm install @aura-stack/router
+```
+
+To enable end-to-end type safety and validation, install your preferred schema validation library. Aura Router supports Zod, TypeBox, Valibot, and ArkType.
+
+<Tabs items={["zod", "typebox", "valibot", "arktype"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```npm
+npm install zod
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```npm
+npm install typebox
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```npm
+npm install valibot
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```npm
+npm install arktype
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step>
+
+## Define Endpoints
+
+Endpoints are the fundamental building blocks of Aura Router, defining the route path, HTTP method, and execution logic. You can create endpoints using the `createEndpoint` function.
+
+```ts title="src/api/endpoints.ts" lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const signIn = createEndpoint("POST", "/sign-in", async (ctx) => {
+  const { username, password } = ctx.body
+  if (username !== "admin" || password !== "password") {
+    return ctx.json({ authenticated: false }, { status: 401 })
+  }
+  return ctx.json({ authenticated: true })
+})
+```
+
+### Adding Schema Validation
+
+You can couple runtime validation and type inference to your endpoints using `createEndpointConfig`. Request fields (`headers`, `params`, `searchParams`, and `body`) are fully validated against your schema before execution.
+
+<Tabs items={["Zod", "TypeBox", "Valibot", "ArkType"]}>
+
+<Tab value="Zod">
+
+```ts title="src/api/endpoints-config.ts" lineNumbers
+import { z } from "zod"
+import { createEndpointConfig } from "@aura-stack/router/endpoint"
+
+export const signInConfig = createEndpointConfig({
+  schema: {
+    body: z.object({
+      username: z.string(),
+      password: z.string(),
+    }),
+  },
+})
+```
+
+</Tab>
+
+<Tab value="TypeBox">
+
+```ts title="src/api/endpoints-config.ts" lineNumbers
+import * as typebox from "typebox"
+import { createEndpointConfig } from "@aura-stack/router/endpoint"
+
+export const signInConfig = createEndpointConfig({
+  schema: {
+    body: typebox.Object({
+      username: typebox.String(),
+      password: typebox.String(),
+    }),
+  },
+})
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts title="src/api/endpoints-config.ts" lineNumbers
+import * as typebox from "valibot"
+import { createEndpointConfig } from "@aura-stack/router/endpoint"
+
+export const signInConfig = createEndpointConfig({
+  schema: {
+    body: valibot.object({
+      username: valibot.string(),
+      password: valibot.string(),
+    }),
+  },
+})
+```
+
+</Tab>
+
+<Tab value="ArkType">
+
+```ts title="src/api/endpoints-config.ts" lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig } from "@aura-stack/router/endpoint"
+
+export const signInConfig = createEndpointConfig({
+  schema: {
+    body: type({
+      username: "string",
+      password: "string",
+    }),
+  },
+})
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step>
+
+## Assemble the Router
+
+Group your defined endpoints together using `createRouter`. This generates a type-safe router structure ready to handle incoming requests for your runtime.
+
+```ts title="src/api/index.ts" lineNumbers
+import { createRouter } from "@aura-stack/router"
+import { signIn } from "@/api/endpoints.ts"
+
+export const router = createRouter([signIn])
+export type Router = typeof router
+```
+
+<Callout>
+  The router returns standard handlers mapped to Web Fetch API primitives. It runs seamlessly on Node.js, Bun, Deno, Cloudflare
+  Workers, and Edge runtimes.
+</Callout>
+
+</Step>
+
+<Step>
+
+## Create the Type-Safe Client API
+
+Generate a fully typed client to interact with your router seamlessly across frontend applications or microservices. The client automatically infers parameters, request bodies, headers, and response types directly from your router type definition.
+
+```ts title="src/api/client.ts" lineNumbers
+import { createClient } from "@aura-stack/router/client"
+import type { Router } from "@/api/index.ts"
+
+const client = createClient<Router>({
+  baseURL: "http://localhost:3000",
+})
+```
+
+</Step>
+
+</Steps>

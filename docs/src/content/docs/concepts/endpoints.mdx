@@ -1,0 +1,145 @@
+---
+title: Endpoint Definitions
+description: Create endpoint definitions in Aura Router
+---
+
+An endpoint definition is the source of truth for a request's TypeScript types. It's a declarative object that describes the request and response shape, along with any parameters, search params, headers, and body that may be required.
+
+An endpoint defines the action or resource a request targets. It must define the HTTP method, the URL path, and the handler function that runs when the request is matched. The handler is responsible for processing the request and returning a response.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const getSession = createEndpoint("GET", "/auth/session", async (ctx) => {
+  return ctx.json({
+    session: {
+      user: {
+        userId: "uuid-123",
+        username: "john_doe",
+      },
+    },
+  })
+})
+```
+
+<Callout>
+  Use `ctx.json` instead of `Response.json` when possible. It preserves the typed response payload, automatically sets the
+  `Content-Type` header, and gives you full inference on the client via `createClient`. See
+  [RequestContext](/docs/concepts/request-context#json) for details.
+</Callout>
+
+### Request Context
+
+The handler function takes a [RequestContext](/docs/concepts/request-context) object as its argument. It contains information about the request body, headers, params, search params and plus helpers for building the response.
+
+```ts lineNumbers
+import { createEndpoint } from "@aura-stack/router"
+
+const getSession = createEndpoint("GET", "/auth/session", async (ctx) => {
+  if (!ctx.headers.has("Authorization")) {
+    return ctx.json({ error: "Unauthorized" }, 401)
+  }
+
+  return ctx.json({
+    session: {
+      user: {
+        userId: "uuid-123",
+        username: "john_doe",
+      },
+    },
+  })
+})
+```
+
+<Callout>
+  A one-off check like this is fine inline, but if the same guard needs to run across several endpoints, define it once as an
+  `onRequest` hook or a `use` middleware instead of repeating it in every handler. See [Lifecycle -
+  onRequest](/docs/concepts/lifecycle#onrequest).
+</Callout>
+
+### Configuring Endpoints
+
+The endpoint definition can also include an optional configuration object to customize its behavior. The configuration object can include:
+
+- **`schemas`**: Validation schemas for validating and typing `params`, `searchParams`, `body`, and `headers`. See [Schema Validation](/docs/guides/schema-validation).
+- **`use`**: middlewares that run once, right before the handler, with access to the fully parsed and validated context. Best suited for cross-cutting logic like auth or logging that several endpoints share.
+- **`hooks`**: lifecycle hooks tied to a specific phase of the request/response cycle (`onRequest`, `onParams`, `onBody`, `onResponse`, and more). Best suited for transforms scoped to a single field, right as it's parsed. See [Lifecycle](/docs/concepts/lifecycle).
+
+The configuration can be defined in two ways: passed directly to `createEndpoint`, or built separately with `createEndpointConfig`.
+
+<Tabs items={["Basic", "With Config"]}>
+
+<Tab value="Basic">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint } from "@aura-stack/router"
+import { hashPassword } from "@/lib/helpers"
+
+const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const body = ctx.body
+    return ctx.json({ user: body })
+  },
+  {
+    schemas: {
+      body: z.object({
+        username: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(8),
+      }),
+    },
+    hooks: {
+      onBody: async ({ body }) => {
+        body.password = await hashPassword(body.password)
+      },
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="With Config">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpoint, createEndpointConfig } from "@aura-stack/router"
+
+const config = createEndpointConfig({
+  schemas: {
+    body: z.object({
+      username: z.string().min(1),
+      email: z.string().email(),
+      password: z.string().min(8),
+    }),
+  },
+  hooks: {
+    onBody: async ({ body }) => {
+      body.password = await hashPassword(body.password)
+    },
+  },
+})
+
+const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const body = ctx.body
+    return ctx.json({ user: body })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+<Callout type="warn">
+  The `password` field validated by `schemas.body` is the *plaintext* value sent by the client. `onBody` runs before validation,
+  so it hashes the already-validated password before it reaches the handler — `ctx.body.password` in the handler is the hashed
+  value, not the original.
+</Callout>
