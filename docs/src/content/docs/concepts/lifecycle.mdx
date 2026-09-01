@@ -158,7 +158,7 @@ export const getSession = createEndpoint(
 
 <Callout>
   If `schemas.headers` is defined, invalid headers reject the request with `422 Unprocessable Entity` after this hook runs. See
-  [Schema Validation](/docs/guides/schema-validation).
+  [Schema Validation](/docs/guides/validation).
 </Callout>
 
 ## `onParams`
@@ -188,7 +188,7 @@ export const getBookByUser = createEndpoint(
 
 <Callout>
   If `schemas.params` is defined, invalid params reject the request with `422 Unprocessable Entity` after this hook runs, and
-  against the (possibly transformed) value it produced. See [Schema Validation](/docs/guides/schema-validation).
+  against the (possibly transformed) value it produced. See [Schema Validation](/docs/guides/validation).
 </Callout>
 
 ## `onSearchParams`
@@ -218,7 +218,7 @@ export const getBook = createEndpoint(
 
 <Callout>
   If `schemas.searchParams` is defined, invalid search params reject the request with `422 Unprocessable Entity` after this hook
-  runs. See [Schema Validation](/docs/guides/schema-validation).
+  runs. See [Schema Validation](/docs/guides/validation).
 </Callout>
 
 ## `onBody`
@@ -308,6 +308,11 @@ export const getBook = createEndpoint(
   }
 )
 ```
+
+<Callout>
+  If `schemas.response` is defined, invalid headers reject the request with `422 Unprocessable Entity` after this hook runs. See
+  [Schema Validation](/docs/guides/validation).
+</Callout>
 
 ## `onError`
 

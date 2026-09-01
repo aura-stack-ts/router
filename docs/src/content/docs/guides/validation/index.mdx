@@ -3,7 +3,7 @@ title: Schema Validation
 description: Learn how to add schema validation to your Aura Router endpoints using popular validation libraries.
 ---
 
-Schema validation is an optional configuration in `createEndpoint` and `createEndpointConfig`. It enables runtime validation for `headers`, `params`, `searchParams`, and `body` — verifying the incoming data and giving the endpoint's request context full type safety.
+Schema validation is an optional configuration in `createEndpoint` and `createEndpointConfig`. It enables runtime validation for `headers`, `params`, `searchParams`, `body` and `response` verifying the incoming data and giving the endpoint's request context full type safety.
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -80,6 +80,9 @@ npm install arktype
 </Card>
 <Card title="Body" href="/docs/guides/validation/body">
   Validate request body using the `schemas.body` option.
+</Card>
+<Card title="Response" href="/docs/guides/validation/response">
+  Validate outgoing responses using the `schemas.response` option.
 </Card>
 
 </Cards>

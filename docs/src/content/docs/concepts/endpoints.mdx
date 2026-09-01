@@ -61,7 +61,7 @@ const getSession = createEndpoint("GET", "/auth/session", async (ctx) => {
 
 The endpoint definition can also include an optional configuration object to customize its behavior. The configuration object can include:
 
-- **`schemas`**: Validation schemas for validating and typing `params`, `searchParams`, `body`, and `headers`. See [Schema Validation](/docs/guides/schema-validation).
+- **`schemas`**: Validation schemas for validating and typing `params`, `searchParams`, `body`, and `headers`. See [Schema Validation](/docs/guides/validation).
 - **`use`**: middlewares that run once, right before the handler, with access to the fully parsed and validated context. Best suited for cross-cutting logic like auth or logging that several endpoints share.
 - **`hooks`**: lifecycle hooks tied to a specific phase of the request/response cycle (`onRequest`, `onParams`, `onBody`, `onResponse`, and more). Best suited for transforms scoped to a single field, right as it's parsed. See [Lifecycle](/docs/concepts/lifecycle).
 
