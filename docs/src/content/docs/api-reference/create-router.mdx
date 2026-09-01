@@ -198,9 +198,10 @@ export const { GET } = createRouter([session], {
 
 The `createRouter` function returns a typed object containing only the HTTP handlers defined by the endpoints in the router. This ensures that developers can only access valid handler methods and prevents runtime errors by leveraging TypeScript's static type system.
 
-| Return        | Type                                                 | Description                                                                            |
-| ------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| http handlers | `GetHttpHandlers<Endpoints extends RouteEndpoint[]>` | Generates an object containing only the allowed HTTP methods defined in the endpoints. |
+| Return        | Type                                                 | Description                                                                                |
+| ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| http handlers | `GetHttpHandlers<Endpoints extends RouteEndpoint[]>` | Generates an object containing only the allowed HTTP methods defined in the endpoints.     |
+| `handle`      | `(request: Request) => Awaitable<Response>`          | A function that handles incoming requests and dispatches them to the appropriate endpoint. |
 
 <Callout>
   This return type ensures full type safety. If an endpoint does not define a DELETE method, TypeScript prevents access to DELETE
