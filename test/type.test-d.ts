@@ -21,10 +21,11 @@ import type {
     ContextParams,
     EndpointMeta,
     HTTPMethod,
+    ContextResponse,
 } from "@/@types/index.ts"
-import { ZodEnum, type ZodObject, type ZodString } from "zod"
-import type { EnumSchema, ObjectSchema, StringSchema } from "valibot"
-import type { TObject, TString, TEnum } from "typebox"
+import { ZodEnum, ZodNumber, type ZodObject, type ZodString } from "zod"
+import type { EnumSchema, NumberSchema, ObjectSchema, StringSchema } from "valibot"
+import type { TObject, TString, TEnum, TNumber } from "typebox"
 
 type RoutePath = "/auth/:oauth"
 type EmptyObject = Record<PropertyKey, never>
@@ -71,7 +72,14 @@ describe("RequestContext", () => {
             request: Request
             url: URL
             context: GlobalContext
-            json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
+            json: <
+                Override = unknown,
+                const Init extends ResponseInit = ResponseInit,
+                T = unknown extends Override ? ContextResponse<EndpointMeta<any, any, any>, Init> : Override,
+            >(
+                data: T,
+                init?: Init
+            ) => JsonResponse<T>
         } & T
     >
     expectTypeOf<RequestContext<EndpointMeta<"/", "GET", {}>>>().toEqualTypeOf<
@@ -552,6 +560,96 @@ describe("ContextParams", () => {
                 }>
             }>
         >().toEqualTypeOf<TObject<{ userId: TString; itemId: TString }>>()
+    })
+})
+
+describe("ContextResponse", () => {
+    describe("No response schema", () => {
+        expectTypeOf<ContextResponse<{}, {}>>().toEqualTypeOf<any>()
+    })
+
+    describe("With response schema", () => {
+        describe("With unique response schema", () => {
+            expectTypeOf<ContextResponse<{ response: ZodObject<{ id: ZodString }> }, {}>>().toEqualTypeOf<{
+                id: string
+            }>()
+            expectTypeOf<
+                ContextResponse<{ response: ZodObject<{ id: ZodString; name: ZodString; age: ZodNumber }> }, {}>
+            >().toEqualTypeOf<{
+                id: string
+                name: string
+                age: number
+            }>()
+
+            expectTypeOf<
+                ContextResponse<{ response: ObjectSchema<{ id: StringSchema<undefined> }, undefined> }, {}>
+            >().toEqualTypeOf<{
+                id: string
+            }>()
+            expectTypeOf<
+                ContextResponse<
+                    {
+                        response: ObjectSchema<
+                            { id: StringSchema<undefined>; name: StringSchema<undefined>; age: NumberSchema<undefined> },
+                            undefined
+                        >
+                    },
+                    {}
+                >
+            >().toEqualTypeOf<{
+                id: string
+                name: string
+                age: number
+            }>()
+
+            expectTypeOf<ContextResponse<{ response: TObject<{ id: TString }> }, {}>>().toEqualTypeOf<TObject<{ id: TString }>>()
+            expectTypeOf<
+                ContextResponse<{ response: TObject<{ id: TString; name: TString; age: TNumber }> }, {}>
+            >().toEqualTypeOf<TObject<{ id: TString; name: TString; age: TNumber }>>()
+        })
+
+        describe("With multiple response schemas", () => {
+            expectTypeOf<
+                ContextResponse<
+                    {
+                        response: {
+                            200: ZodObject<{ id: ZodString }>
+                            302: ZodObject<{ location: ZodString }>
+                            404: ZodObject<{ message: ZodString }>
+                        }
+                    },
+                    {}
+                >
+            >().toEqualTypeOf<{ id: string } | { location: string } | { message: string }>()
+
+            expectTypeOf<
+                ContextResponse<
+                    {
+                        response: {
+                            200: ObjectSchema<{ id: StringSchema<undefined> }, undefined>
+                            302: ObjectSchema<{ location: StringSchema<undefined> }, undefined>
+                            404: ObjectSchema<{ message: StringSchema<undefined> }, undefined>
+                        }
+                    },
+                    { status: 302 }
+                >
+            >().toEqualTypeOf<{
+                location: string
+            }>()
+
+            expectTypeOf<
+                ContextResponse<
+                    {
+                        response: {
+                            200: TObject<{ id: TString }>
+                            302: TObject<{ location: TString }>
+                            404: TObject<{ message: TString }>
+                        }
+                    },
+                    { status: 302 }
+                >
+            >().toEqualTypeOf<TObject<{ location: TString }>>()
+        })
     })
 })
 

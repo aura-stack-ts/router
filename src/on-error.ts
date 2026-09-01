@@ -22,10 +22,11 @@ export const onError = async (
     error: Error | AuraRouterError | AuraRouterValidationError,
     request: Request,
     config: RouterConfig,
-    endpointOnError?: OnErrorHook<any>,
-    ctx?: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>>
+    endpointOnError?: OnErrorHook<any, any>,
+    ctx?: RequestHookContext<any> | MatchHookContext<any, any> | RequestContext<EndpointMeta<any, any, any>>
 ): Promise<Response> => {
-    const errorCtx = ctx ?? ({ request, context: config.context ?? {}, json, phase: "onRequest" } satisfies RequestHookContext)
+    const errorCtx =
+        ctx ?? ({ request, context: config.context ?? {}, json, phase: "onRequest" } satisfies RequestHookContext<any>)
 
     if (endpointOnError) {
         try {

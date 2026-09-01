@@ -1,6 +1,6 @@
 import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedBodyMethod } from "@/assert.ts"
-import { createValidator } from "@/validator/registry.ts"
+import { createValidator, isSupportedSchema } from "@/validator/registry.ts"
 import { AuraRouterError, AuraRouterValidationError } from "@/error.ts"
 import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
 
@@ -159,4 +159,37 @@ const createContentTypeRegex = (contentTypes: ContentType[], contenType: string)
 
 export const json = <T>(data: T, init?: ResponseInit): JsonResponse<T> => {
     return Response.json(data, init) as JsonResponse<T>
+}
+
+export const jsonWithValidation = (config: EndpointConfig<any, any, any>) => {
+    return <T>(data: T, init?: ResponseInit): JsonResponse<T> => {
+        let output: any = data
+        if (config?.schemas?.response) {
+            if (isSupportedSchema(config.schemas.response)) {
+                const validator = createValidator(config.schemas.response)
+                const parsed = validator.validate(data)
+                if (!parsed.success) {
+                    throw new AuraRouterValidationError({
+                        details: parsed.error,
+                        userMessage: "The response body or parameter schema layout contains output format errors.",
+                    })
+                }
+                output = parsed.data
+            } else {
+                const statusCode = init?.status ?? 200
+                if (config.schemas.response[statusCode]) {
+                    const validator = createValidator(config.schemas.response[statusCode])
+                    const parsed = validator.validate(data)
+                    if (!parsed.success) {
+                        throw new AuraRouterValidationError({
+                            details: parsed.error,
+                            userMessage: "The response body or parameter schema layout contains output format errors.",
+                        })
+                    }
+                    output = parsed.data
+                }
+            }
+        }
+        return Response.json(output, init) as JsonResponse<T>
+    }
 }

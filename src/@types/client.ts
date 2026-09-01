@@ -23,7 +23,7 @@ export type RemoveUndefined<T> = {
     [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 }
 
-type SchemaValues<T> = T[keyof T]
+export type SchemaValues<T> = T[keyof T]
 
 type HasSchemas<C> =
     C extends EndpointConfig<any, any, infer Schemas>

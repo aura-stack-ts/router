@@ -3,18 +3,22 @@ import { safeParse } from "valibot"
 import { Value } from "typebox/value"
 import { AuraRouterError } from "@/error.ts"
 import { isValibotSchema, isZodSchema, isArkType } from "@/assert.ts"
-import type { SchemaAdapter, ValidationResult } from "@/@types/types.ts"
-import { formatArkTypeError, formatTypeBoxError, formatValibotError, formatZodError } from "./formatter.ts"
+import { formatArkTypeError, formatTypeBoxError, formatValibotError, formatZodError } from "@/validator/formatter.ts"
 import type { ArkErrors } from "arktype"
+import type { SchemaAdapter, ValidationResult } from "@/@types/types.ts"
 
 export { isAuraRouterError, isAuraRouterValidationError, isArkType, isZodSchema, isValibotSchema } from "@/assert.ts"
 export type { SchemaAdapter, ValidationResult }
+
+export const isSupportedSchema = (schema: any): boolean => {
+    return isZodSchema(schema) || isValibotSchema(schema) || isArkType(schema) || IsObject(schema)
+}
 
 /**
  * Universal wrapper for Zod, Valibot, ArkType, etc.
  */
 export const createValidator = <T>(schema: any): SchemaAdapter<T> => {
-    if (!isZodSchema(schema) && !isValibotSchema(schema) && !isArkType(schema) && !IsObject(schema)) {
+    if (!isSupportedSchema(schema)) {
         throw new AuraRouterError({ code: "UNSUPPORTED_SCHEMA_VALIDATOR" })
     }
     return {

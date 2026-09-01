@@ -287,6 +287,24 @@ describe("Client", () => {
 })
 
 test("Client type inference with Zod schemas", async () => {
+    const notFoundConfig = createEndpointConfig({
+        schemas: {
+            response: {
+                200: z.object({ message: z.string() }),
+                404: z.object({ error: z.string() }),
+            },
+        },
+    })
+
+    const notFound = createEndpoint(
+        "GET",
+        "/not-found",
+        (ctx) => {
+            return ctx.json({ error: "Not Found" }, { status: 404 })
+        },
+        notFoundConfig
+    )
+
     const getItemConfig = createEndpointConfig({
         schemas: {
             params: z.object({ itemId: z.string() }),
@@ -340,7 +358,7 @@ test("Client type inference with Zod schemas", async () => {
         signOutConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem, signOut])
+    const router = createRouter([getItem, createItem, deleteItem, signOut, notFound])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -374,9 +392,30 @@ test("Client type inference with Zod schemas", async () => {
         },
     })
     expectTypeOf<typeof out>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const notFoundResponse = await client.get("/not-found")
+    expectTypeOf<typeof notFoundResponse>().toEqualTypeOf<JsonResponse<{ error: string }>>()
 })
 
 test("Client type inference with Valibot schemas", async () => {
+    const notFoundConfig = createEndpointConfig({
+        schemas: {
+            response: {
+                200: valibot.object({ message: valibot.string() }),
+                404: valibot.object({ error: valibot.string() }),
+            },
+        },
+    })
+
+    const notFound = createEndpoint(
+        "GET",
+        "/not-found",
+        (ctx) => {
+            return ctx.json({ error: "Not Found" }, { status: 404 })
+        },
+        notFoundConfig
+    )
+
     const getItemConfig = createEndpointConfig({
         schemas: {
             params: valibot.object({ itemId: valibot.string() }),
@@ -430,7 +469,7 @@ test("Client type inference with Valibot schemas", async () => {
         signOutConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem, signOut])
+    const router = createRouter([getItem, createItem, deleteItem, signOut, notFound])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -470,9 +509,30 @@ test("Client type inference with Valibot schemas", async () => {
         },
     })
     expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const notFoundResponse = await client.get("/not-found")
+    expectTypeOf<typeof notFoundResponse>().toEqualTypeOf<JsonResponse<{ error: string }>>()
 })
 
 test("Client type inference with Arktype schemas", async () => {
+    const notFoundConfig = createEndpointConfig({
+        schemas: {
+            response: {
+                200: type({ message: "string" }),
+                404: type({ error: "string" }),
+            },
+        },
+    })
+
+    const notFound = createEndpoint(
+        "GET",
+        "/not-found",
+        (ctx) => {
+            return ctx.json({ error: "Not Found" }, { status: 404 })
+        },
+        notFoundConfig
+    )
+
     const getItemConfig = createEndpointConfig({
         schemas: {
             params: type({
@@ -532,7 +592,7 @@ test("Client type inference with Arktype schemas", async () => {
         signOutConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem, signOut])
+    const router = createRouter([getItem, createItem, deleteItem, signOut, notFound])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -578,9 +638,30 @@ test("Client type inference with Arktype schemas", async () => {
         },
     })
     expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const notFoundResponse = await client.get("/not-found")
+    expectTypeOf<typeof notFoundResponse>().toEqualTypeOf<JsonResponse<{ error: string }>>()
 })
 
 test("Client type inference with TypeBox schemas", async () => {
+    const notFoundConfig = createEndpointConfig({
+        schemas: {
+            response: {
+                200: typebox.Object({ message: typebox.String() }),
+                404: typebox.Object({ error: typebox.String() }),
+            },
+        },
+    })
+
+    const notFound = createEndpoint(
+        "GET",
+        "/not-found",
+        (ctx) => {
+            return ctx.json({ error: "Not Found" }, { status: 404 })
+        },
+        notFoundConfig
+    )
+
     const getItemConfig = createEndpointConfig({
         schemas: {
             params: typebox.Object({
@@ -644,7 +725,7 @@ test("Client type inference with TypeBox schemas", async () => {
         signOutConfig
     )
 
-    const router = createRouter([getItem, createItem, deleteItem, getItems, signOut])
+    const router = createRouter([getItem, createItem, deleteItem, getItems, signOut, notFound])
 
     const client = createClient<typeof router>({
         baseURL: "http://api.example.com",
@@ -684,4 +765,7 @@ test("Client type inference with TypeBox schemas", async () => {
         },
     })
     expectTypeOf<typeof signedOut>().toEqualTypeOf<JsonResponse<{ method: "POST" }>>()
+
+    const notFoundResponse = await client.get("/not-found")
+    expectTypeOf<typeof notFoundResponse>().toEqualTypeOf<JsonResponse<{ error: string }>>()
 })

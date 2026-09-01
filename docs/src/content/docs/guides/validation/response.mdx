@@ -1,276 +1,291 @@
 ---
-title: Body
-description: Learn how to validate request body in Aura Stack Router using schema validation.
+title: Response
+description: Learn how to validate outgoing responses in Aura Stack Router using schema validation.
 ---
 
-The request body can be validated with the `schemas.body` option.
-
-<Callout>
-  Defining `schemas.body` lets the endpoint infer the type of the body, accessible via `ctx.body`. If no schema is defined,
-  `ctx.body` defaults to `unknown`, since its shape can't be inferred.
-</Callout>
-
-<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
- 
-<Tab value="zod">
-  
-```ts lineNumbers
-import { z } from "zod"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
- 
-export const config = createEndpointConfig({
-  schemas: {
-    body: z.object({
-      name: z.string().min(1),
-      email: z.string().email(),
-    }),
-  },
-})
- 
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
- 
-</Tab>
-
-<Tab value="valibot">
-
-```ts lineNumbers
-import * as valibot from "valibot"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
-
-export const config = createEndpointConfig({
-  schemas: {
-    body: valibot.object({
-      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
-      email: valibot.pipe(valibot.string(), valibot.email()),
-    }),
-  },
-})
-
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
-
-</Tab>
-
-<Tab value="arktype">
-  
-```ts lineNumbers
-import { type } from "arktype"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
- 
-export const config = createEndpointConfig({
-  schemas: {
-    body: type({
-      name: "string > 0",
-      email: "string.email",
-    }),
-  },
-})
- 
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
- 
-</Tab>
-
-<Tab value="typebox">
-
-```ts lineNumbers
-import { Type } from "typebox"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
-
-export const config = createEndpointConfig({
-  schemas: {
-    body: Type.Object({
-      name: Type.String({ minLength: 1 }),
-      email: Type.String({ format: "email" }),
-    }),
-  },
-})
-
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
-
-</Tab>
-
-</Tabs>
-
-Before the body is validated, it can be transformed or normalized with the `onBody` hook called after the body is parsed, but before it's checked against the schema.
-
-<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
- 
-<Tab value="zod">
-  
-```ts lineNumbers
-import { z } from "zod"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
- 
-export const config = createEndpointConfig({
-  schemas: {
-    body: z.object({
-      name: z.string().min(1),
-      email: z.string().email(),
-    }),
-  },
-  hooks: {
-    onBody: ({ body }) => {
-      body.name = body.name.trim()
-      body.email = body.email.toLowerCase()
-    },
-  },
-})
- 
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
- 
-</Tab>
-
-<Tab value="valibot">
-
-```ts lineNumbers
-import * as valibot from "valibot"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
-
-export const config = createEndpointConfig({
-  schemas: {
-    body: valibot.object({
-      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
-      email: valibot.pipe(valibot.string(), valibot.email()),
-    }),
-  },
-  hooks: {
-    onBody: ({ body }) => {
-      body.name = body.name.trim()
-      body.email = body.email.toLowerCase()
-    },
-  },
-})
-
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
-
-</Tab>
-
-<Tab value="arktype">
-  
-```ts lineNumbers
-import { type } from "arktype"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
- 
-export const config = createEndpointConfig({
-  schemas: {
-    body: type({
-      name: "string > 0",
-      email: "string.email",
-    }),
-  },
-  hooks: {
-    onBody: ({ body }) => {
-      body.name = body.name.trim()
-      body.email = body.email.toLowerCase()
-    },
-  },
-})
- 
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
- 
-</Tab>
-
-<Tab value="typebox">
-
-```ts lineNumbers
-import { Type } from "typebox"
-import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
-
-export const config = createEndpointConfig({
-  schemas: {
-    body: Type.Object({
-      name: Type.String({ minLength: 1 }),
-      email: Type.String({ format: "email" }),
-    }),
-  },
-  hooks: {
-    onBody: ({ body }) => {
-      body.name = body.name.trim()
-      body.email = body.email.toLowerCase()
-    },
-  },
-})
-
-export const createUser = createEndpoint(
-  "POST",
-  "/users",
-  async (ctx) => {
-    const { name, email } = ctx.body
-    return ctx.json({ id: "new-id", name, email }, { status: 201 })
-  },
-  config
-)
-```
-
-</Tab>
-
-</Tabs>
+Response payloads can be validated with the `schemas.response` option, which checks the outgoing response against the defined schema.
 
 <Callout type="warn">
-  `onBody` runs *before* `schemas.body` validates the payload, so anything you write into a field here is what gets validated not
-  the client's original value. That's fine for normalization like trimming or case-folding above, but don't use `onBody` for
-  transforms that depend on validation having already passed hashing a password after its length has been checked, for example.
-  Use `onHandler` for that instead; see [Lifecycle onBody](/docs/concepts/lifecycle#onbody) for details.
+  Response schema validation only applies to responses built with the `ctx.json` helper; responses created through other means
+  (e.g. constructing a `Response` directly) aren't validated.
 </Callout>
+
+`schemas.response` can be a single schema, or an object keyed by status code to validate different response shapes per status.
+
+### Single Status Code
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: valibot.object({
+      name: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      email: valibot.pipe(valibot.string(), valibot.email()),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: type({
+      name: "string > 0",
+      email: "string.email",
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: Type.Object({
+      name: Type.String({ minLength: 1 }),
+      email: Type.String({ format: "email" }),
+    }),
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>
+
+### Multiple Status Codes
+
+<Callout>
+  If no schema is defined for the status code a response is sent with, validation is skipped and the response goes out as-is.
+  If a schema *is* defined for that status and the payload doesn't match it, the response is rejected and the client instead
+  receives a `422 Unprocessable Entity`.
+
+Aura Router infers the response type per status code, so `ctx.json(data, { status: 404 })` and `ctx.json(data, { status: 200 })` are each checked —
+and typed — against their own schema below.
+
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
+
+```ts lineNumbers
+import { z } from "zod"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: {
+      201: z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+      }),
+      204: z.object({
+        success: z.boolean(),
+      }),
+      404: z.object({
+        message: z.string().min(1),
+      }),
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: {
+      201: valibot.object({
+        name: valibot.pipe(valibot.string(), valibot.minLength(1)),
+        email: valibot.pipe(valibot.string(), valibot.email()),
+      }),
+      204: valibot.object({
+        success: valibot.boolean(),
+      }),
+      404: valibot.object({
+        message: valibot.pipe(valibot.string(), valibot.minLength(1)),
+      }),
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: {
+      201: type({
+        name: "string > 0",
+        email: "string.email",
+      }),
+      204: type({
+        success: "boolean",
+      }),
+      404: type({
+        message: "string > 0",
+      }),
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type } from "typebox"
+import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
+
+export const config = createEndpointConfig({
+  schemas: {
+    response: {
+      201: Type.Object({
+        name: Type.String({ minLength: 1 }),
+        email: Type.String({ format: "email" }),
+      }),
+      204: Type.Object({
+        success: Type.Boolean(),
+      }),
+      404: Type.Object({
+        message: Type.String({ minLength: 1 }),
+      }),
+    },
+  },
+})
+
+export const createUser = createEndpoint(
+  "POST",
+  "/users",
+  async (ctx) => {
+    const { name, email } = ctx.body
+    return ctx.json({ name, email }, { status: 201 })
+  },
+  config
+)
+```
+
+</Tab>
+
+</Tabs>

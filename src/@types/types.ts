@@ -6,6 +6,7 @@ import type { AURA_ERROR_CODES, AuraRouterError, AuraRouterValidationError, Rout
 import type { HeadersBuilder } from "@/headers.ts"
 import type { HTTPMethod } from "@/@types/http.ts"
 import type { InferValibotSchema, SupportedSchemas } from "@/@types/schemas.ts"
+import type { SchemaValues } from "@/@types/client.ts"
 
 /**
  * Utility type that represents a value that can be either synchronous or a Promise.
@@ -54,6 +55,7 @@ export interface EndpointSchemas {
     searchParams?: SupportedSchemas
     params?: SupportedSchemas
     headers?: SupportedSchemas
+    response?: SupportedSchemas | Record<string, SupportedSchemas>
 }
 
 /**
@@ -66,76 +68,103 @@ export interface GlobalContext {}
 /**
  * Base context available at the earliest hook stage (`onRequest`), before route matching.
  */
-export interface RequestHookContext {
+export interface RequestHookContext<Meta extends EndpointMeta<any, any, any>> {
     phase: HookPhase
     request: Request
     context: GlobalContext
-    json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
-}
-
-/**
- * Context available after a route has been matched (`onMatch`, `onParams`, `onSearchParams`, `onBody`).
- * Extends `RequestHookContext` with the resolved route and method.
- */
-export interface MatchHookContext<Route extends RoutePattern> extends RequestHookContext {
-    route: Route
-    method: HTTPMethod
+    json: <
+        Override = unknown,
+        const Init extends ResponseInit = ResponseInit,
+        T = unknown extends Override ? ContextResponse<Meta["schemas"], Init> : Override,
+    >(
+        data: T,
+        init?: Init
+    ) => JsonResponse<T>
 }
 
 /**
  * Fires when a raw request arrives, before global middlewares and route matching.
  * Returning `void` is a pass-through. Returning a `Response` short-circuits the pipeline.
  */
-export type OnRequestHook = (ctx: RequestHookContext) => Awaitable<void | RequestHookContext | Response>
+export type OnRequestHook<Meta extends EndpointMeta<any, any, any>> = (
+    ctx: RequestHookContext<Meta>
+) => Awaitable<void | RequestHookContext<Meta> | Response>
+
+/**
+ * Context available after a route has been matched (`onMatch`, `onParams`, `onSearchParams`, `onBody`).
+ * Extends `RequestHookContext` with the resolved route and method.
+ */
+export interface MatchHookContext<
+    Route extends RoutePattern,
+    Meta extends EndpointMeta<any, any, any>,
+> extends RequestHookContext<Meta> {
+    route: Route
+    method: HTTPMethod
+}
 
 /**
  * Fires after a route has been matched, before params/body extraction.
  * Returning `void` is a pass-through. Returning a `Response` short-circuits the pipeline.
  */
-export type OnMatchHook<Route extends RoutePattern> = (
-    ctx: MatchHookContext<Route>
-) => Awaitable<void | MatchHookContext<Route> | Response>
+export type OnMatchHook<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: MatchHookContext<Route, Meta>
+) => Awaitable<void | MatchHookContext<Route, Meta> | Response>
 
-export interface HeadersHookContext<Route extends RoutePattern> extends MatchHookContext<Route> {
+export interface HeadersHookContext<
+    Route extends RoutePattern,
+    Meta extends EndpointMeta<any, any, any>,
+> extends MatchHookContext<Route, Meta> {
     headers: HeadersBuilder
 }
 
-export type OnHeadersHook<Route extends RoutePattern> = (
-    ctx: HeadersHookContext<Route>
+export type OnHeadersHook<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: HeadersHookContext<Route, Meta>
 ) => Awaitable<void | HeadersBuilder | Response>
 
 /**
  * Replaces `getRouteParams()`. Receives raw trie-matched params (no schema validation).
  * Returning `void` uses the raw params as-is. Returning a `Response` short-circuits.
  */
-export interface ParamsHookContext<Params, Route extends RoutePattern> extends MatchHookContext<Route> {
+export interface ParamsHookContext<
+    Params,
+    Route extends RoutePattern,
+    Meta extends EndpointMeta<any, any, any>,
+> extends MatchHookContext<Route, Meta> {
     params: Params
 }
 
-export type OnParamsHook<Params, Route extends RoutePattern> = (
-    ctx: ParamsHookContext<Params, Route>
+export type OnParamsHook<Params, Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: ParamsHookContext<Params, Route, Meta>
 ) => Awaitable<void | Params | Response>
 
 /**
  * Replaces `getSearchParams()`. Receives raw `URLSearchParams` (no schema validation).
  * Returning `void` uses the raw URLSearchParams as-is. Returning a `Response` short-circuits.
  */
-export interface SearchParamsHookContext<Route extends RoutePattern> extends MatchHookContext<Route> {
+export interface SearchParamsHookContext<
+    Route extends RoutePattern,
+    Meta extends EndpointMeta<any, any, any>,
+> extends MatchHookContext<Route, Meta> {
     searchParams: URLSearchParams
 }
-export type OnSearchParamsHook<Route extends RoutePattern> = (
-    ctx: SearchParamsHookContext<Route>
+export type OnSearchParamsHook<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: SearchParamsHookContext<Route, Meta>
 ) => Awaitable<void | Record<string, unknown> | URLSearchParams | Response>
 
 /**
  * Replaces schema validation in `getBody()`. Receives the content-type-parsed body (no schema validation).
  * Returning `void` uses the raw parsed body as-is. Returning a `Response` short-circuits.
  */
-export interface BodyHookContext<Route extends RoutePattern> extends MatchHookContext<Route> {
+export interface BodyHookContext<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> extends MatchHookContext<
+    Route,
+    Meta
+> {
     body: unknown
 }
 
-export type OnBodyHook<Route extends RoutePattern> = (ctx: BodyHookContext<Route>) => Awaitable<void | unknown | Response>
+export type OnBodyHook<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: BodyHookContext<Route, Meta>
+) => Awaitable<void | unknown | Response>
 
 /**
  * Fires just before the route handler is called, after all middlewares.
@@ -170,11 +199,13 @@ export type HookPhase =
  * The `ctx` union reflects which stage the error occurred at.
  * Must return a `Response`.
  */
-export type ErrorHookContext<Route extends RoutePattern> = {
+export type ErrorHookContext<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = {
     error: Error | AuraRouterError | AuraRouterValidationError
     phase: HookPhase
-} & (RequestHookContext | MatchHookContext<Route> | RequestContext<EndpointMeta<any, any, any>>)
-export type OnErrorHook<Route extends RoutePattern> = (ctx: ErrorHookContext<Route>) => Awaitable<Response>
+} & (RequestHookContext<Meta> | MatchHookContext<Route, Meta> | RequestContext<EndpointMeta<any, any, any>>)
+export type OnErrorHook<Route extends RoutePattern, Meta extends EndpointMeta<any, any, any>> = (
+    ctx: ErrorHookContext<Route, Meta>
+) => Awaitable<Response>
 
 /**
  * All lifecycle hooks available on a per-endpoint basis via `EndpointConfig.hooks`.
@@ -189,38 +220,38 @@ export interface EndpointHooks<
      * Fires at the earliest stage of the lyfecycle. It receives the raw request
      * and context before route matching.
      */
-    onRequest?: OnRequestHook
+    onRequest?: OnRequestHook<EndpointMeta<Route, Method, Schemas>>
     /**
      * Executes after a route is matched but before params/body extraction. It receives the
      */
-    onMatch?: OnMatchHook<Route>
+    onMatch?: OnMatchHook<Route, EndpointMeta<Route, Method, Schemas>>
     /**
      * Replaces `getHeaders()`. It receives the raw request headers (no schema validation).
      * Returning `void` uses the raw headers as-is. Returning a `Response` short-circuits the pipeline.
      * Note: This hook is executed after `onMatch` and before `onParams`, `onSearchParams`, and `onBody`.
      */
-    onHeaders?: OnHeadersHook<Route>
+    onHeaders?: OnHeadersHook<Route, EndpointMeta<Route, Method, Schemas>>
     /**
      * Replaces `getRouteParams()`. It receives the raw trie-matched params (no schema validation).
      * Returning `void` uses the raw params as-is. Returning a `Response` short-circuits the pipeline.
      */
-    onParams?: OnParamsHook<GetRouteParams<Route>, Route>
+    onParams?: OnParamsHook<GetRouteParams<Route>, Route, EndpointMeta<Route, Method, Schemas>>
     /**
      * Replaces `getSearchParams()`. It receives the raw `URLSearchParams` (no schema validation).
      * Returning `void` uses the raw URLSearchParams as-is. Returning a `Response` short-circuits the pipeline.
      */
-    onSearchParams?: OnSearchParamsHook<Route>
+    onSearchParams?: OnSearchParamsHook<Route, EndpointMeta<Route, Method, Schemas>>
     /**
      * Replaces schema validation in `getBody()`. It receives the content-type-parsed body (no schema validation).
      * Returning `void` uses the raw parsed body as-is. Returning a `Response` short-circuits the pipeline.
      */
-    onBody?: OnBodyHook<Route>
+    onBody?: OnBodyHook<Route, EndpointMeta<Route, Method, Schemas>>
     /**
      * Fires just before the route handler is called, after all middlewares. It receives the full request context
      */
     onHandler?: OnHandlerHook<EndpointMeta<Route, Method, Schemas>>
     onResponse?: OnResponseHook<EndpointMeta<Route, Method, Schemas>>
-    onError?: OnErrorHook<Route>
+    onError?: OnErrorHook<Route, EndpointMeta<Route, Method, Schemas>>
 }
 
 /**
@@ -228,9 +259,9 @@ export interface EndpointHooks<
  * Only hooks that make sense across all routes are included.
  */
 export interface RouterHooks {
-    onRequest?: OnRequestHook
+    onRequest?: OnRequestHook<EndpointMeta<any, any, any>>
     onResponse?: OnResponseHook<EndpointMeta<any, any, any>>
-    onError?: OnErrorHook<any>
+    onError?: OnErrorHook<any, EndpointMeta<any, any, any>>
 }
 
 /**
@@ -273,6 +304,17 @@ export type ContextParams<
 
 export type ContextHeaders<Schemas extends EndpointSchemas> = UnwrapSchema<Schemas["headers"], HeadersBuilder>
 
+export type IsStrictlyAny<T> = (T extends never ? true : false) extends false ? false : true
+
+export type ContextResponse<Schemas extends EndpointSchemas, Init extends ResponseInit> =
+    IsStrictlyAny<UnwrapSchema<Schemas["response"], any>> extends true
+        ? Schemas["response"] extends Record<string | number, any>
+            ? NonNullable<Init["status"]> extends keyof Schemas["response"]
+                ? UnwrapSchema<Schemas["response"][NonNullable<Init["status"]>], any>
+                : UnwrapSchema<SchemaValues<Schemas["response"]>, any>
+            : any
+        : UnwrapSchema<Schemas["response"], any>
+
 declare const jsonResponseBrand: unique symbol
 
 export type JsonResponse<T> = Omit<Response, "json"> & {
@@ -293,6 +335,7 @@ export interface EndpointMeta<
     body: ContextBody<NonNullable<Schemas>>
     searchParams: ContextSearchParams<NonNullable<Schemas>>
     params: ContextParams<NonNullable<Schemas>, GetRouteParams<Route>>
+    schemas: NonNullable<Schemas>
 }
 
 /**
@@ -309,7 +352,14 @@ export type RequestContext<Meta extends EndpointMeta<any, any, any>> = {
     request: Request
     url: URL
     context: GlobalContext
-    json: <T>(data: T, init?: ResponseInit) => JsonResponse<T>
+    json: <
+        Override = unknown,
+        const Init extends ResponseInit = ResponseInit,
+        T = unknown extends Override ? ContextResponse<Meta["schemas"], Init> : Override,
+    >(
+        data: T,
+        init?: Init
+    ) => JsonResponse<T>
 }
 
 export interface GlobalMiddlewareContext {
