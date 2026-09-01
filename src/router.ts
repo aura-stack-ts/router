@@ -246,5 +246,22 @@ export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, router)
     }
-    return server as Router<Endpoints>
+
+    const handle = (request: Request): Response | Promise<Response> => {
+        const method = request.method.toUpperCase() as HTTPMethod
+        const toHandler = server[method as keyof typeof server]
+        if (!toHandler) {
+            return Response.json(
+                {
+                    type: "ROUTER_FLOW",
+                    code: "METHOD_NOT_ALLOWED",
+                    message: "The requested resource does not support the submitted HTTP execution method request verb.",
+                },
+                { status: 405 }
+            )
+        }
+        return toHandler(request)
+    }
+
+    return { ...server, handle } as Router<Endpoints>
 }
