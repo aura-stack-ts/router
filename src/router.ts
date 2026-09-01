@@ -56,7 +56,7 @@ const handleRequest = async (
     config: RouterConfig,
     router: TrieRouter
 ): Promise<Response> => {
-    let errorCtx: RequestHookContext | MatchHookContext<any> | RequestContext<EndpointMeta<any, any, any>> = {
+    let errorCtx: RequestHookContext<any> | MatchHookContext<any, any> | RequestContext<EndpointMeta<any, any, any>> = {
         request,
         context: config.context ?? ({} as GlobalContext),
         json,
@@ -69,7 +69,7 @@ const handleRequest = async (
         }
 
         /** onRequest hook */
-        let requestCtx: RequestHookContext = {
+        let requestCtx: RequestHookContext<any> = {
             request,
             context: config.context ?? ({} as GlobalContext),
             json,
@@ -117,7 +117,7 @@ const handleRequest = async (
             method: requestCtx.request.method as HTTPMethod,
             json,
             phase: "onMatch",
-        } as MatchHookContext<any>
+        } as MatchHookContext<any, any>
         errorCtx = matchCtx
 
         const endpointOnRequestCtx = { ...matchCtx, phase: "onRequest" as const }
