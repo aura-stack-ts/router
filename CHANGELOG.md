@@ -7,6 +7,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added response schema validation through the `schemas.response` option in `createEndpoint()` and `createEndpointConfig()`. Response schemas can be defined as a single schema to validate all responses or mapped by HTTP status code to validate responses against their corresponding schema. Response schema validation is only supported for responses created with the `ctx.json()` helper; responses created through other methods are not validated. [#67](https://github.com/aura-stack-ts/router/pull/67)
+
 ---
 
 ## [0.10.0] - 2026-08-13

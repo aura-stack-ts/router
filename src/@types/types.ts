@@ -54,6 +54,7 @@ export interface EndpointSchemas {
     searchParams?: SupportedSchemas
     params?: SupportedSchemas
     headers?: SupportedSchemas
+    response?: SupportedSchemas | Record<string, SupportedSchemas>
 }
 
 /**

@@ -4,7 +4,7 @@ import { AuraRouterError } from "@/error.ts"
 import { HeadersBuilder } from "@/headers.ts"
 import { isSupportedMethod } from "@/assert.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
-import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw } from "@/context.ts"
+import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw, jsonWithValidation } from "@/context.ts"
 import {
     runOnRequest,
     runOnMatch,
@@ -88,7 +88,12 @@ const handleRequest = async (
         )
         if (globalRequestContext instanceof Response) return globalRequestContext
 
-        requestCtx = { request: globalRequestContext.request, context: globalRequestContext.context, json, phase: "onRequest" }
+        requestCtx = {
+            request: globalRequestContext.request,
+            context: globalRequestContext.context,
+            json,
+            phase: "onRequest",
+        }
         errorCtx = requestCtx
 
         const url = new URL(requestCtx.request.url)
@@ -181,7 +186,7 @@ const handleRequest = async (
             method: requestCtx.request.method,
             route: endpoint.route,
             context: requestCtx.context ?? ({} as GlobalContext),
-            json,
+            json: jsonWithValidation(endpoint?.config),
             phase: "onBody",
         }
         errorCtx = context as RequestContext<EndpointMeta<any, any, any>>
