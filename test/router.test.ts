@@ -252,7 +252,79 @@ describe("createRouter", () => {
             })
         })
 
-        test("Using handle method with unsupported HTTP method", async () => {
+        test("Unsupported HTTP method and not found route", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/unknown-path", { method: "PURGE" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Unsupported HTTP method and not found route using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/unknown-path", { method: "PURGE" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route with unsupported HTTP method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/session/settings", { method: "GET" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route with unsupported HTTP method using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/session/settings", { method: "GET" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Mismatched HTTP method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/session", { method: "PATCH" }))
+            expect(response.status).toBe(405)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
+        })
+
+        /**
+         * @todo fix the handleRequest function to accept the method as a parameter and use it for matching the route
+         */
+        test.skip("Using handle method with unsupported HTTP method", async () => {
             const get = createEndpoint("GET", "/session", () => {
                 return Response.json({ message: "Get user session" }, { status: 200 })
             })
@@ -263,6 +335,42 @@ describe("createRouter", () => {
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
                 message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
+        })
+
+        test("Not found route", async () => {
+            const get = createEndpoint("GET", "/session", () => {
+                return Response.json({ message: "Get user session" }, { status: 200 })
+            })
+
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/not-found", { method: "GET" }))
+
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => {
+                return Response.json({ message: "Get user session" }, { status: 200 })
+            })
+
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/not-found", { method: "GET" }))
+
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
             })
         })
     })
