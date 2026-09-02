@@ -201,6 +201,12 @@ describe("createRouter", () => {
             expect(post.status).toBe(422)
         })
 
+        test("Using handle method", async () => {
+            const response = await router.handle(new Request("https://example.com/auth/session", { method: "GET" }))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({ message: "Get user session" })
+        })
+
         test("Types", () => {
             expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                 GET: (request: Request) => Awaitable<Response>
@@ -245,6 +251,128 @@ describe("createRouter", () => {
                 message: "The requested resource does not support the submitted HTTP execution method request verb.",
             })
         })
+
+        test("Unsupported HTTP method and not found route", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/unknown-path", { method: "PURGE" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Unsupported HTTP method and not found route using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/unknown-path", { method: "PURGE" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route with unsupported HTTP method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/session/settings", { method: "GET" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route with unsupported HTTP method using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/session/settings", { method: "GET" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Mismatched HTTP method", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/session", { method: "PATCH" }))
+            expect(response.status).toBe(405)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
+        })
+
+        /**
+         * @todo fix the handleRequest function to accept the method as a parameter and use it for matching the route
+         */
+        test.skip("Using handle method with unsupported HTTP method", async () => {
+            const get = createEndpoint("GET", "/session", () => {
+                return Response.json({ message: "Get user session" }, { status: 200 })
+            })
+            const router = createRouter([get])
+            const response = await router.handle(new Request("https://example.com/session", { method: "DELETE" }))
+            expect(response.status).toBe(405)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
+        })
+
+        test("Not found route", async () => {
+            const get = createEndpoint("GET", "/session", () => {
+                return Response.json({ message: "Get user session" }, { status: 200 })
+            })
+
+            const { GET } = createRouter([get])
+
+            const response = await GET(new Request("https://example.com/not-found", { method: "GET" }))
+
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("Not found route using handle method", async () => {
+            const get = createEndpoint("GET", "/session", () => {
+                return Response.json({ message: "Get user session" }, { status: 200 })
+            })
+
+            const { handle } = createRouter([get])
+
+            const response = await handle(new Request("https://example.com/not-found", { method: "GET" }))
+
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
     })
 
     describe("With base path", () => {
@@ -279,6 +407,12 @@ describe("createRouter", () => {
             })
         })
 
+        test("Using handle method with base path", async () => {
+            const response = await router.handle(new Request("https://example.com/api/auth/session", { method: "GET" }))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({ message: "Get user session" })
+        })
+
         test("Types", () => {
             expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                 GET: (request: Request) => Awaitable<Response>
@@ -304,7 +438,7 @@ describe("createRouter", () => {
                     },
                 ],
             })
-            const { GET, POST } = router
+            const { GET, POST, handle } = router
 
             test("Add header in GET request", async () => {
                 const get = await GET(new Request("https://example.com/session", { method: "GET" }))
@@ -320,6 +454,14 @@ describe("createRouter", () => {
                 expect(post.ok).toBeTruthy()
                 expect(post.headers.get("x-powered-by")).toBe("@aura-stack")
                 expect(await post.json()).toEqual({ message: "Sign in with OAuth" })
+            })
+
+            test("Add header in handle method", async () => {
+                const response = await handle(new Request("https://example.com/session", { method: "GET" }))
+                expect(response.status).toBe(200)
+                expect(response.ok).toBeTruthy()
+                expect(response.headers.get("x-powered-by")).toBe("@aura-stack")
+                expect(await response.json()).toEqual({ message: "Get user session" })
             })
 
             test("Types", () => {
@@ -343,13 +485,22 @@ describe("createRouter", () => {
                     },
                 ],
             })
-            const { GET } = router
+            const { GET, handle } = router
 
             test("Block request without authorization header", async () => {
                 const get = await GET(new Request("https://example.com/session", { method: "GET" }))
                 expect(get).toBeInstanceOf(Response)
                 expect(get.status).toBe(403)
                 expect(await get.json()).toEqual({ message: "Forbidden" })
+            })
+
+            test("Allow request with authorization header", async () => {
+                const get = await handle(
+                    new Request("https://example.com/session", { method: "GET", headers: { authorization: "Bearer token" } })
+                )
+                expect(get).toBeInstanceOf(Response)
+                expect(get.status).toBe(200)
+                expect(await get.json()).toEqual({ message: "Get user session" })
             })
 
             test("Types", () => {
@@ -451,6 +602,60 @@ describe("createRouter", () => {
             )
             expect(request.status).toBe(200)
             expect(await request.json()).toEqual({ message: "Get user", body: { username: "John", password: "Doe" } })
+        })
+
+        test("Get body with invalid content-type", async () => {
+            const request = await router.POST(
+                new Request("https://example.com/auth/credentials", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: JSON.stringify({
+                        username: "John",
+                        password: "Doe",
+                    }),
+                })
+            )
+            expect(request.status).toBe(422)
+            expect(await request.json()).toEqual({
+                type: "VALIDATION",
+                code: "UNPROCESSABLE_ENTITY",
+                message: "The request body or parameter schema layout contains input format errors.",
+                details: {
+                    "": {
+                        code: "invalid_type",
+                        message: "Invalid input: expected object, received string",
+                    },
+                },
+            })
+        })
+
+        test("Get body with invalid content-type using handle method", async () => {
+            const request = await router.handle(
+                new Request("https://example.com/auth/credentials", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: JSON.stringify({
+                        username: "John",
+                        password: "Doe",
+                    }),
+                })
+            )
+            expect(request.status).toBe(422)
+            expect(await request.json()).toEqual({
+                type: "VALIDATION",
+                code: "UNPROCESSABLE_ENTITY",
+                message: "The request body or parameter schema layout contains input format errors.",
+                details: {
+                    "": {
+                        code: "invalid_type",
+                        message: "Invalid input: expected object, received string",
+                    },
+                },
+            })
         })
 
         test("Types", () => {

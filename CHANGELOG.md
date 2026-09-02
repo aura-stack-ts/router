@@ -9,6 +9,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
+- Added the `handle()` function to `createRouter()` for handling incoming requests through a single universal request handler. The `handle()` function supports any incoming request and is returned directly by `createRouter()`. [#68](https://github.com/aura-stack-ts/router/pull/68)
+
 - Added response schema validation through the `schemas.response` option in `createEndpoint()` and `createEndpointConfig()`. Response schemas can be defined as a single schema to validate all responses or mapped by HTTP status code to validate responses against their corresponding schema. Response schema validation is only supported for responses created with the `ctx.json()` helper; responses created through other methods are not validated. [#67](https://github.com/aura-stack-ts/router/pull/67)
 
 ---

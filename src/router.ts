@@ -2,7 +2,6 @@ import { TrieRouter } from "@/trie.ts"
 import { onError } from "@/on-error.ts"
 import { AuraRouterError } from "@/error.ts"
 import { HeadersBuilder } from "@/headers.ts"
-import { isSupportedMethod } from "@/assert.ts"
 import { executeGlobalMiddlewares, executeMiddlewares } from "@/middlewares.ts"
 import { getBody, getHeaders, getRouteParams, getSearchParams, json, parseBodyRaw, jsonWithValidation } from "@/context.ts"
 import {
@@ -64,10 +63,6 @@ const handleRequest = async (
     }
     let endpoint: RouteEndpoint<any, any, any, any> | undefined
     try {
-        if (!isSupportedMethod(request.method)) {
-            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
-        }
-
         /** onRequest hook */
         let requestCtx: RequestHookContext<any> = {
             request,
@@ -99,14 +94,15 @@ const handleRequest = async (
         const url = new URL(requestCtx.request.url)
         const pathnameWithBase = url.pathname
 
-        if (requestCtx.request.method !== method) {
-            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
-        }
-
         const node = router.match(method, pathnameWithBase)
         if (!node) {
             throw new AuraRouterError({ code: "NOT_FOUND" })
         }
+        const methods = Array.isArray(node.endpoint.method) ? node.endpoint.method : [node.endpoint.method]
+        if (!methods.includes(requestCtx.request.method)) {
+            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
+        }
+
         const { params } = node
         endpoint = node.endpoint
 
@@ -246,5 +242,10 @@ export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, router)
     }
-    return server as Router<Endpoints>
+
+    const handle = (request: Request): Response | Promise<Response> => {
+        return handleRequest(request.method as HTTPMethod, request, config, router)
+    }
+
+    return { ...server, handle } as Router<Endpoints>
 }

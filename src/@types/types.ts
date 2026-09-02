@@ -502,6 +502,7 @@ export declare const endpointsSymbol: unique symbol
 
 export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
     readonly __endpoints: Endpoints
+    handle: (request: Request) => Awaitable<Response>
 } & GetHttpHandlers<Endpoints>
 
 export type InferEndpoints<T> = T extends Router<infer E> ? E : never
