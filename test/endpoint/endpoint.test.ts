@@ -1,0 +1,314 @@
+import z from "zod"
+import { describe, test } from "vitest"
+import { createRouter } from "@/router.ts"
+import { createEndpoint } from "@/endpoint.ts"
+import type { HTTPMethod, RoutePattern } from "@/@types/index.ts"
+
+describe("createEndpoint", () => {
+    describe("With valid configuration", () => {
+        const testCases = [
+            {
+                description: "Create GET endpoint with route",
+                method: "GET",
+                route: "/users/:userId",
+                expected: {
+                    method: "GET",
+                    route: "/users/:userId",
+                    config: {},
+                },
+            },
+            {
+                description: "Create POST endpoint with route",
+                method: "POST",
+                route: "/users",
+                expected: {
+                    method: "POST",
+                    route: "/users",
+                    config: {},
+                },
+            },
+            {
+                description: "Create DELETE endpoint with route",
+                method: "DELETE",
+                route: "/users/:userId",
+                expected: {
+                    method: "DELETE",
+                    route: "/users/:userId",
+                    config: {},
+                },
+            },
+        ]
+
+        for (const { description, method, route, expected } of testCases) {
+            test.concurrent(description, ({ expect }) => {
+                const handler: any = () => {}
+                const endpoint = createEndpoint(method as HTTPMethod, route as Lowercase<RoutePattern>, handler)
+                expect(endpoint).toEqual({ ...expected, handler })
+            })
+        }
+    })
+
+    describe("With invalid configuration", () => {
+        const testCases = [
+            {
+                description: "Throws error for unsupported HTTP method",
+                method: "FETCH",
+                route: "/users",
+                expected:
+                    /An endpoint registration was attempted with an invalid or poorly formatted HTTP verb string. Ensure uppercase standard types are used./,
+            },
+            {
+                description: "Throws error for invalid route format",
+                method: "GET",
+                route: "invalid-route",
+                expected:
+                    /The designated URL pattern string parsing layout failed regex format checks. Verify base formatting patterns/,
+            },
+        ]
+
+        for (const { description, method, route, expected } of testCases) {
+            test.concurrent(description, ({ expect }) => {
+                const handler: any = () => {}
+                expect(() => createEndpoint(method as HTTPMethod, route as Lowercase<RoutePattern>, handler, {})).toThrowError(
+                    expected
+                )
+            })
+        }
+    })
+
+    describe("With middlewares", () => {
+        test("Update params context in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/auth/:oauth",
+                (ctx) => {
+                    const oauth = ctx.params.oauth
+                    return Response.json({ oauth })
+                },
+                {
+                    use: [
+                        (ctx) => {
+                            ctx.params = { oauth: "google" }
+                            return ctx
+                        },
+                    ],
+                }
+            )
+            const { GET } = createRouter([endpoint])
+            const get = await GET(new Request("https://example.com/auth/github"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({ oauth: "google" })
+        })
+
+        test("Update searchParams context in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/auth/google",
+                (ctx) => {
+                    const searchParams = Object.fromEntries(ctx.searchParams.entries())
+                    return Response.json({ searchParams })
+                },
+                {
+                    use: [
+                        (ctx) => {
+                            ctx.searchParams.set("state", "123abc")
+                            ctx.searchParams.set("code", "123")
+                            return ctx
+                        },
+                    ],
+                }
+            )
+            const { GET } = createRouter([endpoint])
+            const get = await GET(new Request("https://example.com/auth/google"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                searchParams: { state: "123abc", code: "123" },
+            })
+        })
+
+        test("Update headers context in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/headers",
+                (ctx) => {
+                    const headers = Object.fromEntries(ctx.headers.toHeaders().entries())
+                    return Response.json({ headers })
+                },
+                {
+                    use: [
+                        (ctx) => {
+                            ctx.headers.setHeader("Authorization", "Bearer token")
+                            return ctx
+                        },
+                    ],
+                }
+            )
+            const { GET } = createRouter([endpoint])
+            const get = await GET(new Request("https://example.com/headers"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                headers: { authorization: "Bearer token" },
+            })
+        })
+    })
+
+    describe("With schemas and middlewares", () => {
+        test("Override body in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "POST",
+                "/auth/credentials",
+                (ctx) => {
+                    return Response.json({ body: ctx.body })
+                },
+                {
+                    schemas: {
+                        body: z.object({
+                            username: z.string(),
+                            password: z.string(),
+                        }),
+                    },
+                    use: [
+                        (ctx) => {
+                            ctx.body.username = "John Doe"
+                            return ctx
+                        },
+                    ],
+                }
+            )
+            const { POST } = createRouter([endpoint])
+
+            const post = await POST(
+                new Request("https://example.com/auth/credentials", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: "John", password: "secret" }),
+                })
+            )
+            expect(post.ok).toBe(true)
+            expect(await post.json()).toEqual({
+                body: { username: "John Doe", password: "secret" },
+            })
+        })
+
+        test("Override searchParams in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/auth/google",
+                (ctx) => {
+                    return Response.json({ searchParams: ctx.searchParams })
+                },
+                {
+                    schemas: {
+                        searchParams: z.object({
+                            redirect_uri: z.string(),
+                        }),
+                    },
+                    use: [
+                        (ctx) => {
+                            const searchParams = ctx.searchParams as Record<string, string>
+                            searchParams.state = "123abc"
+                            searchParams.code = "123"
+                            return ctx
+                        },
+                    ],
+                }
+            )
+            const { GET } = createRouter([endpoint])
+            const get = await GET(new Request("https://example.com/auth/google?redirect_uri=https://app.com/callback"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                searchParams: {
+                    state: "123abc",
+                    code: "123",
+                    redirect_uri: "https://app.com/callback",
+                },
+            })
+        })
+
+        test("Override params in middleware", async ({ expect }) => {
+            const endpoint = createEndpoint(
+                "GET",
+                "/auth/:oauth",
+                (ctx) => {
+                    return Response.json({ params: ctx.params })
+                },
+                {
+                    schemas: {
+                        params: z.object({
+                            oauth: z.enum(["google", "github"]),
+                        }),
+                    },
+                    use: [
+                        (ctx) => {
+                            ctx.params.oauth = "google"
+                            return ctx
+                        },
+                    ],
+                }
+            )
+
+            const { GET } = createRouter([endpoint])
+            const get = await GET(new Request("https://example.com/auth/github"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                params: { oauth: "google" },
+            })
+        })
+    })
+
+    describe("With method, route, and url", () => {
+        const endpoint = createEndpoint("GET", "/users", (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route, url: ctx.url })
+        })
+
+        const { GET } = createRouter([endpoint])
+
+        test("Access method, route, and url from context", async ({ expect }) => {
+            const get = await GET(new Request("https://example.com/users?id=123"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                method: "GET",
+                route: "/users",
+                url: "https://example.com/users?id=123",
+            })
+        })
+    })
+
+    describe("with multiple HTTP methods", () => {
+        const endpoint = createEndpoint(["GET", "POST"], "/items", (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route })
+        })
+        const deleteEndpoint = createEndpoint("DELETE", "/items/:id", (ctx) => {
+            return Response.json({ method: ctx.method, route: ctx.route, id: ctx.params.id })
+        })
+        const router = createRouter([endpoint, deleteEndpoint])
+
+        test("Handle GET request", async ({ expect }) => {
+            const get = await router.GET(new Request("https://example.com/items"))
+            expect(get.ok).toBe(true)
+            expect(await get.json()).toEqual({
+                method: "GET",
+                route: "/items",
+            })
+        })
+
+        test("Handle POST request", async ({ expect }) => {
+            const post = await router.POST(new Request("https://example.com/items", { method: "POST" }))
+            expect(post.ok).toBe(true)
+            expect(await post.json()).toEqual({
+                method: "POST",
+                route: "/items",
+            })
+        })
+
+        test("Handle DELETE request with params", async ({ expect }) => {
+            const del = await router.DELETE(new Request("https://example.com/items/123", { method: "DELETE" }))
+            expect(del.ok).toBe(true)
+            expect(await del.json()).toEqual({
+                method: "DELETE",
+                route: "/items/:id",
+                id: "123",
+            })
+        })
+    })
+})
