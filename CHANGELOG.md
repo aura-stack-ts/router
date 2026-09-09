@@ -7,6 +7,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.11.0] - 2026-09-08
+
 ### Added
 
 - Added the `handle()` function to `createRouter()` for handling incoming requests through a single universal request handler. The `handle()` function supports any incoming request and is returned directly by `createRouter()`. [#68](https://github.com/aura-stack-ts/router/pull/68)
