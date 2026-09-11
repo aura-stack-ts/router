@@ -3,7 +3,21 @@ title: Schema Validation
 description: Learn how to add schema validation to your Aura Router endpoints using popular validation libraries.
 ---
 
-Schema validation is an optional configuration in `createEndpoint` and `createEndpointConfig`. It enables runtime validation for `headers`, `params`, `searchParams`, `body` and `response` verifying the incoming data and giving the endpoint's request context full type safety.
+Schema validation is an optional configuration in `createEndpoint` and `createEndpointConfig`. It enables runtime validation for `headers`, `params`, `searchParams`, `body`, and `response`, verifying the incoming data and giving the endpoint's request context full type safety.
+
+<Callout>
+  Aura Router doesn't ship built-in schema validation. Install a supported validation library to use this feature — see
+  [Installation](#installation) below.
+</Callout>
+
+<Callout type="warn">
+  Aura Router has limited type inference for TypeBox schemas, due to the expensive computation operations performed by TypeBox. If
+  you want to use TypeBox, use the `Static` type to infer the schema type inside the endpoint handler.
+</Callout>
+
+<Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
+
+<Tab value="zod">
 
 ```ts lineNumbers
 import { z } from "zod"
@@ -14,7 +28,7 @@ export const endpoint = createEndpoint(
   "/auth/signIn",
   async (ctx) => {
     const { username, password } = ctx.body
-    return Response.json({ message: "Successful Login" })
+    return ctx.json({ message: "Successful Login" })
   },
   {
     schemas: {
@@ -26,6 +40,89 @@ export const endpoint = createEndpoint(
   }
 )
 ```
+
+</Tab>
+
+<Tab value="valibot">
+
+```ts lineNumbers
+import * as valibot from "valibot"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    const { username, password } = ctx.body
+    return ctx.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: valibot.object({
+        username: valibot.string(),
+        password: valibot.string(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="arktype">
+
+```ts lineNumbers
+import { type } from "arktype"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    const { username, password } = ctx.body
+    return ctx.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: type({
+        username: "string",
+        password: "string",
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+<Tab value="typebox">
+
+```ts lineNumbers
+import { Type, type Static } from "typebox"
+import { createEndpoint } from "@aura-stack/router"
+
+export const endpoint = createEndpoint(
+  "POST",
+  "/auth/signIn",
+  async (ctx) => {
+    // TypeBox has limited type inference, cast manually using Static<>
+    const { username, password } = ctx.body as unknown as Static<typeof ctx.body>
+    return ctx.json({ message: "Successful Login" })
+  },
+  {
+    schemas: {
+      body: Type.Object({
+        username: Type.String(),
+        password: Type.String(),
+      }),
+    },
+  }
+)
+```
+
+</Tab>
+
+</Tabs>
 
 ## Installation
 
@@ -72,15 +169,19 @@ npm install arktype
 <Card title="Headers" href="/docs/guides/validation/headers">
   Validate request headers using the `schemas.headers` option.
 </Card>
+
 <Card title="Params" href="/docs/guides/validation/params">
   Validate request params using the `schemas.params` option.
 </Card>
+
 <Card title="Search Params" href="/docs/guides/validation/search-params">
   Validate request search params using the `schemas.searchParams` option.
 </Card>
+
 <Card title="Body" href="/docs/guides/validation/body">
   Validate request body using the `schemas.body` option.
 </Card>
+
 <Card title="Response" href="/docs/guides/validation/response">
   Validate outgoing responses using the `schemas.response` option.
 </Card>
