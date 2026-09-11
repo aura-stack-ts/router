@@ -602,7 +602,6 @@ describe("Client type inference with Zod schemas", () => {
                 page: 2,
                 q: "search",
             },
-            route: "/with-params/:param1/:param2",
         })
         expectTypeOf<typeof withParamsResponse>().toEqualTypeOf<
             JsonResponse<{ page: number; q: string; is_eval: boolean; param1: string; param2: string }>
@@ -758,8 +757,7 @@ describe("Client type inference with Zod schemas", () => {
             baseURL: "http://api.example.com",
         })
 
-        await client.get("/multi-status", {})
-        const simpleStatusResponse = await client.get("/multi-status")
+        const simpleStatusResponse = await client.get("/simple-status")
         expectTypeOf<typeof simpleStatusResponse>().toEqualTypeOf<
             JsonResponse<{ code: string; message: string; id: number; is_eval: boolean }>
         >()

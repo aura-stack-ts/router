@@ -27,9 +27,9 @@ export type SchemaValues<T> = T[keyof T]
 
 type HasSchemas<C> =
     C extends EndpointConfig<any, any, infer Schemas>
-        ? [SchemaValues<Schemas>] extends [never]
+        ? [SchemaValues<Omit<Schemas, "response">>] extends [never]
             ? false
-            : [SchemaValues<Schemas>] extends [SupportedSchemas]
+            : [SchemaValues<Omit<Schemas, "response">>] extends [SupportedSchemas]
               ? true
               : false
         : false
@@ -47,9 +47,7 @@ export type InferContent<Config extends EndpointConfig<any, any, any>, Route ext
         ? [SchemaValues<Schemas>] extends [never]
             ? unknown
             : [SchemaValues<Schemas>] extends [SupportedSchemas]
-              ? Prettify<
-                    ComplementaryHeaders<ComplementaryParams<RemoveUndefined<ToInferSchema<Schemas>>, Route> & { route?: Route }>
-                >
+              ? Prettify<ComplementaryHeaders<ComplementaryParams<RemoveUndefined<ToInferSchema<Schemas>>, Route>>>
               : unknown
         : unknown
 
@@ -62,12 +60,12 @@ export type InferContent<Config extends EndpointConfig<any, any, any>, Route ext
  *   RouteEndpoint<"POST", "/users", EndpointConfig, Handler>
  * ]>
  */
-export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
-    ? Endpoints extends [infer First, ...infer Rest]
+export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends readonly unknown[]
+    ? Endpoints extends readonly [infer First, ...infer Rest]
         ? First extends RouteEndpoint<infer Route, infer Method, infer Config, infer Handler>
-            ? Method extends HTTPMethod[]
+            ? Method extends HTTPMethod | HTTPMethod[]
                 ? {
-                      [K in Lowercase<Method[number]>]: HasSchemas<Config> extends false
+                      [K in Lowercase<Method extends HTTPMethod ? Method : Method[number]>]: HasSchemas<Config> extends false
                           ? (path: Route, ctx?: ComplementaryParams<RequestInit, Route>) => Awaitable<ReturnType<Handler>>
                           : (
                                 path: Route,
@@ -75,15 +73,7 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
                                     Prettify<Omit<InferContent<Config, Route>, "response">>
                             ) => Awaitable<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
-                : {
-                      [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
-                          ? (path: Route, ctx?: ComplementaryParams<RequestInit, Route>) => Awaitable<ReturnType<Handler>>
-                          : (
-                                path: Route,
-                                ctx: Omit<RequestInit, "body" | "headers"> &
-                                    Prettify<Omit<InferContent<Config, Route>, "response">>
-                            ) => Awaitable<ReturnType<Handler>>
-                  } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
+                : {}
             : {}
         : {}
     : {}

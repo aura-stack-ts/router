@@ -16,7 +16,7 @@ import type { Router, InferEndpoints, Client, HTTPMethod, ClientOptions } from "
  *
  * client.get("/users")
  */
-export function createClient<const InferRouter extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>> {
+export function createClient<InferRouter extends Router<any>>(options: ClientOptions): Client<InferEndpoints<InferRouter>> {
     const { baseURL, basePath, headers: defaultHeaders, fetch: customFetch, ...clientOptions } = options
     const fetchFn = customFetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
 
