@@ -9,6 +9,14 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ---
 
+## [0.11.1] - 20226-09-11
+
+### Fixed
+
+- Fixed client-side type inference for route parameters (`params`), search parameters (`searchParams`), request bodies (`body`), headers (`headers`), and response data (`response`) when schemas are defined. Also fixed HTTP method inference for endpoints that support multiple HTTP methods. [#72](https://github.com/aura-stack-ts/router/pull/72)
+
+---
+
 ## [0.11.0] - 2026-09-08
 
 ### Added

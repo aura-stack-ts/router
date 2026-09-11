@@ -51,6 +51,14 @@ export type InferContent<Config extends EndpointConfig<any, any, any>, Route ext
               : unknown
         : unknown
 
+type ContextWithoutSchemas<Route extends RoutePattern> = ComplementaryParams<RequestInit, Route>
+
+type ContextWithSchemas<Config extends EndpointConfig<any, any, any>, Route extends RoutePattern> = Omit<
+    RequestInit,
+    "body" | "headers"
+> &
+    Prettify<Omit<InferContent<Config, Route>, "response">>
+
 /**
  * Generates a client type based on the provided route endpoints. Each endpoint's method and route are
  * used to create a corresponding function to access the endpoint.
@@ -66,12 +74,8 @@ export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[
             ? Method extends HTTPMethod | HTTPMethod[]
                 ? {
                       [K in Lowercase<Method extends HTTPMethod ? Method : Method[number]>]: HasSchemas<Config> extends false
-                          ? (path: Route, ctx?: ComplementaryParams<RequestInit, Route>) => Awaitable<ReturnType<Handler>>
-                          : (
-                                path: Route,
-                                ctx: Omit<RequestInit, "body" | "headers"> &
-                                    Prettify<Omit<InferContent<Config, Route>, "response">>
-                            ) => Awaitable<ReturnType<Handler>>
+                          ? (path: Route, ctx?: ContextWithoutSchemas<Route>) => Awaitable<ReturnType<Handler>>
+                          : (path: Route, ctx: ContextWithSchemas<Config, Route>) => Awaitable<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
                 : {}
             : {}
