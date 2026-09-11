@@ -15,6 +15,11 @@ Request headers can be validated with the `schemas.headers` option, which checks
   correctly.
 </Callout>
 
+<Callout type="warn">
+  Aura Router has limited type inference for TypeBox schemas, due to the expensive computation operations performed by TypeBox. If
+  you want to use TypeBox, use the `Static` type to infer the schema type inside the endpoint handler.
+</Callout>
+
 <Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
 
 <Tab value="zod">
@@ -104,7 +109,7 @@ export const signOut = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -120,7 +125,7 @@ export const signOut = createEndpoint(
   "POST",
   "/signOut",
   async (ctx) => {
-    const { authorization } = ctx.headers
+    const { authorization } = ctx.headers as unknown as Static<typeof ctx.headers>
     return ctx.json({ message: "Signed out successfully" })
   },
   config
@@ -237,7 +242,7 @@ export const signOut = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -258,7 +263,7 @@ export const signOut = createEndpoint(
   "POST",
   "/signOut",
   async (ctx) => {
-    const { authorization } = ctx.headers
+    const { authorization } = ctx.headers as unknown as Static<typeof ctx.headers>
     return ctx.json({ message: "Signed out successfully" })
   },
   config

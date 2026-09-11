@@ -330,7 +330,7 @@ export interface EndpointMeta<
     Schemas extends EndpointSchemas,
 > {
     route: Route
-    method: Method
+    method: Method extends HTTPMethod[] ? Method[number] : Method
     headers: ContextHeaders<NonNullable<Schemas>>
     body: ContextBody<NonNullable<Schemas>>
     searchParams: ContextSearchParams<NonNullable<Schemas>>
@@ -500,7 +500,7 @@ export interface RouterConfig extends GlobalCtx {
 
 export declare const endpointsSymbol: unique symbol
 
-export type Router<Endpoints extends RouteEndpoint<any, any, any, any>[]> = {
+export type Router<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = {
     readonly __endpoints: Endpoints
     handle: (request: Request) => Awaitable<Response>
 } & GetHttpHandlers<Endpoints>

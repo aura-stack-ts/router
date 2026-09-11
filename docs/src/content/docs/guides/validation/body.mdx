@@ -10,6 +10,11 @@ The request body can be validated with the `schemas.body` option.
   `ctx.body` defaults to `unknown`, since its shape can't be inferred.
 </Callout>
 
+<Callout type="warn">
+  Aura Router has limited type inference for TypeBox schemas, due to the expensive computation operations performed by TypeBox. If
+  you want to use TypeBox, use the `Static` type to infer the schema type inside the endpoint handler.
+</Callout>
+
 <Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
  
 <Tab value="zod">
@@ -99,7 +104,7 @@ export const createUser = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -115,7 +120,7 @@ export const createUser = createEndpoint(
   "POST",
   "/users",
   async (ctx) => {
-    const { name, email } = ctx.body
+    const { name, email } = ctx.body as unknown as Static<typeof ctx.body>
     return ctx.json({ id: "new-id", name, email }, { status: 201 })
   },
   config
@@ -235,7 +240,7 @@ export const createUser = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -257,7 +262,7 @@ export const createUser = createEndpoint(
   "POST",
   "/users",
   async (ctx) => {
-    const { name, email } = ctx.body
+    const { name, email } = ctx.body as unknown as Static<typeof ctx.body>
     return ctx.json({ id: "new-id", name, email }, { status: 201 })
   },
   config

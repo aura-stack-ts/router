@@ -10,6 +10,11 @@ Search params (query params) can be validated with the `schemas.searchParams` op
   schema is defined, `ctx.searchParams` is the native `URLSearchParams` object instead.
 </Callout>
 
+<Callout type="warn">
+  Aura Router has limited type inference for TypeBox schemas, due to the expensive computation operations performed by TypeBox. If
+  you want to use TypeBox, use the `Static` type to infer the schema type inside the endpoint handler.
+</Callout>
+
 <Tabs items={["zod", "valibot", "arktype", "typebox"]} persist groupId="schema-validation">
 
 <Tab value="zod">
@@ -107,7 +112,7 @@ export const searchUsers = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -130,7 +135,7 @@ export const searchUsers = createEndpoint(
   "GET",
   "/users/search",
   async (ctx) => {
-    const { q, page } = ctx.searchParams
+    const { q, page } = ctx.searchParams as unknown as Static<typeof ctx.searchParams>
     return ctx.json({ query: q, page, results: [] })
   },
   config
@@ -261,7 +266,7 @@ export const searchUsers = createEndpoint(
 <Tab value="typebox">
 
 ```ts lineNumbers
-import { Type } from "typebox"
+import { Type, type Static } from "typebox"
 import { createEndpointConfig, createEndpoint } from "@aura-stack/router"
 
 export const config = createEndpointConfig({
@@ -291,7 +296,7 @@ export const searchUsers = createEndpoint(
   "GET",
   "/users/search",
   async (ctx) => {
-    const { q, page } = ctx.searchParams
+    const { q, page } = ctx.searchParams as unknown as Static<typeof ctx.searchParams>
     return ctx.json({ query: q, page, results: [] })
   },
   config
