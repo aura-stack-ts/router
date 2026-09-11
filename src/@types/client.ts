@@ -1,9 +1,9 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
-import type { RequestHeaders } from "@/@types/http.ts"
+import type { HTTPMethod, RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
 import type { InferValibotSchema, SchemaKind, SupportedSchemas } from "@/@types/schemas.ts"
-import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint, Awaitable } from "@/@types/types.ts"
+import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint, Awaitable, GetRouteParams } from "@/@types/types.ts"
 
 export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>
@@ -34,12 +34,22 @@ type HasSchemas<C> =
               : false
         : false
 
-type InferContent<Config extends EndpointConfig<any, any, any>> =
+type ComplementaryParams<T, Route extends RoutePattern> = T extends { params: any }
+    ? T
+    : keyof GetRouteParams<Route> extends never
+      ? T
+      : T & { params: GetRouteParams<Route> }
+
+type ComplementaryHeaders<T> = T extends { headers: any } ? T : T & { headers?: HeadersInit }
+
+export type InferContent<Config extends EndpointConfig<any, any, any>, Route extends RoutePattern> =
     Config extends EndpointConfig<any, any, infer Schemas>
         ? [SchemaValues<Schemas>] extends [never]
             ? unknown
             : [SchemaValues<Schemas>] extends [SupportedSchemas]
-              ? RemoveUndefined<ToInferSchema<Schemas>>
+              ? Prettify<
+                    ComplementaryHeaders<ComplementaryParams<RemoveUndefined<ToInferSchema<Schemas>>, Route> & { route?: Route }>
+                >
               : unknown
         : unknown
 
@@ -55,13 +65,25 @@ type InferContent<Config extends EndpointConfig<any, any, any>> =
 export type Client<Endpoints extends readonly RouteEndpoint<any, any, any, any>[]> = Endpoints extends unknown[]
     ? Endpoints extends [infer First, ...infer Rest]
         ? First extends RouteEndpoint<infer Route, infer Method, infer Config, infer Handler>
-            ? Prettify<
-                  {
-                      [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
-                          ? (path: Route, ctx?: RequestInit) => Awaitable<ReturnType<Handler>>
-                          : (path: Route, ctx: Omit<RequestInit, "body"> & InferContent<Config>) => Awaitable<ReturnType<Handler>>
+            ? Method extends HTTPMethod[]
+                ? {
+                      [K in Lowercase<Method[number]>]: HasSchemas<Config> extends false
+                          ? (path: Route, ctx?: ComplementaryParams<RequestInit, Route>) => Awaitable<ReturnType<Handler>>
+                          : (
+                                path: Route,
+                                ctx: Omit<RequestInit, "body" | "headers"> &
+                                    Prettify<Omit<InferContent<Config, Route>, "response">>
+                            ) => Awaitable<ReturnType<Handler>>
                   } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
-              >
+                : {
+                      [K in Lowercase<Method & string>]: HasSchemas<Config> extends false
+                          ? (path: Route, ctx?: ComplementaryParams<RequestInit, Route>) => Awaitable<ReturnType<Handler>>
+                          : (
+                                path: Route,
+                                ctx: Omit<RequestInit, "body" | "headers"> &
+                                    Prettify<Omit<InferContent<Config, Route>, "response">>
+                            ) => Awaitable<ReturnType<Handler>>
+                  } & Client<Rest extends readonly RouteEndpoint<any, any, any, any>[] ? Rest : []>
             : {}
         : {}
     : {}
