@@ -129,6 +129,7 @@
       "optional": true
     }
   },
+  "workspaces": ["docs"],
   "pnpm": {
     "overrides": {
       "tar": "^7.5.21",

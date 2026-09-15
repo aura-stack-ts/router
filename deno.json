@@ -20,7 +20,7 @@
     "cookie": "npm:cookie@^1.1.1",
     "zod": "npm:zod@^4.1.11",
     "arktype": "npm:arktype@^2.0.0",
-    "valibot": "npm:valibot@^1.4.0",
+    "valibot": "npm:valibot@^1.4.2",
     "typebox": "npm:typebox@^1.1.38"
   },
   "publish": {
