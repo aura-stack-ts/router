@@ -11,25 +11,25 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
-    "fumadocs-core": "16.15.10",
-    "fumadocs-mdx": "15.4.0",
-    "fumadocs-twoslash": "^3.1.12",
-    "fumadocs-ui": "16.15.10",
+    "fumadocs-core": "16.4.11",
+    "fumadocs-mdx": "14.2.6",
+    "fumadocs-twoslash": "^3.3.1",
+    "fumadocs-ui": "16.4.11",
     "lucide-react": "^0.544.0",
     "next": "16.3.5",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "twoslash": "^0.3.6"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "twoslash": "^0.3.9"
   },
   "devDependencies": {
     "@aura-stack/router": "workspace:*",
-    "@tailwindcss/postcss": "^4.1.14",
-    "@types/mdx": "^2.0.13",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
     "@types/node": "24.6.2",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.23",
-    "tailwindcss": "^4.1.14",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   }
 }
