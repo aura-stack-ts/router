@@ -95,7 +95,7 @@
       "types": "./dist/@types/index.d.ts"
     }
   },
-  "packageManager": "pnpm@10.15.0",
+  "packageManager": "pnpm@12.4.0",
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "@types/node": "24.6.2",
@@ -105,6 +105,13 @@
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.4.0",
+      "onFail": "download"
+    }
   },
   "dependencies": {
     "cookie": "^1.1.1"
@@ -131,17 +138,5 @@
   },
   "workspaces": [
     "docs"
-  ],
-  "pnpm": {
-    "overrides": {
-      "tar": "^7.5.21",
-      "mdast-util-to-hast": "^13.2.1",
-      "vite": "^7.3.5",
-      "glob": "^10.5.0",
-      "js-yaml": "^4.2.0"
-    },
-    "ignoredBuiltDependencies": [
-      "esbuild"
-    ]
-  }
+  ]
 }
