@@ -1,25 +1,18 @@
 {
-  "name": "@aura-stack/router",
-  "version": "0.11.4",
-  "private": false,
+  "name": "@aura-stack/root",
+  "version": "0.0.0",
+  "private": true,
   "type": "module",
   "description": "A lightweight TypeScript library for building, managing, and validating API routes and endpoints in Node.js applications.",
   "scripts": {
-    "dev": "tsdown --watch",
+    "dev": "pnpm -r run dev",
+    "dev:router": "pnpm --filter @aura-stack/router dev",
     "dev:docs": "pnpm --filter docs dev",
-    "build": "tsdown",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "test": "vitest --run",
-    "test:types": "vitest --run --typecheck.only",
-    "test:watch": "vitest",
-    "test:bench": "vitest --run bench",
-    "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "clean:cts": "[ -d dist ] && find dist -type f -name \"*.cts\" -delete || true",
-    "prepublishOnly": "pnpm build && pnpm clean:cts"
+    "build": "pnpm -r run build",
+    "format": "pnpm -r run format",
+    "format:check": "pnpm -r run format:check",
+    "test": "pnpm -r run test",
+    "type-check": "pnpm -r run type-check"
   },
   "repository": {
     "type": "git",
@@ -47,101 +40,16 @@
     "url": "https://github.com/aura-stack-ts/router/issues"
   },
   "license": "MIT",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./router": {
-      "types": "./dist/router.d.ts",
-      "import": "./dist/router.js",
-      "require": "./dist/router.cjs"
-    },
-    "./endpoint": {
-      "types": "./dist/endpoint.d.ts",
-      "import": "./dist/endpoint.js",
-      "require": "./dist/endpoint.cjs"
-    },
-    "./error": {
-      "types": "./dist/error.d.ts",
-      "import": "./dist/error.js",
-      "require": "./dist/error.cjs"
-    },
-    "./headers": {
-      "types": "./dist/headers.d.ts",
-      "import": "./dist/headers.js",
-      "require": "./dist/headers.cjs"
-    },
-    "./cookie": {
-      "types": "./dist/cookie.d.ts",
-      "import": "./dist/cookie.js",
-      "require": "./dist/cookie.cjs"
-    },
-    "./client": {
-      "types": "./dist/client.d.ts",
-      "import": "./dist/client.js",
-      "require": "./dist/client.cjs"
-    },
-    "./validator": {
-      "types": "./dist/validator/registry.d.ts",
-      "import": "./dist/validator/registry.js",
-      "require": "./dist/validator/registry.cjs"
-    },
-    "./types": {
-      "types": "./dist/@types/index.d.ts"
-    }
-  },
-  "packageManager": "pnpm@10.15.0",
-  "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "@types/node": "24.6.2",
-    "mitata": "^1.0.34",
-    "oxfmt": "^0.49.0",
-    "oxlint": "^1.83.0",
-    "tsdown": "^0.22.14",
-    "typescript": "^5.9.3",
-    "vitest": "^5.0.0"
-  },
-  "dependencies": {
-    "cookie": "^1.1.1"
-  },
-  "peerDependencies": {
-    "arktype": "^2.0.0",
-    "typebox": "^1.1.38",
-    "valibot": "^1.4.2",
-    "zod": "^4.1.11"
-  },
-  "peerDependenciesMeta": {
-    "zod": {
-      "optional": true
-    },
-    "valibot": {
-      "optional": true
-    },
-    "arktype": {
-      "optional": true
-    },
-    "typebox": {
-      "optional": true
+  "packageManager": "pnpm@12.4.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.4.0",
+      "onFail": "download"
     }
   },
   "workspaces": [
-    "docs"
-  ],
-  "pnpm": {
-    "overrides": {
-      "tar": "^7.5.21",
-      "mdast-util-to-hast": "^13.2.1",
-      "vite": "^7.3.5",
-      "glob": "^10.5.0",
-      "js-yaml": "^4.2.0"
-    },
-    "ignoredBuiltDependencies": [
-      "esbuild"
-    ]
-  }
+    "docs",
+    "packages/*"
+  ]
 }

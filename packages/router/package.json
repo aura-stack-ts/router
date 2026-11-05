@@ -1,0 +1,142 @@
+{
+  "name": "@aura-stack/router",
+  "version": "0.11.4",
+  "private": false,
+  "type": "module",
+  "description": "A lightweight TypeScript library for building, managing, and validating API routes and endpoints in Node.js applications.",
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "test": "vitest --run",
+    "test:types": "vitest --run --typecheck.only",
+    "test:watch": "vitest",
+    "test:bench": "vitest --run bench",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:cts": "[ -d dist ] && find dist -type f -name \"*.cts\" -delete || true",
+    "prepublishOnly": "pnpm build && pnpm clean:cts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aura-stack-ts/router"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/@aura-stack/router"
+  },
+  "keywords": [
+    "router",
+    "endpoints",
+    "api",
+    "aura",
+    "aura stack",
+    "aura-stack",
+    "aura-stack-ts",
+    "aura stack ts",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Aura Stack <aurastackjs@gmail.com> | Hernan Alvarado <hernanvid123@gmail.com>",
+  "homepage": "https://github.com/aura-stack-ts/router",
+  "bugs": {
+    "url": "https://github.com/aura-stack-ts/router/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js",
+      "require": "./dist/router.cjs"
+    },
+    "./endpoint": {
+      "types": "./dist/endpoint.d.ts",
+      "import": "./dist/endpoint.js",
+      "require": "./dist/endpoint.cjs"
+    },
+    "./error": {
+      "types": "./dist/error.d.ts",
+      "import": "./dist/error.js",
+      "require": "./dist/error.cjs"
+    },
+    "./headers": {
+      "types": "./dist/headers.d.ts",
+      "import": "./dist/headers.js",
+      "require": "./dist/headers.cjs"
+    },
+    "./cookie": {
+      "types": "./dist/cookie.d.ts",
+      "import": "./dist/cookie.js",
+      "require": "./dist/cookie.cjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
+    "./validator": {
+      "types": "./dist/validator/registry.d.ts",
+      "import": "./dist/validator/registry.js",
+      "require": "./dist/validator/registry.cjs"
+    },
+    "./types": {
+      "types": "./dist/@types/index.d.ts"
+    }
+  },
+  "packageManager": "pnpm@12.4.0",
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/node": "24.6.2",
+    "mitata": "^1.0.34",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "tsdown": "^0.22.14",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.4.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "cookie": "^1.1.1"
+  },
+  "peerDependencies": {
+    "arktype": "^2.0.0",
+    "typebox": "^1.1.38",
+    "valibot": "^1.4.2",
+    "zod": "^4.1.11"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    },
+    "valibot": {
+      "optional": true
+    },
+    "arktype": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "workspaces": [
+    "docs",
+    "packages/*"
+  ]
+}
