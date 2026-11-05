@@ -8,6 +8,7 @@
     "start": "next start",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
+    "type-check": "tsc --noEmit",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {

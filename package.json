@@ -5,18 +5,14 @@
   "type": "module",
   "description": "A lightweight TypeScript library for building, managing, and validating API routes and endpoints in Node.js applications.",
   "scripts": {
-    "dev": "pnpm --filter router dev",
+    "dev": "pnpm -r run dev",
+    "dev:router": "pnpm --filter @aura-stack/router dev",
     "dev:docs": "pnpm --filter docs dev",
-    "build": "tsdown",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "test": "vitest --run",
-    "test:types": "vitest --run --typecheck.only",
-    "test:watch": "vitest",
-    "test:bench": "vitest --run bench",
-    "type-check": "tsc --noEmit"
+    "build": "pnpm -r run build",
+    "format": "pnpm -r run format",
+    "format:check": "pnpm -r run format:check",
+    "test": "pnpm -r run test",
+    "type-check": "pnpm -r run type-check"
   },
   "repository": {
     "type": "git",
