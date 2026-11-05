@@ -5,6 +5,7 @@ export default defineConfig({
     test: {
         include: ["test/**/*.test.ts"],
         benchmark: {
+            enabled: true,
             include: ["bench/**/*.bench.ts"],
         },
         typecheck: {
