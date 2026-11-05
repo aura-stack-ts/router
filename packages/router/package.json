@@ -99,11 +99,11 @@
     "@types/bun": "^1.4.2",
     "@types/node": "24.6.2",
     "mitata": "^1.0.34",
-    "oxfmt": "^0.49.0",
-    "oxlint": "^1.83.0",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.1.0"
   },
   "devEngines": {
     "packageManager": {
