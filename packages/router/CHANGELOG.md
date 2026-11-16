@@ -9,6 +9,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Fixed
 
+- Fixed handling of duplicated dynamic route parameters. The router now throws an error when a route defines the same dynamic parameter name more than once, preventing ambiguous parameter resolution. [#78](https://github.com/aura-stack-ts/router/pull/78)
+
 - Fixed route matching by adding backtracking. When a static segment matches but the remaining path cannot be resolved, or the matched route does not support the requested HTTP method, the router now retries matching through alternative dynamic branches. For example, `GET /users/me/posts/1` now correctly falls back from `/users/me/:tab` to `/users/:id/posts/:postId`. Static routes retain priority, and parameters captured by failed branches are discarded. [#78](https://github.com/aura-stack-ts/router/pull/78)
 
 - Fixed handling of malformed percent-encoding in dynamic route segments. Requests containing invalid encoded values (e.g. `/users/%E0%A4%A`) now return `400 Bad Request` instead of triggering an unhandled `decodeURIComponent` exception and resulting in a `500 Internal Server Error`. [#78](https://github.com/aura-stack-ts/router/pull/78)

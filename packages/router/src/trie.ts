@@ -33,6 +33,7 @@ export class TrieRouter {
             let node = this.root
             const route = endpoint.route
             const routeLength = route.length
+            const params = new Set<string>()
             let prev = 0
             while (prev < routeLength) {
                 const curr = route.indexOf("/", prev)
@@ -44,8 +45,15 @@ export class TrieRouter {
                         const name = segment.slice(1)
                         let param = node.param
                         if (!param) {
+                            if (params.has(name)) {
+                                throw new AuraRouterError({
+                                    code: "CONFLICTING_DYNAMIC_SEGMENT",
+                                    message: `Duplicate parameter '${name}' found in route '${route}'. Route parameters must have unique names.`,
+                                })
+                            }
                             param = { name: name, node: new TrieNode() }
                             node.param = param
+                            params.add(name)
                         } else if (param.name !== name) {
                             throw new AuraRouterError({
                                 code: "CONFLICTING_DYNAMIC_SEGMENT",

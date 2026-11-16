@@ -386,10 +386,16 @@ describe("createRouter", () => {
                 message: "The request is invalid or malformed.",
             })
         })
+
+        test("duplicated dynamic parameter name", async () => {
+            expect(() => createRouter([endpoint("GET", "/p/:id/comments/:id/values/:id", "comment")])).toThrow(
+                "Duplicate parameter 'id' found in route '/p/:id/comments/:id/values/:id'. Route parameters must have unique names."
+            )
+        })
     })
 
     describe("Backtrack", () => {
-        test("", async () => {
+        test("Backtracks from a failed static route to a dynamic route", async () => {
             const { handle } = createRouter([
                 endpoint("GET", "/p/new/:draft/edit", "newpost"),
                 endpoint("GET", "/p/:id/comments/:cid", "comment"),
@@ -402,7 +408,7 @@ describe("createRouter", () => {
             })
         })
 
-        test("", async () => {
+        test("Matches a dynamic route when a static prefix has no matching endpoint", async () => {
             const { handle } = createRouter([
                 endpoint("GET", "/users/profile/settings", "settings"),
                 endpoint("GET", "/users/:username/posts", "posts"),
@@ -415,7 +421,7 @@ describe("createRouter", () => {
             })
         })
 
-        test("", async () => {
+        test("Falls back to a fully dynamic route after more specific branches fail", async () => {
             const { handle } = createRouter([
                 endpoint("GET", "/org/engineering/teams/backend/lead", "lead"),
                 endpoint("GET", "/org/engineering/teams/:team/members", "members"),
@@ -430,7 +436,7 @@ describe("createRouter", () => {
             })
         })
 
-        test("", async () => {
+        test("Backtracks to a dynamic route when the static endpoint suffix does not match", async () => {
             const { handle } = createRouter([
                 endpoint("GET", "/v1/users/:userId/posts/:postId/comments/pinned", "pinned"),
                 endpoint("GET", "/v1/:resourceType/:resourceId/posts/:otherId/comments/latest", "latest"),
@@ -502,6 +508,23 @@ describe("createRouter", () => {
                     folder: "reports",
                     subfolder: "annual",
                     year: "2026",
+                },
+            })
+        })
+
+        test("dynamic params regresion", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/:id/a/:item/no", "first"),
+                endpoint("GET", "/:id/:section/:item", "second"),
+            ])
+            const response = await handle(new Request("https://example.com/outer/a/inner"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "second",
+                params: {
+                    id: "outer",
+                    section: "a",
+                    item: "inner",
                 },
             })
         })
