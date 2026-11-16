@@ -9,7 +9,7 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
-- Added the `Allow` response header to default `405 Method Not Allowed` responses. The header lists the HTTP methods supported by the matched static or dynamic route, allowing clients to identify which methods are accepted. [#77](https://github.com/aura-stack-ts/router/pull/77)
+- Added URI length validation with a maximum supported length of 64 KB and a limit of 32 segments per route. [#78](https://github.com/aura-stack-ts/router/pull/78)
 
 ### Fixed
 

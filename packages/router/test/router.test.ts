@@ -422,6 +422,35 @@ describe("createRouter", () => {
                 "Duplicate parameter 'id' found in route '/:id/:id'. Route parameters must have unique names."
             )
         })
+
+        test("throws an error when registering a route pattern that exceeds 64 KB", async () => {
+            const TARGET_BYTES = 64 * 1024
+            const route = `/${"a".repeat(TARGET_BYTES + 1)}` as RoutePattern
+            expect(() => createRouter([endpoint("GET", route, "too long")])).toThrow(
+                "The registered route URI exceeds the maximum supported length and cannot be added to the router."
+            )
+        })
+
+        test("returns 414 URI_TOO_LONG when incoming request URL exceeds 64 KB", async () => {
+            const TARGET_BYTES = 64 * 1024
+            const route = "a".repeat(TARGET_BYTES + 1) as RoutePattern
+
+            const { handle } = createRouter([endpoint("GET", "/users/:id", "user")])
+            const response = await handle(new Request(`https://app.com/${route}`))
+            expect(response.status).toBe(414)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_INIT",
+                code: "URI_TOO_LONG",
+                message: "The route URI is too long to be registered.",
+            })
+        })
+
+        test("throws an error when registering a route pattern contains 33 segments", async () => {
+            const route = `${"/a".repeat(32)}/:id` as RoutePattern
+            expect(() => createRouter([endpoint("GET", route, "too long")])).toThrow(
+                "The route definition contains more than the maximum supported 32 path segments."
+            )
+        })
     })
 
     describe("Backtrack", () => {

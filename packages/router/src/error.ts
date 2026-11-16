@@ -30,6 +30,7 @@ export const statusCode = {
     METHOD_NOT_ALLOWED: 405,
     NOT_ACCEPTABLE: 406,
     PROXY_AUTHENTICATION_REQUIRED: 407,
+    URI_TOO_LONG: 414,
     UNPROCESSABLE_ENTITY: 422,
     INTERNAL_SERVER_ERROR: 500,
     NOT_IMPLEMENTED: 501,
@@ -68,6 +69,8 @@ export const AURA_ERROR_CODES = {
     CONFLICTING_DYNAMIC_SEGMENT: "CONFLICTING_DYNAMIC_SEGMENT",
     UNKNOWN_SCHEMA_ERROR: "UNKNOWN_SCHEMA_ERROR",
     BAD_REQUEST: "BAD_REQUEST",
+    URI_TOO_LONG: "URI_TOO_LONG",
+    INVALID_SEGMENT_LIMIT: "INVALID_SEGMENT_LIMIT",
 } as const
 
 export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntry> = {
@@ -189,6 +192,20 @@ export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntr
         name: "BadRequestError",
         message: "The request could not be processed because it contains invalid or malformed input.",
         userMessage: "The request is invalid or malformed.",
+    },
+    URI_TOO_LONG: {
+        type: "ROUTER_INIT",
+        statusCode: 414,
+        name: "RouterInitError",
+        message: "The registered route URI exceeds the maximum supported length and cannot be added to the router.",
+        userMessage: "The route URI is too long to be registered.",
+    },
+    INVALID_SEGMENT_LIMIT: {
+        type: "ROUTER_INIT",
+        statusCode: 500,
+        name: "RouterInitError",
+        message: "The route definition contains more than the maximum supported 32 path segments.",
+        userMessage: "Internal configuration failure. Routes cannot contain more than 32 path segments.",
     },
 }
 
