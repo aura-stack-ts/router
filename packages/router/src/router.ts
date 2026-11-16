@@ -96,11 +96,14 @@ const handleRequest = async (
 
         const node = router.match(method, pathnameWithBase)
         if (!node.success) {
+            if (node.code === "METHOD_NOT_ALLOWED") {
+                throw new AuraRouterError({ code: node.code, allowedMethods: node.allowedMethods })
+            }
             throw new AuraRouterError({ code: node.code })
         }
         const methods = Array.isArray(node.endpoint.method) ? node.endpoint.method : [node.endpoint.method]
         if (!methods.includes(requestCtx.request.method)) {
-            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED" })
+            throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED", allowedMethods: methods })
         }
 
         const { params } = node

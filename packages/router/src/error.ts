@@ -6,6 +6,7 @@ import type {
     RouterCatalogEntry,
     ValidationIssueDetail,
 } from "@/@types/types.ts"
+import type { HTTPMethod } from "@/@types/http.ts"
 
 /**
  * The HTTP status codes used in AuraStack Router.
@@ -208,9 +209,10 @@ export class AuraRouterError extends Error {
     readonly type: AuraRouterErrorType
     readonly userMessage: string
     readonly statusCode: number
+    readonly allowedMethods?: readonly HTTPMethod[]
     readonly isAuraRouterError = true as const
 
-    constructor({ code, message, cause, statusCode, userMessage }: AuraRouterErrorOptions) {
+    constructor({ code, message, cause, statusCode, userMessage, allowedMethods }: AuraRouterErrorOptions) {
         const entry = ROUTER_ERROR_CATALOG[code]
         const finalInternalMessage = message ?? entry.message
 
@@ -221,6 +223,7 @@ export class AuraRouterError extends Error {
         this.type = entry.type
         this.statusCode = statusCode ?? entry.statusCode
         this.userMessage = userMessage ?? entry.userMessage
+        this.allowedMethods = allowedMethods === undefined ? undefined : [...allowedMethods]
 
         Object.setPrototypeOf(this, new.target.prototype)
         if (hasCaptureStackTrace(Error)) {
@@ -235,7 +238,14 @@ export class AuraRouterError extends Error {
                 code: this.code,
                 message: this.userMessage,
             },
-            { status: this.statusCode, statusText: this.code }
+            {
+                status: this.statusCode,
+                statusText: this.code,
+                headers:
+                    this.code === "METHOD_NOT_ALLOWED" && this.allowedMethods?.length
+                        ? { Allow: this.allowedMethods.join(", ") }
+                        : undefined,
+            }
         )
     }
 }

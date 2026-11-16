@@ -9,7 +9,8 @@ export class TrieNode {
 
 export type TrieMatchReturn =
     | { success: true; endpoint: RouteEndpoint<any, any, any, any>; params: Record<string, string> }
-    | { success: false; code: "NOT_FOUND" | "METHOD_NOT_ALLOWED" }
+    | { success: false; code: "NOT_FOUND" }
+    | { success: false; code: "METHOD_NOT_ALLOWED"; allowedMethods: HTTPMethod[] }
 
 export class TrieRouter {
     private root: TrieNode
@@ -151,6 +152,9 @@ export class TrieRouter {
         for (const m of this.methods) {
             if (this.statics.has(`${m} ${pathname}`)) allowed.add(m)
         }
-        return { success: false, code: allowed.size === 0 ? "NOT_FOUND" : "METHOD_NOT_ALLOWED" }
+        if (allowed.size === 0) {
+            return { success: false, code: "NOT_FOUND" }
+        }
+        return { success: false, code: "METHOD_NOT_ALLOWED", allowedMethods: [...allowed] }
     }
 }

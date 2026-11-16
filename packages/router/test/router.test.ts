@@ -249,6 +249,7 @@ describe("createRouter", () => {
             const { GET } = createRouter([get])
             const response = await GET(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -318,6 +319,7 @@ describe("createRouter", () => {
 
             const response = await GET(new Request("https://example.com/session", { method: "PATCH" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -332,11 +334,33 @@ describe("createRouter", () => {
             const router = createRouter([get])
             const response = await router.handle(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
                 message: "The requested resource does not support the submitted HTTP execution method request verb.",
             })
+        })
+
+        test("Includes allowed methods for a static route", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const post = createEndpoint("POST", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get, post])
+
+            const response = await handle(new Request("https://example.com/session", { method: "DELETE" }))
+            expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET, POST")
+        })
+
+        test("Includes allowed methods for a dynamic route", async () => {
+            const get = createEndpoint("GET", "/users/:id", () => Response.json({ status: 200 }))
+            const post = createEndpoint("POST", "/users/:id", () => Response.json({ status: 200 }))
+            const remove = createEndpoint("DELETE", "/users/:id", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get, post, remove])
+
+            const response = await handle(new Request("https://example.com/users/123", { method: "PUT" }))
+            expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET, POST, DELETE")
         })
 
         test("Not found route", async () => {
