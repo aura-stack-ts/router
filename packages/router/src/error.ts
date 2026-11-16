@@ -66,6 +66,7 @@ export const AURA_ERROR_CODES = {
 
     CONFLICTING_DYNAMIC_SEGMENT: "CONFLICTING_DYNAMIC_SEGMENT",
     UNKNOWN_SCHEMA_ERROR: "UNKNOWN_SCHEMA_ERROR",
+    BAD_REQUEST: "BAD_REQUEST",
 } as const
 
 export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntry> = {
@@ -180,6 +181,13 @@ export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntr
         message:
             "An unhandled exception or critical system failure occurred inside the structural validation compilation pipeline while executing schema evaluation matching checks.",
         userMessage: "An unexpected internal processing error occurred during incoming request schema validation verification.",
+    },
+    BAD_REQUEST: {
+        type: "ROUTER_FLOW",
+        statusCode: 400,
+        name: "BadRequestError",
+        message: "The request could not be processed because it contains invalid or malformed input.",
+        userMessage: "The request is invalid or malformed.",
     },
 }
 

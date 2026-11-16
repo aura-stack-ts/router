@@ -95,8 +95,8 @@ const handleRequest = async (
         const pathnameWithBase = url.pathname
 
         const node = router.match(method, pathnameWithBase)
-        if (!node) {
-            throw new AuraRouterError({ code: "NOT_FOUND" })
+        if (!node.success) {
+            throw new AuraRouterError({ code: node.code })
         }
         const methods = Array.isArray(node.endpoint.method) ? node.endpoint.method : [node.endpoint.method]
         if (!methods.includes(requestCtx.request.method)) {

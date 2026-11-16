@@ -7,6 +7,10 @@ export class TrieNode {
     public endpoints: Map<HTTPMethod, RouteEndpoint<any, any, any, any>> = new Map()
 }
 
+export type TrieMatchReturn =
+    | { success: true; endpoint: RouteEndpoint<any, any, any, any>; params: Record<string, string> }
+    | { success: false; code: "NOT_FOUND" | "METHOD_NOT_ALLOWED" }
+
 export class TrieRouter {
     private root: TrieNode
     private statics: Map<string, RouteEndpoint<any, any, any, any>>
@@ -72,41 +76,73 @@ export class TrieRouter {
         }
     }
 
-    match(method: HTTPMethod, pathname: string) {
-        const staticEndpoint = this.statics.get(`${method} ${pathname}`)
-        if (staticEndpoint) {
-            return { endpoint: staticEndpoint, params: {} }
+    private safeDecode(segment: string): string | null {
+        try {
+            return decodeURIComponent(segment)
+        } catch {
+            throw new AuraRouterError({ code: "BAD_REQUEST" })
         }
-        let node = this.root
-        const params = {} as Record<string, string>
-        const pathLength = pathname.length
-        let prev = 0
-        while (prev < pathLength) {
-            const curr = pathname.indexOf("/", prev)
-            const end = curr === -1 ? pathLength : curr
-            if (end > prev) {
-                const segment = pathname.slice(prev, end)
-                const staticNode = node.statics.get(segment)
-                if (staticNode) {
-                    node = staticNode
-                } else {
-                    const param = node.param
-                    if (!param) {
-                        return null
-                    }
-                    params[param.name] = decodeURIComponent(segment)
-                    node = param.node
-                }
-            }
-            if (curr === -1) {
-                break
-            }
-            prev = curr + 1
+    }
+
+    private walk(
+        node: TrieNode,
+        path: string,
+        start: number,
+        method: HTTPMethod,
+        params: Record<string, string>,
+        allowed: Set<HTTPMethod>
+    ): RouteEndpoint<any, any, any, any> | null {
+        const length = path.length
+
+        while (start < length && path.codePointAt(start) === 47) {
+            start++
         }
-        const endpoint = node.endpoints.get(method)
-        if (!endpoint) {
+
+        if (start >= length) {
+            const endpoint = node.endpoints.get(method)
+            if (endpoint) return endpoint
+            for (const m of node.endpoints.keys()) allowed.add(m)
             return null
         }
-        return { endpoint, params }
+
+        const slash = path.indexOf("/", start)
+        const end = slash === -1 ? length : slash
+        const next = slash === -1 ? length : slash + 1
+        const segment = path.slice(start, end)
+
+        const staticNode = node.statics.get(segment)
+        if (staticNode) {
+            const found = this.walk(staticNode, path, next, method, params, allowed)
+            if (found) return found
+        }
+
+        const param = node.param
+        if (param) {
+            const value = this.safeDecode(segment)
+            if (value === null) return null
+            params[param.name] = value
+            const found = this.walk(param.node, path, next, method, params, allowed)
+            if (found) return found
+            delete params[param.name]
+        }
+
+        return null
+    }
+
+    match(method: HTTPMethod, pathname: string): TrieMatchReturn {
+        const staticEndpoint = this.statics.get(`${method} ${pathname}`)
+        if (staticEndpoint) {
+            return { success: true, endpoint: staticEndpoint, params: {} as Record<string, string> }
+        }
+        const allowed = new Set<HTTPMethod>()
+        const params: Record<string, string> = {}
+        const endpoint = this.walk(this.root, pathname, 0, method, params, allowed)
+        if (endpoint) {
+            return { success: true, endpoint, params }
+        }
+        for (const m of this.methods) {
+            if (this.statics.has(`${m} ${pathname}`)) allowed.add(m)
+        }
+        return { success: false, code: allowed.size === 0 ? "NOT_FOUND" : "METHOD_NOT_ALLOWED" }
     }
 }
