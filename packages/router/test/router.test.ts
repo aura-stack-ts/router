@@ -416,6 +416,12 @@ describe("createRouter", () => {
                 "Duplicate parameter 'id' found in route '/p/:id/comments/:id/values/:id'. Route parameters must have unique names."
             )
         })
+
+        test("duplicated dynamic parameter name test regresion", async () => {
+            expect(() => createRouter([endpoint("GET", "/:id/x", "first"), endpoint("GET", "/:id/:id", "second")])).toThrow(
+                "Duplicate parameter 'id' found in route '/:id/:id'. Route parameters must have unique names."
+            )
+        })
     })
 
     describe("Backtrack", () => {

@@ -52,15 +52,15 @@ export class TrieRouter {
                                     message: `Duplicate parameter '${name}' found in route '${route}'. Route parameters must have unique names.`,
                                 })
                             }
-                            param = { name: name, node: new TrieNode() }
+                            param = { name, node: new TrieNode() }
                             node.param = param
-                            params.add(name)
                         } else if (param.name !== name) {
                             throw new AuraRouterError({
                                 code: "CONFLICTING_DYNAMIC_SEGMENT",
                                 message: `Conflicting dynamic segments discovered in route "${endpoint.route}". Existing param "${param.name}" conflicts with incoming param "${name}".`,
                             })
                         }
+                        params.add(name)
                         node = param.node
                     } else {
                         let child = node.statics.get(segment)
