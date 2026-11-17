@@ -2,7 +2,7 @@
  * HTTP methods defined in HTTP/1.1 specification.
  * @see https://datatracker.ietf.org/doc/html/rfc7231#section-4.3
  */
-export type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "HEAD" | "TRACE" | "CONNECT"
+export type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "TRACE" | "CONNECT"
 
 /**
  * Content types supported by the router.

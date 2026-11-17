@@ -723,13 +723,13 @@ describe("RouteEndpoint", () => {
 })
 
 describe("InferMethod", () => {
-    expectTypeOf<InferMethod<[RouteEndpoint<"/auth/:oauth", "GET", EmptyObject>]>>().toEqualTypeOf<"GET">()
+    expectTypeOf<InferMethod<[RouteEndpoint<"/auth/:oauth", "GET", EmptyObject>]>>().toEqualTypeOf<"GET" | "HEAD">()
     expectTypeOf<
         InferMethod<[RouteEndpoint<"/auth/:oauth", "GET", EmptyObject>, RouteEndpoint<"/auth/session", "GET", EmptyObject>]>
-    >().toEqualTypeOf<"GET">()
+    >().toEqualTypeOf<"GET" | "HEAD">()
     expectTypeOf<
         InferMethod<[RouteEndpoint<"/auth/:oauth", "GET", EmptyObject>, RouteEndpoint<"/auth/signOut", "POST", EmptyObject>]>
-    >().toEqualTypeOf<"GET" | "POST">()
+    >().toEqualTypeOf<"GET" | "POST" | "HEAD">()
     expectTypeOf<
         InferMethod<
             [
@@ -738,7 +738,7 @@ describe("InferMethod", () => {
                 RouteEndpoint<"/auth/session", "PUT", EmptyObject>,
             ]
         >
-    >().toEqualTypeOf<"GET" | "POST" | "PUT">()
+    >().toEqualTypeOf<"GET" | "POST" | "PUT" | "HEAD">()
 })
 
 describe("RouteEndpoint response inference from ctx.json", async () => {

@@ -215,6 +215,7 @@ describe("createRouter", () => {
             expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                 GET: (request: Request) => Awaitable<Response>
                 POST: (request: Request) => Awaitable<Response>
+                HEAD: (request: Request) => Awaitable<Response>
             }>()
         })
     })
@@ -249,7 +250,7 @@ describe("createRouter", () => {
             const { GET } = createRouter([get])
             const response = await GET(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
-            expect(response.headers.get("Allow")).toBe("GET")
+            expect(response.headers.get("Allow")).toBe("GET, HEAD")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -319,7 +320,7 @@ describe("createRouter", () => {
 
             const response = await GET(new Request("https://example.com/session", { method: "PATCH" }))
             expect(response.status).toBe(405)
-            expect(response.headers.get("Allow")).toBe("GET")
+            expect(response.headers.get("Allow")).toBe("GET, HEAD")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -334,7 +335,7 @@ describe("createRouter", () => {
             const router = createRouter([get])
             const response = await router.handle(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
-            expect(response.headers.get("Allow")).toBe("GET")
+            expect(response.headers.get("Allow")).toBe("GET, HEAD")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -349,7 +350,7 @@ describe("createRouter", () => {
 
             const response = await handle(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
-            expect(response.headers.get("Allow")).toBe("GET, POST")
+            expect(response.headers.get("Allow")).toBe("GET, HEAD, POST")
         })
 
         test("Includes allowed methods for a dynamic route", async () => {
@@ -360,7 +361,7 @@ describe("createRouter", () => {
 
             const response = await handle(new Request("https://example.com/users/123", { method: "PUT" }))
             expect(response.status).toBe(405)
-            expect(response.headers.get("Allow")).toBe("GET, POST, DELETE")
+            expect(response.headers.get("Allow")).toBe("GET, HEAD, POST, DELETE")
         })
 
         test("Not found route", async () => {
@@ -450,6 +451,59 @@ describe("createRouter", () => {
             expect(() => createRouter([endpoint("GET", route, "too long")])).toThrow(
                 "The route definition contains more than the maximum supported 32 path segments."
             )
+        })
+    })
+
+    describe("HEAD Method", () => {
+        const { handle } = createRouter([
+            createEndpoint("GET", "/home", (ctx) => {
+                return ctx.json(
+                    { message: "home" },
+                    {
+                        headers: { "x-method": ctx.method, "x-token": "123", "x-message": "home", cookie: "theme=light; Path=/" },
+                    }
+                )
+            }),
+            createEndpoint("POST", "/users", (ctx) => {
+                return ctx.json({ message: "Created" })
+            }),
+        ])
+
+        test("should return 200 response with body - GET /home", async () => {
+            const response = await handle(new Request("https://app.com/home"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({ message: "home" })
+            expect(Object.fromEntries(response.headers)).toEqual({
+                "x-method": "GET",
+                "x-token": "123",
+                "x-message": "home",
+                cookie: "theme=light; Path=/",
+                "content-type": "application/json",
+            })
+        })
+
+        test("should return 200 response without body - HEAD /home", async () => {
+            const response = await handle(new Request("https://app.com/home", { method: "HEAD" }))
+            expect(response.status).toBe(200)
+            expect(response.body).toBeNull()
+            expect(Object.fromEntries(response.headers)).toEqual({
+                "x-method": "HEAD",
+                "x-token": "123",
+                "x-message": "home",
+                cookie: "theme=light; Path=/",
+                "content-type": "application/json",
+            })
+        })
+
+        test("should return 405 response  - POST /users", async () => {
+            const response = await handle(new Request("https://app.com/users", { method: "HEAD" }))
+            expect(response.status).toBe(405)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+            })
+            expect(response.headers.get("Allow")).toBe("POST")
         })
     })
 
@@ -630,6 +684,7 @@ describe("createRouter", () => {
         test("Types", () => {
             expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                 GET: (request: Request) => Awaitable<Response>
+                HEAD: (request: Request) => Awaitable<Response>
             }>()
         })
     })
@@ -682,6 +737,7 @@ describe("createRouter", () => {
                 expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                     GET: (request: Request) => Awaitable<Response>
                     POST: (request: Request) => Awaitable<Response>
+                    HEAD: (request: Request) => Awaitable<Response>
                 }>()
             })
         })
@@ -720,6 +776,7 @@ describe("createRouter", () => {
             test("Types", () => {
                 expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
                     GET: (request: Request) => Awaitable<Response>
+                    HEAD: (request: Request) => Awaitable<Response>
                 }>()
             })
         })
