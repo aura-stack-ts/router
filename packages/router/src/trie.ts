@@ -40,6 +40,9 @@ export class TrieRouter {
 
         const isDynamic = endpoint.route.includes(":")
         const methods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
+        if (methods.includes("GET")) {
+            methods.push("HEAD")
+        }
         if (!isDynamic) {
             for (const method of methods) {
                 this.statics.set(`${method} ${endpoint.route}`, endpoint)

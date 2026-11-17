@@ -424,8 +424,14 @@ export type InferMethod<Endpoints extends readonly RouteEndpoint<any, any, any, 
     Endpoints extends readonly (infer Endpoint)[]
         ? Endpoint extends RouteEndpoint<infer _, infer Method, infer __>
             ? Method extends HTTPMethod[]
-                ? Method[number]
-                : Method
+                ? Method extends Array<infer Items>
+                    ? Items extends "GET"
+                        ? Items | "HEAD"
+                        : Items
+                    : Method
+                : Method extends "GET"
+                  ? "GET" | "HEAD"
+                  : Method
             : never
         : never
 

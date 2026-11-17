@@ -102,6 +102,9 @@ const handleRequest = async (
             throw new AuraRouterError({ code: node.code })
         }
         const methods = Array.isArray(node.endpoint.method) ? node.endpoint.method : [node.endpoint.method]
+        if (methods.includes("GET")) {
+            methods.push("HEAD")
+        }
         if (!methods.includes(requestCtx.request.method)) {
             throw new AuraRouterError({ code: "METHOD_NOT_ALLOWED", allowedMethods: methods })
         }
@@ -205,6 +208,7 @@ const handleRequest = async (
         /** Route handler */
         const handlerResult = await endpoint.handler(context)
         let response = inferHandlerResponse(handlerResult)
+        response = requestCtx.request.method === "HEAD" ? new Response(null, handlerResult) : handlerResult
 
         /** onResponse hook */
         context.phase = "onResponse"

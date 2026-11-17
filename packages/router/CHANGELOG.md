@@ -7,9 +7,15 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
-### Added
+### Breaking Changes
+
+- Removed support for explicitly defining `HEAD` endpoints. The router now registers them automatically for all `GET` endpoints. [#79](https://github.com/aura-stack-ts/router/pull/79)
 
 - Added URI length validation with a maximum supported length of 64 KB and a limit of 32 segments per route. [#78](https://github.com/aura-stack-ts/router/pull/78)
+
+### Added
+
+- Added automatic `HEAD` endpoint registration for all `GET` endpoints. The `createClient()` function now also automatically infers the `HEAD` method for every `GET` endpoint defined in the router. [#79](https://github.com/aura-stack-ts/router/pull/79)
 
 ### Fixed
 
