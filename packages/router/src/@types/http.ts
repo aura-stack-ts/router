@@ -2,7 +2,17 @@
  * HTTP methods defined in HTTP/1.1 specification.
  * @see https://datatracker.ietf.org/doc/html/rfc7231#section-4.3
  */
-export type HTTPMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "OPTIONS" | "TRACE" | "CONNECT"
+export type StandardHTTPMethod =
+    | "GET"
+    | "POST"
+    | "DELETE"
+    | "PUT"
+    | "PATCH"
+    | "OPTIONS"
+    | "TRACE"
+    | "CONNECT"
+    | "QUERY"
+    | (string & Record<never, never>)
 
 /**
  * Content types supported by the router.
@@ -49,7 +59,8 @@ export interface RequestHeaders extends Record<string, number | string | string[
     "content-length"?: string | undefined
     "content-location"?: string | undefined
     "content-range"?: string | undefined
-    "content-type"?: string | undefined
+    "content-type"?: ContentType
+    "Content-Type"?: ContentType
     cookie?: string | undefined
     date?: string | undefined
     etag?: string | undefined

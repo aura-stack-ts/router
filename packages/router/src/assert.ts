@@ -4,7 +4,7 @@ import type { ZodObject } from "zod/v4"
 import type { BaseSchema } from "valibot"
 import type { RouteHandler, HTTPMethod, RoutePattern } from "@/@types/index.ts"
 
-const supportedMethods = new Set<HTTPMethod | "HEAD">([
+export const SUPPORTED_HTTP_METHODS = new Set<HTTPMethod | "HEAD">([
     "GET",
     "POST",
     "DELETE",
@@ -16,7 +16,7 @@ const supportedMethods = new Set<HTTPMethod | "HEAD">([
     "CONNECT",
 ])
 
-const supportedBodyMethods = new Set<HTTPMethod>(["POST", "PUT", "PATCH"])
+export const SUPPORTED_BODY_METHODS = new Set<HTTPMethod>(["POST", "PUT", "PATCH", "QUERY"])
 
 export const supportedProtocols = new Set(["http:", "https:"])
 
@@ -28,18 +28,9 @@ export const supportedProtocols = new Set(["http:", "https:"])
  */
 export const isSupportedMethod = (method: string | string[]): method is HTTPMethod | HTTPMethod[] => {
     if (Array.isArray(method)) {
-        return method.every((meth) => supportedMethods.has(meth as HTTPMethod))
+        return method.every((meth) => SUPPORTED_HTTP_METHODS.has(meth as HTTPMethod))
     }
-    return supportedMethods.has(method as HTTPMethod)
-}
-
-/**
- * Check if the provided method can includes a body as per HTTP specification.
- * @param method - The HTTP method to check.
- * @returns True if the method can include a body, false otherwise.
- */
-export const isSupportedBodyMethod = (method: string): method is HTTPMethod => {
-    return supportedBodyMethods.has(method as HTTPMethod)
+    return SUPPORTED_HTTP_METHODS.has(method as HTTPMethod)
 }
 
 /**
@@ -51,6 +42,12 @@ export const isSupportedBodyMethod = (method: string): method is HTTPMethod => {
 export const isValidRoute = (route: string): route is RoutePattern => {
     const routePattern = /^\/[a-zA-Z0-9/_:-]*$/
     return routePattern.test(route)
+}
+
+export const isValidMethod = (method: HTTPMethod | HTTPMethod[]) => {
+    const pattern = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/
+    const methods = Array.isArray(method) ? method : [method]
+    return methods.every((meth) => pattern.test(meth))
 }
 
 /**

@@ -6,7 +6,7 @@ import type {
     RouterCatalogEntry,
     ValidationIssueDetail,
 } from "@/@types/types.ts"
-import type { HTTPMethod } from "@/@types/http.ts"
+import type { HTTPMethod } from "@/@types/types.ts"
 
 /**
  * The HTTP status codes used in AuraStack Router.
@@ -71,6 +71,7 @@ export const AURA_ERROR_CODES = {
     BAD_REQUEST: "BAD_REQUEST",
     URI_TOO_LONG: "URI_TOO_LONG",
     INVALID_SEGMENT_LIMIT: "INVALID_SEGMENT_LIMIT",
+    NOT_IMPLEMENTED: "NOT_IMPLEMENTED",
 } as const
 
 export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntry> = {
@@ -206,6 +207,13 @@ export const ROUTER_ERROR_CATALOG: Record<AuraRouterErrorCode, RouterCatalogEntr
         name: "RouterInitError",
         message: "The route definition contains more than the maximum supported 32 path segments.",
         userMessage: "Internal configuration failure. Routes cannot contain more than 32 path segments.",
+    },
+    NOT_IMPLEMENTED: {
+        type: "ROUTER_FLOW",
+        statusCode: 501,
+        name: "RouterFlowError",
+        message: "The router does not implement the HTTP method used by the request.",
+        userMessage: "The HTTP method is not implemented by this router.",
     },
 }
 

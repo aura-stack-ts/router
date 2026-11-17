@@ -1,9 +1,10 @@
 import type { Type } from "arktype"
 import type { ObjectSchema } from "valibot"
-import type { HTTPMethod, RequestHeaders } from "@/@types/http.ts"
 import type { infer as Infer } from "zod/v4/core"
+import type { RequestHeaders } from "@/@types/http.ts"
+import type { Prettify, Awaitable } from "@/@types/utility.ts"
 import type { InferValibotSchema, SchemaKind, SupportedSchemas } from "@/@types/schemas.ts"
-import type { RoutePattern, EndpointConfig, Prettify, RouteEndpoint, Awaitable, GetRouteParams } from "@/@types/types.ts"
+import type { RoutePattern, EndpointConfig, RouteEndpoint, GetRouteParams, HTTPMethod } from "@/@types/types.ts"
 
 export type InferSchema<T, Kind = SchemaKind<T>> = Kind extends "zod"
     ? Infer<T>

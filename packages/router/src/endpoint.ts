@@ -1,5 +1,5 @@
 import { AuraRouterError } from "@/error.ts"
-import { isSupportedMethod, isValidHandler, isValidRoute } from "@/assert.ts"
+import { isValidHandler, isValidMethod, isValidRoute } from "@/assert.ts"
 import type {
     EndpointConfig,
     EndpointSchemas,
@@ -28,7 +28,7 @@ import type {
  */
 
 export const createEndpoint = <
-    const Method extends Uppercase<HTTPMethod> | Uppercase<HTTPMethod>[],
+    const Method extends HTTPMethod | HTTPMethod[],
     const Route extends RoutePattern,
     Schemas extends EndpointSchemas,
     Handler extends RouteHandler<Route, Method, { schemas?: Schemas }, RouteHandlerReturn>,
@@ -38,7 +38,7 @@ export const createEndpoint = <
     handler: Handler,
     config: EndpointConfig<Route, Method, Schemas> = {} as EndpointConfig<Route, Method, Schemas>
 ): RouteEndpoint<Route, Method, { schemas?: Schemas }, Handler> => {
-    if (!isSupportedMethod(method)) {
+    if (!isValidMethod(method)) {
         throw new AuraRouterError({ code: "INVALID_METHOD_DEFINITION" })
     }
     if (!isValidRoute(route)) {

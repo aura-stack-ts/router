@@ -27,6 +27,7 @@ import type {
     EndpointMeta,
     RequestContext,
 } from "@/@types/index.ts"
+import { getAlllowedMethodsWithBody, getAllowedMethods } from "@/utils/get-allowed-methods.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
@@ -53,7 +54,9 @@ const handleRequest = async (
     method: HTTPMethod,
     request: Request,
     config: RouterConfig,
-    router: TrieRouter
+    router: TrieRouter,
+    implementedMethods: Set<HTTPMethod>,
+    allowedBody: Set<HTTPMethod>
 ): Promise<Response> => {
     let errorCtx: RequestHookContext<any> | MatchHookContext<any, any> | RequestContext<EndpointMeta<any, any, any>> = {
         request,
@@ -90,6 +93,10 @@ const handleRequest = async (
             phase: "onRequest",
         }
         errorCtx = requestCtx
+
+        if (!implementedMethods.has(requestCtx.request.method as HTTPMethod)) {
+            throw new AuraRouterError({ code: "NOT_IMPLEMENTED" })
+        }
 
         const url = new URL(requestCtx.request.url)
         const pathnameWithBase = url.pathname
@@ -171,7 +178,7 @@ const handleRequest = async (
         searchParams = getSearchParams(searchParams, endpoint.config)
 
         /** onBody hook */
-        const rawBody = await parseBodyRaw(requestCtx.request)
+        const rawBody = await parseBodyRaw(requestCtx.request, allowedBody)
         const bodyCtx = { ...matchCtx, phase: "onBody" as const }
         errorCtx = bodyCtx
         let body: unknown = await runOnBody(endpoint.config.hooks?.onBody, rawBody, bodyCtx)
@@ -231,27 +238,36 @@ const handleRequest = async (
  * @param config - Optional configuration object for the router
  * @returns An object with methods corresponding to HTTP methods, each handling requests for that method
  */
-export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any, any>[]>(
+export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any, any>[], const Config extends RouterConfig>(
     endpoints: Endpoints,
-    config: RouterConfig = {}
+    config: Config = {} as Config
 ): Router<Endpoints> => {
     const router = new TrieRouter()
     const server = {} as GetHttpHandlers<Endpoints>
     const methods = new Set<HTTPMethod>()
+    const allowedMethods = getAllowedMethods(config.allowedMethods)
+    const allowedBody = getAlllowedMethodsWithBody(config.allowedMethods)
     for (const endpoint of endpoints) {
         const withBasePath = config.basePath ? `${config.basePath}${endpoint.route}` : endpoint.route
         router.add({ ...endpoint, route: withBasePath as RoutePattern })
         const endpointMethods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
         for (const method of endpointMethods) {
+            if (!allowedMethods.has(method)) {
+                throw new AuraRouterError({
+                    code: "INVALID_METHOD_DEFINITION",
+                    message: `Endpoint "${endpoint.route}" uses "${method}", which is not a standard method. Add it to the "allowedMethods" option.`,
+                })
+            }
             methods.add(method)
         }
     }
     for (const method of methods) {
-        server[method as keyof typeof server] = (request: Request) => handleRequest(method, request, config, router)
+        server[method as keyof typeof server] = (request: Request) =>
+            handleRequest(method, request, config, router, allowedMethods, allowedBody)
     }
 
     const handle = (request: Request): Response | Promise<Response> => {
-        return handleRequest(request.method as HTTPMethod, request, config, router)
+        return handleRequest(request.method as HTTPMethod, request, config, router, allowedMethods, allowedBody)
     }
 
     return { ...server, handle } as Router<Endpoints>
