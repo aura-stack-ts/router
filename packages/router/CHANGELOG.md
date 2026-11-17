@@ -15,6 +15,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Added
 
+- Added support for custom not-found handling through the `notFound` handler option in `createRouter()`. This allows users to customize responses for requests that do not match any registered route. [#83](https://github.com/aura-stack-ts/router/pull/83)
+
 - Added the `allowedMethods` option to `createRouter()` to configure the HTTP methods supported by the router, following RFC 9110. Incoming request methods are now validated against this configuration. Requests using an allowed method proceed through the routing process, while unsupported methods receive a `501 Not Implemented` response. [#82](https://github.com/aura-stack-ts/router/pull/82)
 
 - Added automatic `HEAD` endpoint registration for all `GET` endpoints. The `createClient()` function now also automatically infers the `HEAD` method for every `GET` endpoint defined in the router. [#79](https://github.com/aura-stack-ts/router/pull/79)
