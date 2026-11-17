@@ -59,8 +59,23 @@ The `config` parameter allows setting additional options for customization.
 | `use`            | `GlobalMiddleware[]`                                                     | Global middlewares executed before endpoint handlers.       |
 | `context`        | `GlobalMiddlewareContext`                                                | Global context for endpoints and middlewares.               |
 | `hooks`          | `RouterHooks`                                                            | Optional hooks for router lifecycle events.                 |
+| `notFound`       | `(ctx: RequestHookContext) => Awaitable<Response>`                       | Custom response for requests that do not match a route.     |
 | `allowedMethods` | `string[]`                                                               | Optional extra http methods allowed by the router.          |
 | ~~`onError`~~    | `(error: Error \| RouterError, request: Request) => Awaitable<Response>` | Global error handler.                                       |
+
+##### `notFound` [#not-found]
+
+Use the optional `notFound` handler to customize the response when a request does not match any registered route. It receives the request context, including `request`, `context`, and `json`. If omitted, the router returns its default `404 Not Found` response. A route that matches the path but not the HTTP method still returns `405 Method Not Allowed`.
+
+```ts lineNumbers
+import { createRouter } from "@aura-stack/router"
+
+export const router = createRouter([], {
+  notFound: ({ request, json }) => {
+    return json({ message: `No route for ${new URL(request.url).pathname}` }, { status: 404 })
+  },
+})
+```
 
 ##### `basePath` [#base-path]
 

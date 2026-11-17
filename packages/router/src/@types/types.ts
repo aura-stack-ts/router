@@ -516,6 +516,11 @@ export interface RouterConfig extends GlobalCtx {
      * allowedMethods: ["PURGE", "PROPFIND"]
      */
     allowedMethods?: string[]
+
+    /**
+     * Handles requests that do not match any registered route. When omitted, the router returns its default 404 response.
+     */
+    notFound?: (ctx: RequestHookContext<EndpointMeta<any, any, any>>) => Awaitable<Response>
 }
 
 export declare const endpointsSymbol: unique symbol

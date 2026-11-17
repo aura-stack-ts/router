@@ -103,6 +103,9 @@ const handleRequest = async (
 
         const node = router.match(method, pathnameWithBase)
         if (!node.success) {
+            if (node.code === "NOT_FOUND" && config.notFound) {
+                return await config.notFound(requestCtx)
+            }
             if (node.code === "METHOD_NOT_ALLOWED") {
                 throw new AuraRouterError({ code: node.code, allowedMethods: node.allowedMethods })
             }

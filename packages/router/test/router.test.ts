@@ -312,6 +312,18 @@ describe("createRouter", () => {
             })
         })
 
+        test("Uses the custom not-found handler for unmatched routes", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ message: "Get user session" }))
+            const { handle } = createRouter([get], {
+                notFound: ({ request, json }) =>
+                    json({ message: `No route for ${new URL(request.url).pathname}` }, { status: 404 }),
+            })
+
+            const response = await handle(new Request("https://example.com/missing"))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({ message: "No route for /missing" })
+        })
+
         test("Mismatched HTTP method", async () => {
             const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
             const { GET } = createRouter([get])
@@ -1027,6 +1039,20 @@ describe("createRouter", () => {
                 CANARY: (request: Request) => Awaitable<Response>
                 EXPERIMENTAL: (request: Request) => Awaitable<Response>
             }>()
+        })
+    })
+
+    describe("notFound", () => {
+        const { handle } = createRouter([], {
+            notFound: (ctx) => {
+                return ctx.json({ message: "Custom Not Found 404" }, { status: 404 })
+            },
+        })
+
+        test("Returns custom not found response", async () => {
+            const response = await handle(new Request("https://app.com/home"))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({ message: "Custom Not Found 404" })
         })
     })
 })
