@@ -27,7 +27,7 @@ import type {
     EndpointMeta,
     RequestContext,
 } from "@/@types/index.ts"
-import { getAllowedMethods } from "@/utils/get-allowed-methods.ts"
+import { getAlllowedMethodsWithBody, getAllowedMethods } from "@/utils/get-allowed-methods.ts"
 
 const inferHandlerResponse = (result: unknown): Response => {
     if (result instanceof Response) return result
@@ -55,7 +55,8 @@ const handleRequest = async (
     request: Request,
     config: RouterConfig,
     router: TrieRouter,
-    implementedMethods: Set<HTTPMethod>
+    implementedMethods: Set<HTTPMethod>,
+    allowedBody: Set<HTTPMethod>
 ): Promise<Response> => {
     let errorCtx: RequestHookContext<any> | MatchHookContext<any, any> | RequestContext<EndpointMeta<any, any, any>> = {
         request,
@@ -180,7 +181,7 @@ const handleRequest = async (
         searchParams = getSearchParams(searchParams, endpoint.config)
 
         /** onBody hook */
-        const rawBody = await parseBodyRaw(requestCtx.request)
+        const rawBody = await parseBodyRaw(requestCtx.request, allowedBody)
         const bodyCtx = { ...matchCtx, phase: "onBody" as const }
         errorCtx = bodyCtx
         let body: unknown = await runOnBody(endpoint.config.hooks?.onBody, rawBody, bodyCtx)
@@ -248,6 +249,7 @@ export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any
     const server = {} as GetHttpHandlers<Endpoints>
     const methods = new Set<HTTPMethod>()
     const allowedMethods = getAllowedMethods(config.allowedMethods)
+    const allowedBody = getAlllowedMethodsWithBody(config.allowedMethods)
     for (const endpoint of endpoints) {
         const withBasePath = config.basePath ? `${config.basePath}${endpoint.route}` : endpoint.route
         router.add({ ...endpoint, route: withBasePath as RoutePattern })
@@ -264,11 +266,11 @@ export const createRouter = <const Endpoints extends RouteEndpoint<any, any, any
     }
     for (const method of methods) {
         server[method as keyof typeof server] = (request: Request) =>
-            handleRequest(method, request, config, router, allowedMethods)
+            handleRequest(method, request, config, router, allowedMethods, allowedBody)
     }
 
     const handle = (request: Request): Response | Promise<Response> => {
-        return handleRequest(request.method as HTTPMethod, request, config, router, allowedMethods)
+        return handleRequest(request.method as HTTPMethod, request, config, router, allowedMethods, allowedBody)
     }
 
     return { ...server, handle } as Router<Endpoints>

@@ -11,6 +11,7 @@ export type StandardHTTPMethod =
     | "OPTIONS"
     | "TRACE"
     | "CONNECT"
+    | "QUERY"
     | (string & Record<never, never>)
 
 /**
@@ -58,7 +59,8 @@ export interface RequestHeaders extends Record<string, number | string | string[
     "content-length"?: string | undefined
     "content-location"?: string | undefined
     "content-range"?: string | undefined
-    "content-type"?: string | undefined
+    "content-type"?: ContentType
+    "Content-Type"?: ContentType
     cookie?: string | undefined
     date?: string | undefined
     etag?: string | undefined
