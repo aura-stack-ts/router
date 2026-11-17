@@ -16,14 +16,28 @@ export class TrieRouter {
     private root: TrieNode
     private statics: Map<string, RouteEndpoint<any, any, any, any>>
     private methods: Set<HTTPMethod>
+    private encode: TextEncoder
 
     constructor() {
         this.statics = new Map()
         this.methods = new Set()
         this.root = new TrieNode()
+        this.encode = new TextEncoder()
+    }
+
+    private safeSize(route: string) {
+        const size = this.encode.encode(route).length
+        if (size > 64 * 1024) {
+            throw new AuraRouterError({
+                type: "VALIDATION",
+                code: "URI_TOO_LONG",
+            })
+        }
     }
 
     add(endpoint: RouteEndpoint<any, any, any, any>) {
+        this.safeSize(endpoint.route)
+
         const isDynamic = endpoint.route.includes(":")
         const methods = Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]
         if (!isDynamic) {
@@ -31,6 +45,7 @@ export class TrieRouter {
                 this.statics.set(`${method} ${endpoint.route}`, endpoint)
             }
         } else {
+            let segments = 0
             let node = this.root
             const route = endpoint.route
             const routeLength = route.length
@@ -39,6 +54,9 @@ export class TrieRouter {
             while (prev < routeLength) {
                 const curr = route.indexOf("/", prev)
                 const end = curr === -1 ? routeLength : curr
+                if (segments > 32) {
+                    throw new AuraRouterError({ code: "INVALID_SEGMENT_LIMIT" })
+                }
 
                 if (end > prev) {
                     const segment = route.slice(prev, end)
@@ -75,6 +93,7 @@ export class TrieRouter {
                     break
                 }
                 prev = curr + 1
+                segments++
             }
             for (const method of methods) {
                 node.endpoints.set(method, endpoint)
@@ -139,6 +158,8 @@ export class TrieRouter {
     }
 
     match(method: HTTPMethod, pathname: string): TrieMatchReturn {
+        this.safeSize(pathname)
+
         const staticEndpoint = this.statics.get(`${method} ${pathname}`)
         if (staticEndpoint) {
             return { success: true, endpoint: staticEndpoint, params: {} as Record<string, string> }

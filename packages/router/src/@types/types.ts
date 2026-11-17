@@ -533,6 +533,7 @@ export interface AuraRouterErrorOptions extends ErrorOptions {
     statusCode?: number
     userMessage?: string
     allowedMethods?: readonly HTTPMethod[]
+    type?: AuraRouterErrorType
 }
 
 export interface ValidationIssueDetail {
