@@ -2,16 +2,12 @@ import type { Type } from "arktype"
 import type { TObject } from "typebox"
 import type { $ZodObject as ZodObject, infer as $Infer } from "zod/v4/core"
 import type { ObjectSchema } from "valibot"
-import type { AURA_ERROR_CODES, AuraRouterError, AuraRouterValidationError, RouterError } from "@/error.ts"
 import type { HeadersBuilder } from "@/headers.ts"
-import type { HTTPMethod } from "@/@types/http.ts"
-import type { InferValibotSchema, SupportedSchemas } from "@/@types/schemas.ts"
 import type { SchemaValues } from "@/@types/client.ts"
-
-/**
- * Utility type that represents a value that can be either synchronous or a Promise.
- */
-export type Awaitable<T> = T | Promise<T>
+import type { StandardHTTPMethod } from "@/@types/http.ts"
+import type { Awaitable, Prettify } from "@/@types/utility.ts"
+import type { InferValibotSchema, SupportedSchemas } from "@/@types/schemas.ts"
+import type { AURA_ERROR_CODES, AuraRouterError, AuraRouterValidationError, RouterError } from "@/error.ts"
 
 /**
  * Route pattern must start with a slash and can contain parameters prefixed with a colon.
@@ -20,10 +16,6 @@ export type Awaitable<T> = T | Promise<T>
  * const getPostsComments:RoutePattern = "/posts/:postId/comments/:commentId"
  */
 export type RoutePattern = `/${string}`
-
-export type Prettify<Obj extends object> = {
-    [Key in keyof Obj]: Obj[Key]
-} & {}
 
 type GetParam<Route extends string> = Route extends `:${infer Param}` ? { [K in Param]: string } : {}
 /**
@@ -64,6 +56,17 @@ export interface EndpointSchemas {
  * augmentation to extend the GlobalContext interface.
  */
 export interface GlobalContext {}
+
+/**
+ * Augment this interface to register custom HTTP methods.
+ * @example
+ * declare module "@aura-stack/router" {
+ *   interface GlobalHTTPMethods {
+ *     PURGE: true
+ *   }
+ * }
+ */
+export interface GlobalHTTPMethods {}
 
 /**
  * Base context available at the earliest hook stage (`onRequest`), before route matching.
@@ -426,12 +429,12 @@ export type InferMethod<Endpoints extends readonly RouteEndpoint<any, any, any, 
             ? Method extends HTTPMethod[]
                 ? Method extends Array<infer Items>
                     ? Items extends "GET"
-                        ? Items | "HEAD"
-                        : Items
-                    : Method
+                        ? Uppercase<Items & string> | "HEAD"
+                        : Uppercase<Items & string>
+                    : Uppercase<Method & string>
                 : Method extends "GET"
                   ? "GET" | "HEAD"
-                  : Method
+                  : Uppercase<Method & string>
             : never
         : never
 
@@ -444,6 +447,8 @@ export type GetHttpHandlers<Endpoints extends readonly RouteEndpoint<any, any, a
 }
 
 export type GlobalCtx = keyof GlobalContext extends never ? { context?: GlobalContext } : { context: GlobalContext }
+
+export type HTTPMethod = StandardHTTPMethod | Extract<keyof GlobalHTTPMethods, string>
 
 /**
  * Configuration options for `createRouter` function.
@@ -502,6 +507,15 @@ export interface RouterConfig extends GlobalCtx {
      * }
      */
     onError?: (error: Error | RouterError, request: Request) => Awaitable<Response>
+    /**
+     * Custom HTTP methods the router recognizes, in addition to the standard ones.
+     * Requests using any other method receive `501 Not Implemented`.
+     * Methods are case-sensitive (RFC 9110).
+     *
+     * @example
+     * allowedMethods: ["PURGE", "PROPFIND"]
+     */
+    allowedMethods?: string[]
 }
 
 export declare const endpointsSymbol: unique symbol

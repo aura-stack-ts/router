@@ -258,31 +258,29 @@ describe("createRouter", () => {
             })
         })
 
-        test("Unsupported HTTP method and not found route", async () => {
+        test("Returns not implemented for an unknown method and route", async () => {
             const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
             const { GET } = createRouter([get])
 
             const response = await GET(new Request("https://example.com/unknown-path", { method: "PURGE" }))
-            expect(response.status).toBe(404)
+            expect(response.status).toBe(501)
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
-                code: "NOT_FOUND",
-                message:
-                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+                code: "NOT_IMPLEMENTED",
+                message: "The HTTP method is not implemented by this router.",
             })
         })
 
-        test("Unsupported HTTP method and not found route using handle method", async () => {
+        test("Returns not implemented for an unknown method and route using handle", async () => {
             const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
             const { handle } = createRouter([get])
 
             const response = await handle(new Request("https://example.com/unknown-path", { method: "PURGE" }))
-            expect(response.status).toBe(404)
+            expect(response.status).toBe(501)
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
-                code: "NOT_FOUND",
-                message:
-                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+                code: "NOT_IMPLEMENTED",
+                message: "The HTTP method is not implemented by this router.",
             })
         })
 
@@ -968,6 +966,67 @@ describe("createRouter", () => {
             const get = await GET(new Request("https://example.com/wrong", { method: "GET" }))
             expect(get.status).toBe(200)
             expect(await get.json()).toEqual({ nonExistent: undefined })
+        })
+    })
+
+    describe("With allowedMethods", () => {
+        const get = createEndpoint("GET", "/users", (ctx) => ctx.json({ message: "users" }))
+        const purge = createEndpoint("PURGE", "/purge", (ctx) => ctx.json({ message: "purge" }))
+        const multi = createEndpoint(["EXPERIMENTAL", "CANARY"], "/multi", (ctx) => ctx.json({ message: "multi" }))
+
+        const router = createRouter([get, purge, multi], {
+            allowedMethods: ["PURGE", "EXPERIMENTAL", "CANARY"],
+        })
+
+        test("Should throw an error for unregistered method", () => {
+            const endpoint = createEndpoint("FIZZ", "/foo", (ctx) => ctx.json({ message: "foo" }))
+            expect(() => createRouter([endpoint])).toThrow()
+        })
+
+        test("Should throw an error for case-sensitive names", () => {
+            const endpoint = createEndpoint("fizz", "/foo", (ctx) => ctx.json({ message: "foo" }))
+            expect(() => createRouter([endpoint], { allowedMethods: ["FIZZ"] })).toThrow()
+        })
+
+        test("Returns 501 for an unimplemented HTTP method", async () => {
+            const response = await router.handle(new Request("http://localhost:3000/users", { method: "FOO" }))
+            expect(response.status).toBe(501)
+            expect(await response.json()).toEqual({
+                type: "ROUTER_FLOW",
+                code: "NOT_IMPLEMENTED",
+                message: "The HTTP method is not implemented by this router.",
+            })
+        })
+
+        test("Should return 405", async () => {
+            const response = await router.handle(new Request("http://localhost:3000/users", { method: "DELETE" }))
+            expect(response.status).toBe(405)
+            expect(await response.json()).toEqual({
+                code: "METHOD_NOT_ALLOWED",
+                message: "The requested resource does not support the submitted HTTP execution method request verb.",
+                type: "ROUTER_FLOW",
+            })
+        })
+
+        test("Should return 405", async () => {
+            const response = await router.handle(new Request("http://localhost:3000/fizzbuzz", { method: "GET" }))
+            expect(response.status).toBe(404)
+            expect(await response.json()).toEqual({
+                code: "NOT_FOUND",
+                message:
+                    "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+                type: "ROUTER_FLOW",
+            })
+        })
+
+        test("Router Types", () => {
+            expectTypeOf<GetHttpHandlers<typeof router.__endpoints>>().toEqualTypeOf<{
+                GET: (request: Request) => Awaitable<Response>
+                HEAD: (request: Request) => Awaitable<Response>
+                PURGE: (request: Request) => Awaitable<Response>
+                CANARY: (request: Request) => Awaitable<Response>
+                EXPERIMENTAL: (request: Request) => Awaitable<Response>
+            }>()
         })
     })
 })

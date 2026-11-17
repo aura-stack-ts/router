@@ -51,13 +51,6 @@ describe("createEndpoint", () => {
     describe("With invalid configuration", () => {
         const testCases = [
             {
-                description: "Throws error for unsupported HTTP method",
-                method: "FETCH",
-                route: "/users",
-                expected:
-                    /An endpoint registration was attempted with an invalid or poorly formatted HTTP verb string. Ensure uppercase standard types are used./,
-            },
-            {
                 description: "Throws error for invalid route format",
                 method: "GET",
                 route: "invalid-route",
