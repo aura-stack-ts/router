@@ -7,6 +7,20 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+### Added
+
+- Added the `Allow` response header to default `405 Method Not Allowed` responses. The header lists the HTTP methods supported by the matched static or dynamic route, allowing clients to identify which methods are accepted. [#77](https://github.com/aura-stack-ts/router/pull/77)
+
+### Fixed
+
+- Fixed handling of duplicated dynamic route parameters. The router now throws an error when a route defines the same dynamic parameter name more than once, preventing ambiguous parameter resolution. [#77](https://github.com/aura-stack-ts/router/pull/77)
+
+- Fixed route matching by adding backtracking. When a static segment matches but the remaining path cannot be resolved, or the matched route does not support the requested HTTP method, the router now retries matching through alternative dynamic branches. For example, `GET /users/me/posts/1` now correctly falls back from `/users/me/:tab` to `/users/:id/posts/:postId`. Static routes retain priority, and parameters captured by failed branches are discarded. [#77](https://github.com/aura-stack-ts/router/pull/77)
+
+- Fixed handling of malformed percent-encoding in dynamic route segments. Requests containing invalid encoded values (e.g. `/users/%E0%A4%A`) now return `400 Bad Request` instead of triggering an unhandled `decodeURIComponent` exception and resulting in a `500 Internal Server Error`. [#77](https://github.com/aura-stack-ts/router/pull/77)
+
+- Fixed HTTP method handling for existing routes. Requests to a matching route with an unsupported HTTP method (e.g. `POST /users/profile` when only `GET /users/profile` is defined) now return `405 Method Not Allowed` instead of `404 Not Found`. A `404 Not Found` response is now returned only when no route matches the requested path, regardless of the HTTP method. [#77](https://github.com/aura-stack-ts/router/pull/77)
+
 ---
 
 ## [0.11.1] - 20226-09-11

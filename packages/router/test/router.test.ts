@@ -5,7 +5,11 @@ import { createRouter } from "@/router.ts"
 import { isRouterError } from "@/assert.ts"
 import { createEndpoint, createEndpointConfig } from "@/endpoint.ts"
 import { HeadersBuilder } from "@/headers.ts"
-import type { Awaitable, GetHttpHandlers } from "@/index.ts"
+import type { Awaitable, GetHttpHandlers, HTTPMethod, RoutePattern } from "@/index.ts"
+
+const endpoint = (method: HTTPMethod, route: RoutePattern, name: string) => {
+    return createEndpoint(method, route, async (ctx) => ctx.json({ name, params: ctx.params }))
+}
 
 describe("createRouter", () => {
     describe("OAuth endpoints", () => {
@@ -245,6 +249,7 @@ describe("createRouter", () => {
             const { GET } = createRouter([get])
             const response = await GET(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -314,6 +319,7 @@ describe("createRouter", () => {
 
             const response = await GET(new Request("https://example.com/session", { method: "PATCH" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
@@ -321,21 +327,40 @@ describe("createRouter", () => {
             })
         })
 
-        /**
-         * @todo fix the handleRequest function to accept the method as a parameter and use it for matching the route
-         */
-        test.skip("Using handle method with unsupported HTTP method", async () => {
+        test("Using handle method with unsupported HTTP method", async () => {
             const get = createEndpoint("GET", "/session", () => {
                 return Response.json({ message: "Get user session" }, { status: 200 })
             })
             const router = createRouter([get])
             const response = await router.handle(new Request("https://example.com/session", { method: "DELETE" }))
             expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET")
             expect(await response.json()).toEqual({
                 type: "ROUTER_FLOW",
                 code: "METHOD_NOT_ALLOWED",
                 message: "The requested resource does not support the submitted HTTP execution method request verb.",
             })
+        })
+
+        test("Includes allowed methods for a static route", async () => {
+            const get = createEndpoint("GET", "/session", () => Response.json({ status: 200 }))
+            const post = createEndpoint("POST", "/session", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get, post])
+
+            const response = await handle(new Request("https://example.com/session", { method: "DELETE" }))
+            expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET, POST")
+        })
+
+        test("Includes allowed methods for a dynamic route", async () => {
+            const get = createEndpoint("GET", "/users/:id", () => Response.json({ status: 200 }))
+            const post = createEndpoint("POST", "/users/:id", () => Response.json({ status: 200 }))
+            const remove = createEndpoint("DELETE", "/users/:id", () => Response.json({ status: 200 }))
+            const { handle } = createRouter([get, post, remove])
+
+            const response = await handle(new Request("https://example.com/users/123", { method: "PUT" }))
+            expect(response.status).toBe(405)
+            expect(response.headers.get("Allow")).toBe("GET, POST, DELETE")
         })
 
         test("Not found route", async () => {
@@ -371,6 +396,166 @@ describe("createRouter", () => {
                 code: "NOT_FOUND",
                 message:
                     "The requested route address cannot be found or is unavailable on this application endpoint server context.",
+            })
+        })
+
+        test("malformed dynamic param", async () => {
+            const { handle } = createRouter([endpoint("GET", "/users/:id", "user")])
+            const response = await handle(new Request("https://app.com/users/%ZZ"))
+
+            expect(response.status).toBe(400)
+            expect(await response.json()).toEqual({
+                code: "BAD_REQUEST",
+                type: "ROUTER_FLOW",
+                message: "The request is invalid or malformed.",
+            })
+        })
+
+        test("duplicated dynamic parameter name", async () => {
+            expect(() => createRouter([endpoint("GET", "/p/:id/comments/:id/values/:id", "comment")])).toThrow(
+                "Duplicate parameter 'id' found in route '/p/:id/comments/:id/values/:id'. Route parameters must have unique names."
+            )
+        })
+
+        test("duplicated dynamic parameter name test regresion", async () => {
+            expect(() => createRouter([endpoint("GET", "/:id/x", "first"), endpoint("GET", "/:id/:id", "second")])).toThrow(
+                "Duplicate parameter 'id' found in route '/:id/:id'. Route parameters must have unique names."
+            )
+        })
+    })
+
+    describe("Backtrack", () => {
+        test("Backtracks from a failed static route to a dynamic route", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/p/new/:draft/edit", "newpost"),
+                endpoint("GET", "/p/:id/comments/:cid", "comment"),
+            ])
+            const response = await handle(new Request("https://example.com/p/new/comments/3"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "comment",
+                params: { id: "new", cid: "3" },
+            })
+        })
+
+        test("Matches a dynamic route when a static prefix has no matching endpoint", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/users/profile/settings", "settings"),
+                endpoint("GET", "/users/:username/posts", "posts"),
+            ])
+            const response = await handle(new Request("https://example.com/users/profile/posts"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "posts",
+                params: { username: "profile" },
+            })
+        })
+
+        test("Falls back to a fully dynamic route after more specific branches fail", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/org/engineering/teams/backend/lead", "lead"),
+                endpoint("GET", "/org/engineering/teams/:team/members", "members"),
+                endpoint("GET", "/org/:department/teams/backend/budget", "budget"),
+                endpoint("GET", "/:entity/:department/:group/:subgroup/info", "info"),
+            ])
+            const response = await handle(new Request("https://example.com/org/engineering/teams/backend/info"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "info",
+                params: { entity: "org", department: "engineering", group: "teams", subgroup: "backend" },
+            })
+        })
+
+        test("Backtracks to a dynamic route when the static endpoint suffix does not match", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/v1/users/:userId/posts/:postId/comments/pinned", "pinned"),
+                endpoint("GET", "/v1/:resourceType/:resourceId/posts/:otherId/comments/latest", "latest"),
+            ])
+            const response = await handle(new Request("https://example.com/v1/users/42/posts/99/comments/latest"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "latest",
+                params: {
+                    resourceType: "users",
+                    resourceId: "42",
+                    otherId: "99",
+                },
+            })
+        })
+
+        test("repetitive segment trap", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/a/a/a/a/a/b", "first"),
+                endpoint("GET", "/a/a/a/:p1/a/c", "second"),
+                endpoint("GET", "/a/:p1/a/:p2/a/d", "third"),
+                endpoint("GET", "/:p1/:p2/:p3/:p4/:p5/e", "fourth"),
+            ])
+            const response = await handle(new Request("https://example.com/a/a/a/a/a/e"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "fourth",
+                params: { p1: "a", p2: "a", p3: "a", p4: "a", p5: "a" },
+            })
+        })
+
+        test("depth mismatch", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/api/v2/auth/login", "login"),
+                endpoint("GET", "/api/v2/auth/login/oauth/callback", "callback"),
+            ])
+            const response = await handle(new Request("https://example.com/api/v2/auth/login/oauth/callback"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "callback",
+                params: {},
+            })
+        })
+
+        test("zig-zag traversal", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/shop/:category/shoes/:brand/sale", "sale"),
+                endpoint("GET", "/shop/men/:sub/nike/:status", "status"),
+                endpoint("GET", "/shop/men/shoes/nike/clearance", "clearance"),
+            ])
+            const response = await handle(new Request("https://example.com/shop/men/shoes/nike/sale"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "status",
+                params: { sub: "shoes", status: "sale" },
+            })
+        })
+
+        test("http methods collision", async () => {
+            const { handle } = createRouter([
+                endpoint("POST", "/files/reports/annual/2026", "annual"),
+                endpoint("GET", "/files/:folder/:subfolder/:year", "year"),
+            ])
+            const response = await handle(new Request("https://example.com/files/reports/annual/2026"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "year",
+                params: {
+                    folder: "reports",
+                    subfolder: "annual",
+                    year: "2026",
+                },
+            })
+        })
+
+        test("dynamic params regresion", async () => {
+            const { handle } = createRouter([
+                endpoint("GET", "/:id/a/:item/no", "first"),
+                endpoint("GET", "/:id/:section/:item", "second"),
+            ])
+            const response = await handle(new Request("https://example.com/outer/a/inner"))
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({
+                name: "second",
+                params: {
+                    id: "outer",
+                    section: "a",
+                    item: "inner",
+                },
             })
         })
     })

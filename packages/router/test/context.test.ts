@@ -1,6 +1,6 @@
 import { z } from "zod/v4"
 import { describe, expectTypeOf, test } from "vitest"
-import { TrieRouter } from "@/trie.ts"
+import { TrieRouter, type TrieMatchReturn } from "@/trie.ts"
 import { HeadersBuilder } from "@/headers.ts"
 import { getRouteParams, getSearchParams, getBody, getHeaders } from "@/context.ts"
 import type { RouteEndpoint } from "@/@types/index.ts"
@@ -56,7 +56,8 @@ describe("getRouteParams", () => {
 
         for (const { description, path, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = router.match("GET", path)?.params || {}
+                const out = router.match("GET", path) as Extract<TrieMatchReturn, { success: true }>
+                const params = out?.params || {}
                 expect(params).toEqual(expected)
             })
         }
@@ -101,7 +102,8 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema, expected } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = router.match("GET", path)?.params || {}
+                const out = router.match("GET", path) as Extract<TrieMatchReturn, { success: true }>
+                const params = out?.params || {}
                 const dynamic = getRouteParams(params, { schemas: { params: schema } })
                 expect(dynamic).toEqual(expected)
             })
@@ -150,7 +152,8 @@ describe("getRouteParams", () => {
 
         for (const { description, path, schema } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                const params = router.match("GET", path)?.params || {}
+                const out = router.match("GET", path) as Extract<TrieMatchReturn, { success: true }>
+                const params = out?.params || {}
                 expect(() => getRouteParams(params, { schemas: { params: schema } })).toThrowError()
             })
         }
@@ -178,7 +181,10 @@ describe("getRouteParams", () => {
 
         for (const { description, path } of testCases) {
             test.concurrent(description, ({ expect }) => {
-                expect(router.match("GET", path)).toBeNull()
+                expect(router.match("GET", path)).toEqual({
+                    success: false,
+                    code: expect.any(String),
+                })
             })
         }
     })
