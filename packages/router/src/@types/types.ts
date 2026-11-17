@@ -382,7 +382,7 @@ export type MiddlewareFunction<
     Schemas extends EndpointSchemas,
 > = (
     ctx: RequestContext<EndpointMeta<Route, Method, Schemas>>
-) => Awaitable<Response | RequestContext<EndpointMeta<Route, Method, Schemas>>>
+) => Awaitable<Response | RequestContext<EndpointMeta<RoutePattern, HTTPMethod | HTTPMethod[], EndpointSchemas>>>
 
 /**
  * Defines a route handler function that processes an incoming request and returns a response.

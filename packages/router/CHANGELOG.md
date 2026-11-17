@@ -19,6 +19,8 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ### Fixed
 
+- Fixed type inference for local `use` middleware when defining endpoints with `createEndpointConfig()`. Middleware configuration no longer overrides or interferes with endpoint configuration inference. This change affects type inference only and does not alter the data exposed or accessible through the endpoint. Existing hooks and schema inference remain unaffected. [#80](https://github.com/aura-stack-ts/router/pull/80)
+
 - Fixed handling of duplicated dynamic route parameters. The router now throws an error when a route defines the same dynamic parameter name more than once, preventing ambiguous parameter resolution. [#77](https://github.com/aura-stack-ts/router/pull/77)
 
 - Fixed route matching by adding backtracking. When a static segment matches but the remaining path cannot be resolved, or the matched route does not support the requested HTTP method, the router now retries matching through alternative dynamic branches. For example, `GET /users/me/posts/1` now correctly falls back from `/users/me/:tab` to `/users/:id/posts/:postId`. Static routes retain priority, and parameters captured by failed branches are discarded. [#77](https://github.com/aura-stack-ts/router/pull/77)
