@@ -16,7 +16,7 @@ export const SUPPORTED_HTTP_METHODS = new Set<HTTPMethod | "HEAD">([
     "CONNECT",
 ])
 
-const supportedBodyMethods = new Set<HTTPMethod>(["POST", "PUT", "PATCH"])
+export const SUPPORTED_BODY_METHODS = new Set<HTTPMethod>(["POST", "PUT", "PATCH", "QUERY"])
 
 export const supportedProtocols = new Set(["http:", "https:"])
 
@@ -31,15 +31,6 @@ export const isSupportedMethod = (method: string | string[]): method is HTTPMeth
         return method.every((meth) => SUPPORTED_HTTP_METHODS.has(meth as HTTPMethod))
     }
     return SUPPORTED_HTTP_METHODS.has(method as HTTPMethod)
-}
-
-/**
- * Check if the provided method can includes a body as per HTTP specification.
- * @param method - The HTTP method to check.
- * @returns True if the method can include a body, false otherwise.
- */
-export const isSupportedBodyMethod = (method: string): method is HTTPMethod => {
-    return supportedBodyMethods.has(method as HTTPMethod)
 }
 
 /**

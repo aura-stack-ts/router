@@ -53,13 +53,14 @@ export const { GET } = createRouter([signIn, callback])
 
 The `config` parameter allows setting additional options for customization.
 
-| Option        | Type                                                                     | Description                                                 |
-| ------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| `basePath`    | `string`                                                                 | Prefix applied to all routes (recommended: start with `/`). |
-| `use`         | `GlobalMiddleware[]`                                                     | Global middlewares executed before endpoint handlers.       |
-| `context`     | `GlobalMiddlewareContext`                                                | Global context for endpoints and middlewares.               |
-| `hooks`       | `RouterHooks`                                                            | Optional hooks for router lifecycle events.                 |
-| ~~`onError`~~ | `(error: Error \| RouterError, request: Request) => Awaitable<Response>` | Global error handler.                                       |
+| Option           | Type                                                                     | Description                                                 |
+| ---------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `basePath`       | `string`                                                                 | Prefix applied to all routes (recommended: start with `/`). |
+| `use`            | `GlobalMiddleware[]`                                                     | Global middlewares executed before endpoint handlers.       |
+| `context`        | `GlobalMiddlewareContext`                                                | Global context for endpoints and middlewares.               |
+| `hooks`          | `RouterHooks`                                                            | Optional hooks for router lifecycle events.                 |
+| `allowedMethods` | `string[]`                                                               | Optional extra http methods allowed by the router.          |
+| ~~`onError`~~    | `(error: Error \| RouterError, request: Request) => Awaitable<Response>` | Global error handler.                                       |
 
 ##### `basePath` [#base-path]
 
@@ -167,6 +168,37 @@ export const router = createRouter([], {
       port: process.env.PORT!,
     },
   },
+})
+```
+
+#### `allowedMethods` [#allowed-methods]
+
+The `allowedMethods` option extends the router's support for non-standard HTTP methods, allowing you to register and handle custom methods.
+
+To ensure type safety when using custom HTTP methods, create a `types.d.ts` file and augment the `GlobalHTTPMethods` interface with the methods you want to support. For more information, see [TypeScript Module Augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation).
+
+```ts title="types.d.ts"
+import type { GlobalHTTPMethods } from "@aura-stack/router"
+
+declare module "@aura-stack/router" {
+  interface GlobalHTTPMethods {
+    PURGE: true
+    CANARY: true
+  }
+}
+```
+
+You can then use these methods when defining endpoints and configure the router to allow them:
+
+```ts
+import { createEndpoint, createRouter } from "@aura-stack/router"
+
+const session = createEndpoint("CANARY", "/canary", async (ctx) => {
+  return ctx.json({ experimental: true })
+})
+
+export const { GET } = createRouter([session], {
+  allowedMethods: ["PURGE", "CANARY"],
 })
 ```
 

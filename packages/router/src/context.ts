@@ -1,8 +1,7 @@
 import { HeadersBuilder } from "@/headers.ts"
-import { isSupportedBodyMethod } from "@/assert.ts"
 import { createValidator, isSupportedSchema } from "@/validator/registry.ts"
 import { AuraRouterError, AuraRouterValidationError } from "@/error.ts"
-import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse } from "@/@types/index.ts"
+import type { EndpointConfig, ContextSearchParams, ContentType, JsonResponse, HTTPMethod } from "@/@types/index.ts"
 
 export const getHeaders = (headers: HeadersBuilder, config: EndpointConfig<any, any, any>) => {
     if (config.schemas?.headers) {
@@ -100,8 +99,8 @@ export const getSearchParams = <Config extends EndpointConfig<any, any, any>>(
  * @param request - The Request object from which to extract the body.
  * @returns The raw parsed body based on the content type, or null.
  */
-export const parseBodyRaw = async (request: Request): Promise<unknown> => {
-    if (!isSupportedBodyMethod(request.method)) {
+export const parseBodyRaw = async (request: Request, supportedMethods: Set<HTTPMethod>): Promise<unknown> => {
+    if (!supportedMethods.has(request.method)) {
         return null
     }
     const clone = request.clone()
