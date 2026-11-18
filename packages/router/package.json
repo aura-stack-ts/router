@@ -1,6 +1,6 @@
 {
   "name": "@aura-stack/router",
-  "version": "0.11.4",
+  "version": "0.12.0",
   "private": false,
   "type": "module",
   "description": "A lightweight TypeScript library for building, managing, and validating API routes and endpoints in Node.js applications.",
@@ -26,7 +26,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org/@aura-stack/router"
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "router",
@@ -134,9 +134,5 @@
     "typebox": {
       "optional": true
     }
-  },
-  "workspaces": [
-    "docs",
-    "packages/*"
-  ]
+  }
 }
