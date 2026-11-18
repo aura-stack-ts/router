@@ -7,6 +7,10 @@ Per-package version history is maintained inside each package’s own `CHANGELOG
 
 ## [Unreleased]
 
+---
+
+## [0.12.0] - 2026-11-18
+
 ### Breaking Changes
 
 - Removed support for explicitly defining `HEAD` endpoints. The router now registers them automatically for all `GET` endpoints. [#79](https://github.com/aura-stack-ts/router/pull/79)
